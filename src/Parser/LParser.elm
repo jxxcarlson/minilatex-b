@@ -130,20 +130,25 @@ nextRound tc =
                 in
                 Loop { tc| text = newText, parsed = newExpr::tc.parsed, offset = tc.offset + sourceMap.last}
             Err e ->
-                let
-                   _ = Debug.log "ERR" e
-
-                   errorColumn =
-                     e |> List.head |> Maybe.map .col |> Maybe.withDefault 0
-                   errorText = String.left errorColumn tc.text
-                   newText = case Parser.run word errorText of
-                               Ok (_,t) -> String.dropLeft t.last tc.text
-                               Err _ -> String.dropLeft 4 tc.text
-
-                in
-                Loop { tc | text = newText, stack = errorText :: tc.stack}
+                Loop (handleError tc e)
 
 
+handleError tc_ e =
+    let
+       mFirstError = e |> List.head
+       errorColumn =
+          mFirstError |> Maybe.map .col |> Maybe.withDefault 0
+       errorText = String.left errorColumn tc_.text
+       errorColumn2 = case Parser.run word errorText of
+            Ok (_,t) -> t.last
+            Err err -> 4
+       errorText2 = String.left errorColumn2 errorText
+       newText = String.dropLeft errorColumn2 tc_.text
+    in
+    { text = newText
+     , parsed = (Text ("Error=[" ++ errorText2 ++ "]") {first = 0, last = errorColumn2, offset = tc_.offset + errorColumn2}) :: tc_.parsed
+     , stack = errorText :: tc_.stack
+     , offset = tc_.offset + errorColumn}
 
 
 
@@ -204,7 +209,15 @@ toString expr =
         LXList list -> List.foldl (\e acc -> acc ++ toString e) "" list
 
 
+toStringFromList : List Expression -> String
+toStringFromList list =
+    list
+      |> List.map toString
+      |> String.join " "
 
+parseAndRecompose : String -> String
+parseAndRecompose str =
+    str |> textLoop |> .parsed |> List.reverse |> toStringFromList
 
 
 -- FUN STUFF

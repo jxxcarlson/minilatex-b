@@ -10,6 +10,7 @@ type Expression
     | LXList (List Expression)
 
 
+
 getSource : Expression -> SourceMap
 getSource expr =
     case expr of
@@ -39,3 +40,4 @@ type Problem =
    | EndOfInput
    | ExpectingEndOfWordSpace
    | ExpectingLeadingBackslashForMacro
+   | GeneraicError
