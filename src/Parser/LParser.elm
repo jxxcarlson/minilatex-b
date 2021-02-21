@@ -18,6 +18,44 @@ type Context = Foo | Bar
 
 
 
+textLoop : String -> TextCursor
+textLoop str =
+    loop (TextCursor.init str) nextRound
+
+nextRound : TextCursor -> Step TextCursor TextCursor
+nextRound tc =
+    if tc.text == "" then Done tc
+    else
+        case Parser.run expression tc.text of
+            Ok expr ->
+                let
+                   sourceMap = Expression.getSource expr
+                   newText = String.dropLeft sourceMap.end tc.text
+                   newExpr = Expression.incrementOffset tc.offset expr
+                in
+                Loop { tc| text = newText, parsed = newExpr::tc.parsed, offset = tc.offset + sourceMap.end}
+            Err e ->
+                Loop (handleError tc e)
+
+
+handleError tc_ e =
+    let
+       mFirstError = e |> List.head
+       problem = Maybe.map .problem mFirstError |> Maybe.withDefault GenericError
+       errorColumn =
+          mFirstError |> Maybe.map .col |> Maybe.withDefault 0
+       errorText = String.left errorColumn tc_.text
+       errorColumn2 = case Parser.run word errorText of
+            Ok (_,t) -> t.end
+            Err err -> 4
+       errorText2 = String.left errorColumn2 errorText
+       newText = String.dropLeft errorColumn2 tc_.text
+    in
+    { text = newText
+     , parsed = (LXError errorText2 problem {begin = 0, end = errorColumn2, offset = tc_.offset + errorColumn2}) :: tc_.parsed
+     , stack = errorText :: tc_.stack
+     , offset = tc_.offset + errorColumn}
+
 
 
 {-|
@@ -42,12 +80,6 @@ text_ : List Char -> Parser Expression
 text_ stopChars =
   Parser.map (\(t,s) -> Text t s)  (rawText2 stopChars)
 
---rawText : List Char -> Parser (String, {first : Int,  last : Int})
---rawText stopChars =
---  (\s -> Parser.succeed  (s, {first = 0,  last = 0}))
---      <| Parser.getChompedString <|
---        Parser.succeed ()
---          |. Parser.chompWhile (\c -> not (List.member c stopChars))
 
 rawText_ : List Char -> Parser String
 rawText_ stopChars =
@@ -64,7 +96,7 @@ rawText2 stopChars =
 
 getChompedString2 : Parser a -> Parser (String, SourceMap)
 getChompedString2 parser =
-  Parser.succeed (\first_ last_ source_ -> (String.slice first_ last_ source_, {first = first_, length = last_, offset = 0}))
+  Parser.succeed (\first_ last_ source_ -> (String.slice first_ last_ source_, {begin = first_, end = last_, offset = 0}))
     |= Parser.getOffset
     |. parser
     |= Parser.getOffset
@@ -74,7 +106,7 @@ getChompedString2 parser =
 
 inlineMath : Parser Expression
 inlineMath =
-    Parser.succeed (\(s, t) -> InlineMath s  {t | first = t.first - 1, length = t.length + 1})
+    Parser.succeed (\(s, t) -> InlineMath s  {t | begin = t.begin - 1, end = t.end + 1})
       |. Parser.symbol (Parser.Token "$" ExpectingLeadingDollarSign)
       |= getChompedString2 (Parser.chompUntil (Parser.Token "$" ExpectingTrailingDollarSign1))
       |. Parser.symbol (Parser.Token "$" ExpectingTrailingDollarSign2)
@@ -82,7 +114,7 @@ inlineMath =
 
 displayMath : Parser Expression
 displayMath =
-    Parser.succeed (\(s,t) -> DisplayMath s  {t | first = t.first - 2, length = t.length + 2})
+    Parser.succeed (\(s,t) -> DisplayMath s  {t | begin = t.begin - 2, end = t.end + 2})
       |. Parser.symbol (Parser.Token "$$" ExpectingLeadingDoubleDollarSign)
       |= getChompedString2 (Parser.chompUntil (Parser.Token "$$" ExpectingLTrailingDoubleDollarSign1))
       |. Parser.symbol (Parser.Token "$$" ExpectingLTrailingDoubleDollarSign2)
@@ -112,43 +144,6 @@ word =
    Parser.succeed identity
      |= getChompedString2 (Parser.chompUntil (Parser.Token " " ExpectingEndOfWordSpace))
 
-
-textLoop : String -> TextCursor
-textLoop str =
-    loop (TextCursor.init str) nextRound
-
-nextRound : TextCursor -> Step TextCursor TextCursor
-nextRound tc =
-    if tc.text == "" then Done tc
-    else
-        case Parser.run expression tc.text of
-            Ok expr ->
-                let
-                   sourceMap = Expression.getSource expr
-                   newText = String.dropLeft sourceMap.length tc.text
-                   newExpr = Expression.incrementOffset tc.offset expr
-                in
-                Loop { tc| text = newText, parsed = newExpr::tc.parsed, offset = tc.offset + sourceMap.length}
-            Err e ->
-                Loop (handleError tc e)
-
-
-handleError tc_ e =
-    let
-       mFirstError = e |> List.head
-       errorColumn =
-          mFirstError |> Maybe.map .col |> Maybe.withDefault 0
-       errorText = String.left errorColumn tc_.text
-       errorColumn2 = case Parser.run word errorText of
-            Ok (_,t) -> t.length
-            Err err -> 4
-       errorText2 = String.left errorColumn2 errorText
-       newText = String.dropLeft errorColumn2 tc_.text
-    in
-    { text = newText
-     , parsed = (Text ("Error=[" ++ errorText2 ++ "]") {first = 0, length = errorColumn2, offset = tc_.offset + errorColumn2}) :: tc_.parsed
-     , stack = errorText :: tc_.stack
-     , offset = tc_.offset + errorColumn}
 
 
 
@@ -206,6 +201,7 @@ toString expr =
         Text str _ -> str
         InlineMath str _ -> "$" ++ str ++ "$"
         DisplayMath str _ -> str
+        LXError str p _ -> "((( Error! " ++ Expression.problemAsString p ++ " [" ++ str ++ "]  )))"
         LXList list -> List.foldl (\e acc -> acc ++ toString e) "" list
 
 
