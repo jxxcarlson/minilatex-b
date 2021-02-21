@@ -3,7 +3,8 @@ module ParserTest exposing(suite)
 import Test exposing(describe, test, fuzz)
 import Expect
 import Fuzz exposing(string)
-import Parser.Expression exposing(..)
+import Parser.LParser exposing(..)
+import Parser.LExpression exposing(..)
 import Parser.Advanced as Parser exposing(run)
 
 

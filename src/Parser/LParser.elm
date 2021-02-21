@@ -1,4 +1,4 @@
-module Parser.Expression exposing (..)
+module Parser.LParser exposing (..)
 
 
    --Expression(..)
@@ -8,29 +8,12 @@ module Parser.Expression exposing (..)
 
 import Parser.Advanced as Parser exposing ((|.), (|=))
 
-type Expression
-    = Text String
-    | InlineMath String
-    | DisplayMath String
-    --| Macro String (Maybe String) (List String)
-    | LXList (List Expression)
-
-
-
+import Parser.LExpression exposing(Expression(..), Problem(..))
 
 type alias Parser a = Parser.Parser Context Problem a
 
 type Context = Foo | Bar
 
-type Problem =
-    ExpectingLeadingDollarSign
-   | ExpectingTrailingDollarSign1
-   | ExpectingTrailingDollarSign2
-   | ExpectingLeadingDoubleDollarSign
-   | ExpectingLTrailingDoubleDollarSign1
-   | ExpectingLTrailingDoubleDollarSign2
-   | EndOfInput
-   | ExpectingLeadingBackslashForMacro
 
 
 {-|
