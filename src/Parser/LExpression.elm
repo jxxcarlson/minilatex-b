@@ -17,7 +17,7 @@ getSource expr =
         Text _ source -> source
         InlineMath _ source -> source
         DisplayMath _ source -> source
-        LXList e -> List.map getSource e |> List.head |> Maybe.withDefault {first = -1, last = -1, offset = -1}
+        LXList e -> List.map getSource e |> List.head |> Maybe.withDefault {first = -1, length = -1, offset = -1}
 
 incrementOffset : Int -> Expression -> Expression
 incrementOffset delta expr =
@@ -27,7 +27,7 @@ incrementOffset delta expr =
          DisplayMath e source -> DisplayMath e {source | offset = source.offset + delta}
          LXList e -> LXList (List.map (incrementOffset delta) e)
 
-type alias SourceMap =  {first : Int, last: Int, offset: Int}
+type alias SourceMap =  {first : Int, length: Int, offset: Int}
 
 
 type Problem =

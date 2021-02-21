@@ -64,7 +64,7 @@ rawText2 stopChars =
 
 getChompedString2 : Parser a -> Parser (String, SourceMap)
 getChompedString2 parser =
-  Parser.succeed (\first_ last_ source_ -> (String.slice first_ last_ source_, {first = first_, last = last_, offset = 0}))
+  Parser.succeed (\first_ last_ source_ -> (String.slice first_ last_ source_, {first = first_, length = last_, offset = 0}))
     |= Parser.getOffset
     |. parser
     |= Parser.getOffset
@@ -74,7 +74,7 @@ getChompedString2 parser =
 
 inlineMath : Parser Expression
 inlineMath =
-    Parser.succeed (\(s, t) -> InlineMath s  {t | first = t.first - 1, last = t.last + 1})
+    Parser.succeed (\(s, t) -> InlineMath s  {t | first = t.first - 1, length = t.length + 1})
       |. Parser.symbol (Parser.Token "$" ExpectingLeadingDollarSign)
       |= getChompedString2 (Parser.chompUntil (Parser.Token "$" ExpectingTrailingDollarSign1))
       |. Parser.symbol (Parser.Token "$" ExpectingTrailingDollarSign2)
@@ -82,7 +82,7 @@ inlineMath =
 
 displayMath : Parser Expression
 displayMath =
-    Parser.succeed (\(s,t) -> DisplayMath s  {t | first = t.first - 2, last = t.last + 2})
+    Parser.succeed (\(s,t) -> DisplayMath s  {t | first = t.first - 2, length = t.length + 2})
       |. Parser.symbol (Parser.Token "$$" ExpectingLeadingDoubleDollarSign)
       |= getChompedString2 (Parser.chompUntil (Parser.Token "$$" ExpectingLTrailingDoubleDollarSign1))
       |. Parser.symbol (Parser.Token "$$" ExpectingLTrailingDoubleDollarSign2)
@@ -125,10 +125,10 @@ nextRound tc =
             Ok expr ->
                 let
                    sourceMap = Expression.getSource expr
-                   newText = String.dropLeft sourceMap.last tc.text
+                   newText = String.dropLeft sourceMap.length tc.text
                    newExpr = Expression.incrementOffset tc.offset expr
                 in
-                Loop { tc| text = newText, parsed = newExpr::tc.parsed, offset = tc.offset + sourceMap.last}
+                Loop { tc| text = newText, parsed = newExpr::tc.parsed, offset = tc.offset + sourceMap.length}
             Err e ->
                 Loop (handleError tc e)
 
@@ -140,13 +140,13 @@ handleError tc_ e =
           mFirstError |> Maybe.map .col |> Maybe.withDefault 0
        errorText = String.left errorColumn tc_.text
        errorColumn2 = case Parser.run word errorText of
-            Ok (_,t) -> t.last
+            Ok (_,t) -> t.length
             Err err -> 4
        errorText2 = String.left errorColumn2 errorText
        newText = String.dropLeft errorColumn2 tc_.text
     in
     { text = newText
-     , parsed = (Text ("Error=[" ++ errorText2 ++ "]") {first = 0, last = errorColumn2, offset = tc_.offset + errorColumn2}) :: tc_.parsed
+     , parsed = (Text ("Error=[" ++ errorText2 ++ "]") {first = 0, length = errorColumn2, offset = tc_.offset + errorColumn2}) :: tc_.parsed
      , stack = errorText :: tc_.stack
      , offset = tc_.offset + errorColumn}
 
