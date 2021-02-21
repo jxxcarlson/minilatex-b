@@ -1,10 +1,5 @@
-module Parser.LParser exposing (..)
+module Parser.LParser exposing (parseLoop, expressionList, getChompedString, parseAndRecompose)
 
-
-   --Expression(..)
-   --, roundTripCheck
-   --, expression
-   --, expressionList)
 
 import Parser.Advanced as Parser exposing ((|.), (|=))
 
@@ -16,15 +11,13 @@ type alias Parser a = Parser.Parser Context Problem a
 
 type Context = Foo | Bar
 
-
-
-textLoop : String -> TextCursor
-textLoop str =
+parseLoop : String -> TextCursor
+parseLoop str =
     loop (TextCursor.init str) nextRound
 
 nextRound : TextCursor -> Step TextCursor TextCursor
 nextRound tc =
-    if tc.text == "" then Done tc
+    if tc.text == "" then Done {tc | parsed = List.reverse tc.parsed}
     else
         case Parser.run expression tc.text of
             Ok expr ->
@@ -57,6 +50,18 @@ handleError tc_ e =
      , offset = tc_.offset + errorColumn}
 
 
+{-|
+
+    Use this to parse a string and return information about its location in the source
+
+-}
+getChompedString : Parser a -> Parser (String, SourceMap)
+getChompedString parser =
+  Parser.succeed (\first_ last_ source_ -> (String.slice first_ last_ source_, {begin = first_, end = last_, offset = 0}))
+    |= Parser.getOffset
+    |. parser
+    |= Parser.getOffset
+    |= Parser.getSource
 
 {-|
 
@@ -78,29 +83,15 @@ text = text_ ['$', '\\']
 
 text_ : List Char -> Parser Expression
 text_ stopChars =
-  Parser.map (\(t,s) -> Text t s)  (rawText2 stopChars)
+  Parser.map (\(t,s) -> Text t s)  (rawText stopChars)
 
 
-rawText_ : List Char -> Parser String
-rawText_ stopChars =
-  Parser.getChompedString <|
+rawText : List Char -> Parser (String, SourceMap)
+rawText stopChars =
+  getChompedString <|
         Parser.succeed ()
           |. Parser.chompWhile (\c -> not (List.member c stopChars))
 
-rawText2 : List Char -> Parser (String, SourceMap)
-rawText2 stopChars =
-  getChompedString2 <|
-        Parser.succeed ()
-          |. Parser.chompWhile (\c -> not (List.member c stopChars))
-
-
-getChompedString2 : Parser a -> Parser (String, SourceMap)
-getChompedString2 parser =
-  Parser.succeed (\first_ last_ source_ -> (String.slice first_ last_ source_, {begin = first_, end = last_, offset = 0}))
-    |= Parser.getOffset
-    |. parser
-    |= Parser.getOffset
-    |= Parser.getSource
 
 -- MATH
 
@@ -108,7 +99,7 @@ inlineMath : Parser Expression
 inlineMath =
     Parser.succeed (\(s, t) -> InlineMath s  {t | begin = t.begin - 1, end = t.end + 1})
       |. Parser.symbol (Parser.Token "$" ExpectingLeadingDollarSign)
-      |= getChompedString2 (Parser.chompUntil (Parser.Token "$" ExpectingTrailingDollarSign1))
+      |= getChompedString (Parser.chompUntil (Parser.Token "$" ExpectingTrailingDollarSign1))
       |. Parser.symbol (Parser.Token "$" ExpectingTrailingDollarSign2)
       |. Parser.spaces
 
@@ -116,7 +107,7 @@ displayMath : Parser Expression
 displayMath =
     Parser.succeed (\(s,t) -> DisplayMath s  {t | begin = t.begin - 2, end = t.end + 2})
       |. Parser.symbol (Parser.Token "$$" ExpectingLeadingDoubleDollarSign)
-      |= getChompedString2 (Parser.chompUntil (Parser.Token "$$" ExpectingLTrailingDoubleDollarSign1))
+      |= getChompedString (Parser.chompUntil (Parser.Token "$$" ExpectingLTrailingDoubleDollarSign1))
       |. Parser.symbol (Parser.Token "$$" ExpectingLTrailingDoubleDollarSign2)
       |. Parser.spaces
 
@@ -142,10 +133,7 @@ displayMath =
 word : Parser (String, SourceMap)
 word =
    Parser.succeed identity
-     |= getChompedString2 (Parser.chompUntil (Parser.Token " " ExpectingEndOfWordSpace))
-
-
-
+     |= getChompedString (Parser.chompUntil (Parser.Token " " ExpectingEndOfWordSpace))
 
 loop : state -> (state -> Step state a) -> a
 loop s nextState =
@@ -177,8 +165,9 @@ manyHelp p vs =
 eof : Parser ()
 eof = Parser.end EndOfInput
 
--- ROUND TRIP TESTING
 
+
+-- ROUND TRIP TESTING
 
 roundTrip : String -> String
 roundTrip str =
@@ -201,7 +190,7 @@ toString expr =
         Text str _ -> str
         InlineMath str _ -> "$" ++ str ++ "$"
         DisplayMath str _ -> str
-        LXError str p _ -> "((( Error! " ++ Expression.problemAsString p ++ " [" ++ str ++ "]  )))"
+        LXError str p sm -> "((( Error at " ++ String.fromInt sm.offset ++": " ++ Expression.problemAsString p ++ " [" ++ str ++ "]  )))"
         LXList list -> List.foldl (\e acc -> acc ++ toString e) "" list
 
 
@@ -213,7 +202,7 @@ toStringFromList list =
 
 parseAndRecompose : String -> String
 parseAndRecompose str =
-    str |> textLoop |> .parsed |> List.reverse |> toStringFromList
+    str |> parseLoop |> .parsed |> toStringFromList
 
 
 -- FUN STUFF
