@@ -1,4 +1,8 @@
-module Parser.LXExpression exposing (..)
+module Parser.LXExpression exposing (
+   LXExpression(..)
+   , roundTripCheck
+   , expression
+   , expressionList)
 
 import Parser.Advanced as Parser exposing ((|.), (|=))
 
@@ -6,9 +10,37 @@ type LXExpression
     = Text String
     | InlineMath String
     | DisplayMath String
-    | LatexList (List LXExpression)
+    | LXList (List LXExpression)
 
 type alias Parser a = Parser.Parser Context Problem a
+
+
+roundTrip : String -> String
+roundTrip str =
+    case Parser.run expressionList str of
+        Ok r -> List.map toString r |> String.join " "
+        Err err -> Debug.toString err
+
+
+squeeze : String -> String
+squeeze str =
+    str |> String.replace " " "" |> String.replace "\n" ""
+
+roundTripCheck : String -> Bool
+roundTripCheck str =
+    squeeze str == squeeze (roundTrip str)
+
+
+
+
+toString : LXExpression -> String
+toString expr =
+    case expr of
+        Text str -> str
+        InlineMath str -> "$" ++ str ++ "$"
+        DisplayMath str -> str
+        LXList list -> List.foldl (\e acc -> acc ++ toString e) "" list
+
 
 
 type Context = Foo | Bar
@@ -22,11 +54,18 @@ type Problem =
    | InvalidNumber
    | EndOfInput
 
-expression1 = Parser.oneOf [displayMath, inlineMath]
 
+{-|
 
+> run expressionList "foo bar $a^2$ baz"
+Ok [Text ("foo bar "),InlineMath "a^2",Text "baz"]
+
+-}
+expressionList : Parser (List LXExpression)
+expressionList = many expression
+
+expression : Parser.Parser Context Problem LXExpression
 expression = Parser.oneOf [displayMath, inlineMath, text]
-
 
 eof : Parser ()
 eof = Parser.end EndOfInput
@@ -38,9 +77,7 @@ text_ : List Char -> Parser LXExpression
 text_ stopChars =
   Parser.map Text <| Parser.getChompedString <|
     Parser.succeed ()
-      |. Parser.chompIf  (\c -> not (List.member c stopChars)) ExpectingTextChar
       |. Parser.chompWhile (\c -> not (List.member c stopChars))
-      --|. Parser.spaces
 
 inlineMath : Parser LXExpression
 inlineMath =
@@ -69,12 +106,19 @@ manyHelp :  Parser a -> List a -> Parser (Parser.Step (List a) (List a))
 manyHelp p vs =
     Parser.oneOf
         [ eof |> Parser.map (\_ -> Parser.Done (List.reverse vs))
-        , Parser.succeed (\v -> Parser.Loop ((Debug.log "V" v) :: vs))
+        , Parser.succeed (\v -> Parser.Loop (v :: vs))
             |= p
         , Parser.succeed ()
             |> Parser.map (\_ -> Parser.Done (List.reverse vs))
         ]
 
+
+
+
+
+
+-- FUN STUFF
+-- The below are not needed, but were fun to make and play around with
 
 second : Parser a -> Parser a -> Parser a
 second p q  =
