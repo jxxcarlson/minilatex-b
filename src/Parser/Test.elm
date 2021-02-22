@@ -13,11 +13,11 @@ toStringFromList list =
 
 parseAndRecompose : String -> String
 parseAndRecompose str =
-    str |> LParser.parseLoop |> .parsed |> toStringFromList
+    str |> LParser.parseLoop 0 |> .parsed |> toStringFromList
 
 roundTrip : String -> String
 roundTrip str =
-    case Parser.run LParser.expressionList str of
+    case Parser.run (LParser.expressionList 0) str of
         Ok r -> List.map LExpression.toString r |> String.join " "
         Err err -> Debug.toString err
 
