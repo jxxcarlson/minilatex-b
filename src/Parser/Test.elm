@@ -1,4 +1,4 @@
-module Parser.Test exposing (roundTrip, roundTripCheck, parseAndRecompose)
+module Parser.Test exposing (roundTrip, roundTripCheck,squeezeSpace,  parseAndRecompose)
 
 import Parser.Advanced as Parser
 import Parser.Parser as LParser
@@ -25,6 +25,10 @@ roundTrip str =
 squeeze : String -> String
 squeeze str =
     str |> String.replace " " "" |> String.replace "\n" ""
+
+squeezeSpace : String -> String
+squeezeSpace str =
+    str |> String.replace " " ""
 
 roundTripCheck : String -> Bool
 roundTripCheck str =

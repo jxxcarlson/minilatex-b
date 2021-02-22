@@ -4,7 +4,7 @@ import Test exposing(describe, test, fuzz)
 import Expect
 import Fuzz exposing(string)
 import Parser.Parser exposing(..)
-import Parser.Test exposing(roundTripCheck, parseAndRecompose)
+import Parser.Test exposing(roundTripCheck, parseAndRecompose, squeezeSpace)
 import Parser.Expression exposing(..)
 import Parser.Advanced as Parser exposing(run)
 
@@ -30,6 +30,11 @@ suite =
                                       |> parseAndRecompose
                                       |> Expect.equal "foo bar  $a^2$  baz  $$b^2$$  yada"
 
+                , test "parseAndRecompose 2" <|
+                                \_ ->
+                                    "foo bar $a^2$ baz\n$$b^2$$\nyada"
+                                      |> parseAndRecompose |> squeezeSpace
+                                      |> Expect.equal ("foo bar $a^2$ baz\n$$b^2$$\nyada" |> squeezeSpace)
 
             -- fuzz runs the test 100 times with randomly-generated inputs!
             , fuzz string "restores the original string if you run it again" <|
