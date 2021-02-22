@@ -11,15 +11,15 @@ type alias Parser a = Parser.Parser Context Problem a
 
 type Context = Foo | Bar
 
-parseLoop : String -> TextCursor
-parseLoop str =
-    loop (TextCursor.init str) nextRound
+parseLoop : Int -> String -> TextCursor
+parseLoop initialLineNumber str =
+    loop (TextCursor.init initialLineNumber str) nextRound
 
 nextRound : TextCursor -> Step TextCursor TextCursor
 nextRound tc =
     if tc.text == "" then Done {tc | parsed = List.reverse tc.parsed}
     else
-        case Parser.run expression tc.text of
+        case Parser.run (expression tc.lineNumber) tc.text of
             Ok expr ->
                 let
                    sourceMap = Expression.getSource expr
@@ -38,14 +38,15 @@ handleError tc_ e =
        errorColumn =
           mFirstError |> Maybe.map .col |> Maybe.withDefault 0
        errorText = String.left errorColumn tc_.text
-       errorColumn2 = case Parser.run word errorText of
+       errorColumn2 = case Parser.run (word tc_.lineNumber) errorText of
             Ok (_,t) -> t.length
             Err err -> 4
        errorText2 = String.left errorColumn2 errorText
        newText = String.dropLeft errorColumn2 tc_.text
     in
     { text = newText
-     , parsed = (LXError errorText2 problem {length = errorColumn2, offset = tc_.offset + errorColumn2}) :: tc_.parsed
+     , lineNumber = tc_.lineNumber
+     , parsed = (LXError errorText2 problem {lineNumber = tc_.lineNumber, length = errorColumn2, offset = tc_.offset + errorColumn2}) :: tc_.parsed
      , stack = errorText :: tc_.stack
      , offset = tc_.offset + errorColumn}
 
@@ -55,9 +56,9 @@ handleError tc_ e =
     Use this to parse a string and return information about its location in the source
 
 -}
-getChompedString : Parser a -> Parser (String, SourceMap)
-getChompedString parser =
-  Parser.succeed (\first_ last_ source_ -> (String.slice first_ last_ source_, {length = last_, offset = 0}))
+getChompedString : Int -> Parser a -> Parser (String, SourceMap)
+getChompedString lineNumber parser =
+  Parser.succeed (\first_ last_ source_ -> (String.slice first_ last_ source_, {lineNumber = lineNumber, length = last_, offset = 0}))
     |= Parser.getOffset
     |. parser
     |= Parser.getOffset
@@ -69,45 +70,45 @@ getChompedString parser =
 Ok [Text ("foo bar "),InlineMath "a^2",Text "baz"]
 
 -}
-expressionList : Parser (List Expression)
-expressionList = many expression
+expressionList : Int -> Parser (List Expression)
+expressionList lineNumber = many (expression lineNumber)
 
-expression : Parser.Parser Context Problem Expression
-expression = Parser.oneOf [displayMath, inlineMath, text]
+expression : Int -> Parser.Parser Context Problem Expression
+expression lineNumber = Parser.oneOf [displayMath lineNumber, inlineMath lineNumber, text lineNumber]
 
 
 -- TEXT
 
-text : Parser Expression
-text = text_ ['$', '\\']
+text : Int -> Parser Expression
+text lineNumber = text_ lineNumber ['$', '\\']
 
-text_ : List Char -> Parser Expression
-text_ stopChars =
-  Parser.map (\(t,s) -> Text t s)  (rawText stopChars)
+text_ : Int -> List Char -> Parser Expression
+text_ lineNumber stopChars =
+  Parser.map (\(t,s) -> Text t s)  (rawText lineNumber stopChars)
 
 
-rawText : List Char -> Parser (String, SourceMap)
-rawText stopChars =
-  getChompedString <|
+rawText : Int -> List Char -> Parser (String, SourceMap)
+rawText lineNumber stopChars =
+  getChompedString lineNumber <|
         Parser.succeed ()
           |. Parser.chompWhile (\c -> not (List.member c stopChars))
 
 
 -- MATH
 
-inlineMath : Parser Expression
-inlineMath =
+inlineMath : Int -> Parser Expression
+inlineMath lineNumber =
     Parser.succeed (\(s, t) -> InlineMath s  {t | length = t.length + 1})
       |. Parser.symbol (Parser.Token "$" ExpectingLeadingDollarSign)
-      |= getChompedString (Parser.chompUntil (Parser.Token "$" ExpectingTrailingDollarSign1))
+      |= getChompedString lineNumber (Parser.chompUntil (Parser.Token "$" ExpectingTrailingDollarSign1))
       |. Parser.symbol (Parser.Token "$" ExpectingTrailingDollarSign2)
       |. Parser.spaces
 
-displayMath : Parser Expression
-displayMath =
+displayMath : Int -> Parser Expression
+displayMath lineNumber =
     Parser.succeed (\(s,t) -> DisplayMath s  {t | length = t.length + 2})
       |. Parser.symbol (Parser.Token "$$" ExpectingLeadingDoubleDollarSign)
-      |= getChompedString (Parser.chompUntil (Parser.Token "$$" ExpectingLTrailingDoubleDollarSign1))
+      |= getChompedString lineNumber (Parser.chompUntil (Parser.Token "$$" ExpectingLTrailingDoubleDollarSign1))
       |. Parser.symbol (Parser.Token "$$" ExpectingLTrailingDoubleDollarSign2)
       |. Parser.spaces
 
@@ -127,10 +128,10 @@ displayMath =
 
 -- TOOLS
 
-word : Parser (String, SourceMap)
-word =
+word : Int -> Parser (String, SourceMap)
+word lineNumber =
    Parser.succeed identity
-     |= getChompedString (Parser.chompUntil (Parser.Token " " ExpectingEndOfWordSpace))
+     |= getChompedString lineNumber (Parser.chompUntil (Parser.Token " " ExpectingEndOfWordSpace))
 
 loop : state -> (state -> Step state a) -> a
 loop s nextState =

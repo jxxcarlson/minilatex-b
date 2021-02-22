@@ -28,7 +28,7 @@ getSource expr =
         InlineMath _ source -> source
         DisplayMath _ source -> source
         LXError _ _ source -> source
-        LXList e -> List.map getSource e |> List.head |> Maybe.withDefault {length = -1, offset = -1}
+        LXList e -> List.map getSource e |> List.head |> Maybe.withDefault {lineNumber = -1, length = -1, offset = -1}
 
 incrementOffset : Int -> Expression -> Expression
 incrementOffset delta expr =
@@ -39,7 +39,7 @@ incrementOffset delta expr =
          LXError e p source -> LXError e p {source | offset = source.offset + delta}
          LXList e -> LXList (List.map (incrementOffset delta) e)
 
-type alias SourceMap =  {length: Int, offset: Int}
+type alias SourceMap =  {lineNumber: Int, length: Int, offset: Int}
 
 
 type Problem =
