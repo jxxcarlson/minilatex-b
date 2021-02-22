@@ -11,6 +11,15 @@ type Expression
     | LXError String Problem SourceMap
 
 
+toString : Expression -> String
+toString expr =
+    case expr of
+        Text str _ -> str
+        InlineMath str _ -> "$" ++ str ++ "$"
+        DisplayMath str _ -> "$$" ++ str ++ "$$"
+        LXError str p sm -> "((( Error at " ++ String.fromInt sm.offset ++": " ++ problemAsString p ++ " [" ++ str ++ "]  )))"
+        LXList list -> List.foldl (\e acc -> acc ++ toString e) "" list
+
 
 getSource : Expression -> SourceMap
 getSource expr =
@@ -19,7 +28,7 @@ getSource expr =
         InlineMath _ source -> source
         DisplayMath _ source -> source
         LXError _ _ source -> source
-        LXList e -> List.map getSource e |> List.head |> Maybe.withDefault {begin = -1, end = -1, offset = -1}
+        LXList e -> List.map getSource e |> List.head |> Maybe.withDefault {length = -1, offset = -1}
 
 incrementOffset : Int -> Expression -> Expression
 incrementOffset delta expr =
@@ -30,7 +39,7 @@ incrementOffset delta expr =
          LXError e p source -> LXError e p {source | offset = source.offset + delta}
          LXList e -> LXList (List.map (incrementOffset delta) e)
 
-type alias SourceMap =  {begin : Int, end: Int, offset: Int}
+type alias SourceMap =  {length: Int, offset: Int}
 
 
 type Problem =
