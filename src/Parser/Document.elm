@@ -28,6 +28,13 @@ process : String -> State
 process str = loop (init str) nextState
 
 toParsed state = state.output |> List.map .parsed
+
+
+toParsed2 state =
+  state.output |> List.length |> String.fromInt |> (\x -> "Lines: " ++ x)
+
+
+
 toInput state = state.output |> List.map .text
 
 init : String -> State
