@@ -32,9 +32,9 @@ suite =
 
                 , test "parseAndRecompose 2" <|
                                 \_ ->
-                                    "foo bar $a^2$ baz\n$$b^2$$\nyada"
+                                    "foo bar $a^2$ baz\n$$\nb^2\n$$\nyada"
                                       |> parseAndRecompose |> squeezeSpace
-                                      |> Expect.equal ("foo bar $a^2$ baz\n$$b^2$$\nyada" |> squeezeSpace)
+                                      |> Expect.equal ("foo bar $a^2$ baz\n$$\nb^2\n$$\nyada" |> squeezeSpace)
 
             -- fuzz runs the test 100 times with randomly-generated inputs!
             , fuzz string "restores the original string if you run it again" <|
