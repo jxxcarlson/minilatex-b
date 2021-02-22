@@ -1,8 +1,8 @@
 module Parser.Test exposing (roundTrip, roundTripCheck, parseAndRecompose)
 
 import Parser.Advanced as Parser
-import Parser.LParser as LParser
-import Parser.LExpression as LExpression exposing(Expression)
+import Parser.Parser as LParser
+import Parser.Expression as LExpression exposing(Expression)
 
 
 toStringFromList : List Expression -> String

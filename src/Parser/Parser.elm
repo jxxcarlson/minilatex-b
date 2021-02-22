@@ -1,9 +1,9 @@
-module Parser.LParser exposing (parseLoop, expressionList)
+module Parser.Parser exposing (parseLoop, expressionList)
 
 
 import Parser.Advanced as Parser exposing ((|.), (|=))
 
-import Parser.LExpression as Expression exposing(Expression(..), Problem(..), SourceMap)
+import Parser.Expression as Expression exposing(Expression(..), Problem(..), SourceMap)
 
 import Parser.TextCursor as TextCursor exposing(TextCursor)
 

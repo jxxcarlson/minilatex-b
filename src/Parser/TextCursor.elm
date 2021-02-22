@@ -1,6 +1,6 @@
 module Parser.TextCursor exposing (..)
 
-import Parser.LExpression exposing(Expression)
+import Parser.Expression exposing(Expression)
 
 type alias TextCursor =
     { text : String
