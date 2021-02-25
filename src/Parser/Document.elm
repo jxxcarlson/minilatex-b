@@ -54,6 +54,7 @@ nextState state_ =
         Just currentLine ->
             let
                state = {state_ | input = List.drop 1 state_.input}
+               _ = Debug.log "ST" state.blockType
             in
             case (state.blockType, classify currentLine) of
               (Start, LTStart) -> Loop (start state)
@@ -90,26 +91,30 @@ nextState state_ =
               (EnvBlock et, LTTextBlock) -> Loop (addToBlockContents (EnvBlock et) currentLine state )
 
 
+-- OPERATIONS ON STATE
 
+{-| Put State in the Start state -}
+start : State -> State
 start state =
     {state | blockType = Start,  blockTypeStack = [], blockContents = []}
 
+
+initBlock : BlockType -> String -> State -> State
 initBlock blockType_ currentLine_ state =
     {state | blockType = blockType_, blockContents = [currentLine_] }
 
+initWithBlockType : BlockType -> String -> State -> State
 initWithBlockType blockType_ currentLine_ state =
     {state | blockType = blockType_, blockContents = [currentLine_]
       ,  lineNumber = state.lineNumber + (countLines state.blockContents)
       , output = pushTC2 currentLine_ state
       }
 
-countLines : List String -> Int
-countLines list =
-    list |> List.map String.lines |> List.concat |> List.length |> (\x -> x + 1)
-
+addToBlockContents : BlockType -> String -> State -> State
 addToBlockContents blockType_ currentLine_ state =
     {state | blockType = blockType_, blockContents = currentLine_::state.blockContents }
 
+pushBlockStack : BlockType -> String -> State -> State
 pushBlockStack blockType_ currentLine_ state =
     {state | blockType = blockType_
            , blockTypeStack = blockType_::state.blockTypeStack
@@ -136,8 +141,6 @@ popBlockStack blockType_ currentLine_ state =
          , blockTypeStack = newBlockTypeStack
          , blockContents = currentLine_::state.blockContents }
 
-
-
 pushTC : State -> List TextCursor
 pushTC state =
     (Parser.parseLoop state.lineNumber (String.join "\n" ( List.reverse state.blockContents)))::state.output
@@ -154,6 +157,10 @@ flush state =
      tc = {tc_ | text = input}
    in
     { state | output = List.reverse (tc::state.output)}
+
+countLines : List String -> Int
+countLines list =
+    list |> List.map String.lines |> List.concat |> List.length |> (\x -> x + 1)
 
 -- HELPER (LOOP)
 

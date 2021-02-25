@@ -10,6 +10,7 @@ import Browser
 import Html exposing (Html)
 import Html.Attributes as HA
 import Element exposing (..)
+import Html.Keyed
 import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
@@ -32,13 +33,13 @@ main =
 type alias Model =
     { input : String
     , output : List String
+    , counter : Int
     }
 
 
 type Msg
     = NoOp
     | InputText String
-    | ReverseText
 
 
 type alias Flags =
@@ -49,35 +50,31 @@ initialText = """This is a test: $a^2 + b^2 = c^2$"""
 --renderFormatted : String -> String
 --renderFormatted = render >> fo
 
-render : String -> List String
-render input =
+--parse : String -> List String
+
+parse : String -> List String
+parse input =
    input |> Parser.Document.process
        |> Parser.Document.toParsed
        |> List.map Debug.toString
-       |> String.join "\n\n"
-       |> String.replace "," ",\n"
-       |> formatted
+       |> List.map (formatted >> String.join "\n")
 
 
-
-options = { maximumWidth = 105
-              , optimalWidth = 90
+options = { maximumWidth = 200
+              , optimalWidth = 190
               , stringWidth = String.length
               }
 
 
-
+formatted : String -> List String
 formatted str = Paragraph.lines options str
 
 
-{-
-    process : String -> State
-
--}
 init : Flags -> ( Model, Cmd Msg )
 init flags =
     ( { input = initialText
-      , output = render initialText
+      , output = parse initialText
+      , counter = 0
       }
     , Cmd.none
     )
@@ -87,7 +84,6 @@ subscriptions model =
     Sub.none
 
 
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -95,10 +91,7 @@ update msg model =
             ( model, Cmd.none )
 
         InputText str ->
-            ( { model | input = str, output = formatted str }, Cmd.none )
-
-        ReverseText ->
-            ( { model | output = formatted  model.input }, Cmd.none )
+            ( { model | input = str, output = formatted str, counter = model.counter + 1}, Cmd.none)
 
 
 
@@ -113,36 +106,57 @@ view : Model -> Html Msg
 view model =
     Element.layout [bgGray 0.2] (mainColumn model)
 
+panelHeight : Int
+panelHeight = 150
+
+panelWidth : Int
+panelWidth = 1200
 
 mainColumn : Model -> Element Msg
 mainColumn model =
     column mainColumnStyle
-        [ column [ spacing 36, width (px 600), height (px 700) ]
+        [ column [ spacing 36, width (px (panelWidth + 40)), height (px 700), paddingXY 20 0 ]
             [ title "MiniLaTeX B: Test"
-            , inputText model
-            , outputDisplay model
+            ,  inputText model
             , renderedTextDisplay model
+            , parsedTextDisplay model
+
             --, appButton
             ]
         ]
 
 renderedTextDisplay model =
         column [ spacing 8 ]
-            [ el [fontGray 0.9] (text "Rendered text")
+            [ el [fontGray 0.9, Font.size 16] (text "Rendered text")
             , renderedTextDisplay_ model]
 
-renderedTextDisplay_ : Model -> Element msg
+renderedTextDisplay_ : Model -> Element Msg
 renderedTextDisplay_ model =
     column [ spacing 8
              , Font.size 14
              , Background.color (Element.rgb 1.0 1.0 1.0)
+             , Background.color (Element.rgb 1.0 1.0 1.0)
              , paddingXY 8 12
             , width (px 600)
-            , height (px 150)
+            , height (px panelHeight)
             ]
-        (render2 model.input)
+        [ mathNode model.counter model.input]
 
--- render2 : String -> List (Html msg)
+
+mathNode: Int -> String -> Element Msg
+mathNode counter content =
+    Html.Keyed.node "div" [] [(String.fromInt counter, render1 content)]
+      |> Element.html
+
+
+
+render1 : String -> Html Msg
+render1 input =
+   input
+     |> Parser.Document.process
+     |> Parser.Document.toParsed
+     |> List.map (Render.render >> Html.div [HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5"])
+     |> Html.div []
 
 render2 : String -> List (Element nsg)
 render2 input =
@@ -158,42 +172,42 @@ title str =
 
 
 
-outputDisplay : Model -> Element msg
-outputDisplay model =
+parsedTextDisplay : Model -> Element msg
+parsedTextDisplay model =
     column [ spacing 8 ]
-        [ el [fontGray 0.9] (text "Output")
-        , outputDisplay_ model]
+        [ el [fontGray 0.9, Font.size 16] (text "Parsed text")
+        , parsedTextDisplay_ model]
 
-outputDisplay_ : Model -> Element msg
-outputDisplay_ model =
-    column [ spacing 8
+parsedTextDisplay_ : Model -> Element msg
+parsedTextDisplay_ model =
+    column [ spacing 16
              , Font.size 14
              , Background.color (Element.rgb 1.0 1.0 1.0)
              , paddingXY 8 12
-            , width (px 600)
-            , height (px 150)]
-        (render model.input |> List.map text)
+            , width (px panelWidth)
+            , height (px (panelHeight + 40) )]
+        (parse model.input |> List.indexedMap (\k s -> row [spacing 8] [text (String.fromInt k), text s]))
 
 
 inputText : Model -> Element Msg
 inputText model =
-    Input.multiline [ width (px 600), height (px 200), Font.size 14]
+    Input.multiline [ width (px 600), height (px panelHeight), Font.size 16]
         { onChange = InputText
         , text = model.input
         , placeholder = Nothing
-        , label = Input.labelAbove [fontGray 0.9] <| el [] (text "Input")
+        , label = Input.labelAbove [fontGray 0.9] <| el [Font.size 16] (text "Source Text")
         , spellcheck = False
         }
 
-
-appButton : Element Msg
-appButton =
-    row [  ]
-        [ Input.button buttonStyle
-            { onPress = Just ReverseText
-            , label = el [ centerX, centerY ] (text "Reverse")
-            }
-        ]
+--
+--appButton : Element Msg
+--appButton =
+--    row [  ]
+--        [ Input.button buttonStyle
+--            { onPress = Just ReverseText
+--            , label = el [ centerX, centerY ] (text "Reverse")
+--            }
+--        ]
 
 
 

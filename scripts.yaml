@@ -1,14 +1,14 @@
 
 scripts:
 
-  app: elm make  app/Main.elm --output=app/public/Main.js
+  make: elm make  app/Main.elm --output=app/public/Main.js
 
   look: open -a /Applications/Firefox.app app/public/index.html
 
-  live: elm-live app/Main.elm
+  # live: elm-live app/Main.elm
 
-  go: open -a /Applications/Firefox.app http://localhost:8000
+  # go: open -a /Applications/Firefox.app http://localhost:8000
 
-  make: elm make src/Parser/Expression.elm
+  # make: elm make src/Parser/Expression.elm
 
   cloc: cloc --by-file src/
