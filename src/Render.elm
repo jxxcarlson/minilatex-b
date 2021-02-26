@@ -5,6 +5,7 @@ import Html exposing (Html)
 import Html.Attributes as HA
 import Json.Encode
 import Parser.Expression exposing (Expression(..))
+import Parser.Parser as PP
 
 
 type DisplayMode
@@ -95,6 +96,20 @@ inlineMathText str_ =
 displayMathText : String -> Html msg
 displayMathText str_ =
     mathText DisplayMathMode (String.trim str_)
+
+
+highLight : String -> List (List Expression) -> List (Html msg)
+highLight str expressionList =
+    let
+        lines : List String
+        lines =
+            String.lines str
+
+        sourceMaps : List Parser.Expression.SourceMap
+        sourceMaps =
+            PP.getErrors expressionList |> List.map Parser.Expression.getSource
+    in
+    List.map2 highlightWithSourceMap sourceMaps lines
 
 
 highlightWithSourceMap : Parser.Expression.SourceMap -> String -> Html msg

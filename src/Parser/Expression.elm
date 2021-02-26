@@ -18,9 +18,14 @@ type alias Slice =
     { left : String, middle : String, right : String }
 
 
+sliceWithSourceMap1 : SourceMap -> String -> Slice
+sliceWithSourceMap1 sm str =
+    slice sm.offset (sm.offset + sm.length) str
+
+
 sliceWithSourceMap : SourceMap -> String -> Slice
 sliceWithSourceMap sm str =
-    slice sm.offset (sm.offset + sm.length) str
+    slice (sm.offset - sm.length) sm.offset str
 
 
 slice : Int -> Int -> String -> Slice

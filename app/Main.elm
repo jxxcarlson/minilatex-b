@@ -202,7 +202,8 @@ annotatedText_ model =
         , width (px panelWidth)
         , height (px (panelHeight - 4))
         ]
-        (List.map (\s -> el [] (Element.text s)) (String.lines model.input))
+        -- (List.map (\s -> el [] (Element.text s)) (String.lines model.input))
+        (Render.highLight model.input model.parsedText |> List.map Element.html)
 
 
 renderedTextDisplay model =
