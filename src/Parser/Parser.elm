@@ -60,6 +60,7 @@ nextRound tc =
 
 handleError tc_ e =
     let
+        -- Err [{ col = 10, contextStack = [], problem = ExpectingRightBraceForArg, row = 1 }]
         mFirstError =
             e |> List.head
 
@@ -72,40 +73,15 @@ handleError tc_ e =
         errorText =
             String.left errorColumn tc_.text
 
-        errorColumn2 =
-            case Parser.run (word tc_.lineNumber) errorText of
-                Ok ( _, t ) ->
-                    t.length
-
-                Err err ->
-                    4
-
-        errorText2 =
-            String.left errorColumn2 errorText
-
         newText =
-            String.dropLeft errorColumn2 tc_.text
+            String.dropLeft errorColumn tc_.text
     in
     { text = newText
     , lineNumber = tc_.lineNumber
-    , parsed = LXError errorText2 problem { lineNumber = tc_.lineNumber, length = errorColumn2, offset = tc_.offset + errorColumn2 } :: tc_.parsed
+    , parsed = LXError errorText problem { lineNumber = tc_.lineNumber, length = errorColumn, offset = tc_.offset + errorColumn } :: tc_.parsed
     , stack = errorText :: tc_.stack
     , offset = tc_.offset + errorColumn
     }
-
-
-{-|
-
-    Use this to parse a string and return information about its location in the source
-
--}
-getChompedString : Int -> Parser a -> Parser ( String, SourceMap )
-getChompedString lineNumber parser =
-    Parser.succeed (\first_ last_ source_ -> ( String.slice first_ last_ source_, { lineNumber = lineNumber, length = last_, offset = 0 } ))
-        |= Parser.getOffset
-        |. parser
-        |= Parser.getOffset
-        |= Parser.getSource
 
 
 {-|
@@ -191,6 +167,20 @@ displayMath lineNumber =
 
 
 -- MACRO
+
+
+{-|
+
+    Use this to parse a string and return information about its location in the source
+
+-}
+getChompedString : Int -> Parser a -> Parser ( String, SourceMap )
+getChompedString lineNumber parser =
+    Parser.succeed (\first_ last_ source_ -> ( String.slice first_ last_ source_, { lineNumber = lineNumber, length = last_, offset = 0 } ))
+        |= Parser.getOffset
+        |. parser
+        |= Parser.getOffset
+        |= Parser.getSource
 
 
 macro : Int -> Parser Expression

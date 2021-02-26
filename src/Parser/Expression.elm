@@ -141,44 +141,44 @@ problemAsString : Problem -> String
 problemAsString prob =
     case prob of
         ExpectingLeadingDollarSign ->
-            "I was expecting a '$' to begin inline math"
+            "Unmatched '$' (1)"
 
         ExpectingTrailingDollarSign1 ->
             -- EDITED
-            "Unmatched '$'"
+            "Unmatched '$' (2)"
 
         ExpectingTrailingDollarSign2 ->
-            "I was expecting a matching '$' to end inline math (2)"
+            "Unmatched '$' (3)"
 
         ExpectingLeadingDoubleDollarSign ->
-            "I was expecting '$$' to begin display math"
+            "Unmatched '$$' (4)"
 
         ExpectingLTrailingDoubleDollarSign1 ->
-            "I was expecting a matching '$$' to end display math (1)"
+            "Unmatched '$$' (5)"
 
         ExpectingLTrailingDoubleDollarSign2 ->
-            "I was expecting a matching '$$' to end display math (2)"
+            "Unamtched '$$' (6)"
 
         EndOfInput ->
-            "Unexpected end of input"
+            "Unexpected end of input (7)"
 
         ExpectingLeadingBackslashForMacro ->
-            "I was expecting '\\' to begin a macro"
+            "Expecting '\\' to begin a macro (8)"
 
         ExpectingLeftBracketForOptArg ->
-            "I was expecting a left bracket for optional argument"
+            "Expecting a left bracket (9)"
 
         ExpectingRightBracketForOptArg ->
-            "I was expecting a right bracket for optional argument"
+            "Expecting a right bracket (10)"
 
         GenericError ->
-            "Generic error -- I'm at a loss for wards"
+            "Generic error (11)s"
 
         ExpectingEndOfWordSpace ->
-            "Expecting a space to end a waord"
+            "Expecting space (12)"
 
         ExpectingLeftBraceForArg ->
-            "Expecting left brace for macro arg"
+            "Expecting brace (13)"
 
         ExpectingRightBraceForArg ->
-            "Expecting right brace for macro arg"
+            "Expecting brace for (14)"
