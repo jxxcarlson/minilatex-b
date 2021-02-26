@@ -18,7 +18,7 @@ import Paragraph
 import Parser.Document
 import Parser.Expression exposing (Expression)
 import Parser.Parser as PP exposing (..)
-import Render
+import Render.Render as Render
 
 
 main =
@@ -161,7 +161,7 @@ panelHeight =
 
 appWidth : Int
 appWidth =
-    1200
+    900
 
 
 panelWidth =

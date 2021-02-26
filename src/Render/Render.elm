@@ -1,6 +1,7 @@
-module Render exposing (..)
+module Render.Render exposing (..)
 
 import Config
+import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes as HA
 import Json.Encode
@@ -54,16 +55,19 @@ errorString p sm =
         ++ ")"
 
 
-macro : String -> Maybe String -> List String -> Html msg
+macro : String -> Maybe String -> List Expression -> Html msg
 macro name optArg args =
-    Html.text
-        ("\\"
-            ++ name
-            ++ "["
-            ++ Maybe.withDefault "null" optArg
-            ++ "]"
-            ++ (args |> List.map (\x -> "{" ++ x ++ "}") |> String.join "")
-        )
+    case Dict.get name macroDict of
+        Nothing ->
+            undefinedMacro name
+
+        Just f ->
+            f optArg args
+
+
+undefinedMacro : String -> Html msg
+undefinedMacro name =
+    Html.span [ HA.style "color" "ref" ] [ Html.text ("Undefined macro: " ++ name) ]
 
 
 mathText : DisplayMode -> String -> Html msg
@@ -122,4 +126,20 @@ highlightWithSourceMap sm str =
         [ Html.span [] [ Html.text slice.left ]
         , Html.span [ HA.style "background-color" "pink" ] [ Html.text slice.middle ]
         , Html.span [] [ Html.text slice.right ]
+        ]
+
+
+
+-- MACRO DICT
+
+
+type alias MacroDict msg =
+    Dict String (Maybe String -> List Expression -> Html msg)
+
+
+macroDict : MacroDict msg
+macroDict =
+    Dict.fromList
+        [ ( "strong", \ms args -> render args |> Html.span [ HA.style "font-weight" "bold" ] )
+        , ( "italic", \ms args -> render args |> Html.span [ HA.style "font-style" "italic" ] )
         ]

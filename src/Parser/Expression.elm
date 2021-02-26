@@ -5,7 +5,7 @@ type Expression
     = Text String SourceMap
     | InlineMath String SourceMap
     | DisplayMath String SourceMap
-    | Macro String (Maybe String) (List String) SourceMap
+    | Macro String (Maybe String) (List Expression) SourceMap
     | LXList (List Expression)
     | LXError String Problem SourceMap
 
@@ -67,7 +67,7 @@ toString expr =
             "$$" ++ str ++ "$$"
 
         Macro name optArg args str ->
-            "\\" ++ name ++ Maybe.withDefault "OptArg: Null" optArg ++ (args |> String.join "")
+            "\\" ++ name ++ Maybe.withDefault "OptArg: Null" optArg ++ (List.map toString args |> String.join "")
 
         LXError str p sm ->
             "((( Error at " ++ String.fromInt sm.offset ++ ": " ++ problemAsString p ++ " [" ++ str ++ "]  )))"

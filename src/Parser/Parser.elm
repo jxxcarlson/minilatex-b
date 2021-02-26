@@ -34,7 +34,7 @@ nextRound : TextCursor -> Step TextCursor TextCursor
 nextRound tc =
     let
         _ =
-            Debug.log "TXT" tc.text
+            Debug.log "!TXT" tc.text
     in
     if tc.text == "" then
         Done { tc | parsed = List.reverse tc.parsed }
@@ -44,10 +44,10 @@ nextRound tc =
             Ok expr ->
                 let
                     sourceMap =
-                        Expression.getSource expr
+                        Expression.getSource expr |> Debug.log "SM"
 
                     newText =
-                        String.dropLeft sourceMap.length tc.text
+                        String.dropLeft sourceMap.length tc.text |> Debug.log "NT"
 
                     newExpr =
                         Expression.incrementOffset tc.offset expr
@@ -185,38 +185,49 @@ getChompedString lineNumber parser =
 
 macro : Int -> Parser Expression
 macro lineNo =
-    Parser.succeed (\n o a -> fixMacro n o a)
+    Parser.succeed (\n o a -> fixMacro lineNo n o a)
         |= macroName lineNo
         |= optArg lineNo
         |= many (arg lineNo)
 
 
-fixMacro : ( String, SourceMap ) -> Maybe ( String, SourceMap ) -> List ( String, SourceMap ) -> Expression
-fixMacro ( name, sm1 ) optArg_ args_ =
+fixMacro : Int -> ( String, SourceMap ) -> Maybe ( String, SourceMap ) -> List ( String, SourceMap ) -> Expression
+fixMacro lineNo ( name, sm1 ) optArg_ args_ =
     let
         lineNumber =
             sm1.lineNumber
+
+        _ =
+            Debug.log "!!ARGS_" args_
 
         offset =
             sm1.offset
 
         l1 =
-            sm1.length
+            Debug.log "l1"
+                sm1.length
 
         l2 =
-            Maybe.map (Tuple.second >> .length) optArg_ |> Maybe.withDefault 0
+            Debug.log "l2" (Maybe.map (Tuple.second >> .length) optArg_ |> Maybe.withDefault 0)
 
         realArgs =
-            List.map Tuple.first (Debug.log "ARGS" args_)
+            (args_ |> Debug.log "ARGS_") |> List.map (Tuple.first >> parseLoop (Debug.log "LINE NO" lineNo) >> .parsed) |> List.concat |> Debug.log "REAL ARGS"
 
         lengths_ =
-            List.map (Tuple.second >> .length) args_ |> List.sum
+            Debug.log "lengths_" <|
+                (List.map (Tuple.second >> .length) args_
+                    |> List.maximum
+                    |> Maybe.withDefault 0
+                )
 
         length =
-            l1 + l2 + lengths_
+            Debug.log "length" <|
+                l1
+                    + l2
+                    + lengths_
 
         sm =
-            { lineNumber = lineNumber, offset = offset, length = length }
+            { lineNumber = lineNumber, offset = offset, length = lengths_ + 1 }
     in
     Macro name (Maybe.map Tuple.first optArg_) realArgs sm
 
@@ -243,7 +254,7 @@ optArg__ lineNo =
 
 arg : Int -> Parser ( String, SourceMap )
 arg lineNo =
-    Parser.succeed identity
+    Parser.succeed (\( s, m ) -> ( s, { m | length = m.length } ))
         |. Parser.symbol (Parser.Token "{" ExpectingLeftBraceForArg)
         |= rawText lineNo [ '}' ]
         |. Parser.symbol (Parser.Token "}" ExpectingRightBraceForArg)
