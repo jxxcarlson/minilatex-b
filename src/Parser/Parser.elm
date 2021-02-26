@@ -2,6 +2,7 @@ module Parser.Parser exposing
     ( arg
     , expression
     , expressionList
+    , getErrors
     , macro
     , macroName
     , many
@@ -121,6 +122,28 @@ expressionList lineNumber =
 expression : Int -> Parser.Parser Context Problem Expression
 expression lineNumber =
     Parser.oneOf [ macro lineNumber, displayMath lineNumber, inlineMath lineNumber, text lineNumber ]
+
+
+getErrors : List (List Expression) -> List Expression
+getErrors list =
+    list
+        |> List.map getErrors_
+        |> List.concat
+
+
+getErrors_ : List Expression -> List Expression
+getErrors_ list =
+    List.filter (\e -> isError e) list
+
+
+isError : Expression -> Bool
+isError expr =
+    case expr of
+        LXError _ _ _ ->
+            True
+
+        _ ->
+            False
 
 
 

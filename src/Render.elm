@@ -38,8 +38,19 @@ renderExpr expr =
         LXError s p sm ->
             Html.span []
                 [ Html.span Config.errorStyle2 [ Html.text s ]
-                , Html.span Config.errorStyle [ Html.text (" << " ++ Parser.Expression.problemAsString p) ]
+                , Html.span Config.errorStyle [ Html.text (errorString p sm) ]
                 ]
+
+
+errorString : Parser.Expression.Problem -> Parser.Expression.SourceMap -> String
+errorString p sm =
+    " << "
+        ++ Parser.Expression.problemAsString p
+        ++ " // Pos ("
+        ++ String.fromInt sm.lineNumber
+        ++ ", "
+        ++ String.fromInt sm.offset
+        ++ ")"
 
 
 macro : String -> Maybe String -> List String -> Html msg
@@ -84,3 +95,16 @@ inlineMathText str_ =
 displayMathText : String -> Html msg
 displayMathText str_ =
     mathText DisplayMathMode (String.trim str_)
+
+
+highlightWithSourceMap : Parser.Expression.SourceMap -> String -> Html msg
+highlightWithSourceMap sm str =
+    let
+        slice =
+            Parser.Expression.sliceWithSourceMap sm str
+    in
+    Html.span []
+        [ Html.span [] [ Html.text slice.left ]
+        , Html.span [ HA.style "background-color" "pink" ] [ Html.text slice.middle ]
+        , Html.span [] [ Html.text slice.right ]
+        ]

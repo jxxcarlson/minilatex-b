@@ -7,18 +7,18 @@ module Main exposing (main)
 -}
 
 import Browser
-import Html exposing (Html)
-import Html.Attributes as HA
 import Element exposing (..)
-import Html.Keyed
 import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
-import Parser.Parser as PP exposing(..)
-import Parser.Document
+import Html exposing (Html)
+import Html.Attributes as HA
+import Html.Keyed
 import Paragraph
+import Parser.Document
+import Parser.Expression exposing (Expression)
+import Parser.Parser as PP exposing (..)
 import Render
-
 
 
 main =
@@ -32,49 +32,75 @@ main =
 
 type alias Model =
     { input : String
-    , output : List String
+    , parsedText : List (List Expression)
     , counter : Int
+    , viewMode : ViewMode
     }
+
+
+type ViewMode
+    = ShowParsedText
+    | ShowParseErrors
+    | ShowSourceMap
 
 
 type Msg
     = NoOp
     | InputText String
+    | CycleViewMode
 
 
 type alias Flags =
     {}
+
+
 initialText : String
-initialText = """This is a test: $a^2 + b^2 = c^2$"""
+initialText =
+    """This is a test: $a^2 + b^2 = c^2$"""
 
---renderFormatted : String -> String
---renderFormatted = render >> fo
 
---parse : String -> List String
-
-parse : String -> List String
+parse : String -> List (List Expression)
 parse input =
-   input |> Parser.Document.process
-       |> Parser.Document.toParsed
-       |> List.map Debug.toString
-       |> List.map (formatted >> String.join "\n")
+    input
+        |> Parser.Document.process
+        |> Parser.Document.toParsed
 
 
-options = { maximumWidth = 200
-              , optimalWidth = 190
-              , stringWidth = String.length
-              }
+parsedTextToString : List (List Expression) -> List String
+parsedTextToString pt =
+    pt
+        |> List.map Debug.toString
+        |> List.map (formatted >> String.join "\n")
+
+
+parsedTextToString_ : List Expression -> List String
+parsedTextToString_ pt =
+    pt
+        |> List.map Debug.toString
+
+
+
+-- (formatted >> String.join "\n")
+
+
+options =
+    { maximumWidth = 200
+    , optimalWidth = 190
+    , stringWidth = String.length
+    }
 
 
 formatted : String -> List String
-formatted str = Paragraph.lines options str
+formatted str =
+    Paragraph.lines options str
 
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
     ( { input = initialText
-      , output = parse initialText
+      , parsedText = parse initialText
       , counter = 0
+      , viewMode = ShowParsedText
       }
     , Cmd.none
     )
@@ -91,7 +117,22 @@ update msg model =
             ( model, Cmd.none )
 
         InputText str ->
-            ( { model | input = str, output = formatted str, counter = model.counter + 1}, Cmd.none)
+            ( { model | input = str, parsedText = parse str, counter = model.counter + 1 }, Cmd.none )
+
+        CycleViewMode ->
+            let
+                viewMode =
+                    case model.viewMode of
+                        ShowParsedText ->
+                            ShowParseErrors
+
+                        ShowParseErrors ->
+                            ShowSourceMap
+
+                        ShowSourceMap ->
+                            ShowParsedText
+            in
+            ( { model | viewMode = viewMode }, Cmd.none )
 
 
 
@@ -99,115 +140,195 @@ update msg model =
 -- VIEW
 --
 
-fontGray g = Font.color (Element.rgb g g g )
-bgGray g =  Background.color (Element.rgb g g g)
+
+fontGray g =
+    Font.color (Element.rgb g g g)
+
+
+bgGray g =
+    Background.color (Element.rgb g g g)
+
 
 view : Model -> Html Msg
 view model =
-    Element.layout [bgGray 0.2] (mainColumn model)
+    Element.layoutWith { options = [ focusStyle noFocus ] } [ bgGray 0.2 ] (mainColumn model)
+
 
 panelHeight : Int
-panelHeight = 150
+panelHeight =
+    150
 
-panelWidth : Int
-panelWidth = 1200
+
+appWidth : Int
+appWidth =
+    1200
+
+
+panelWidth =
+    appWidth // 2
+
+
+parsedTextPeneWith =
+    1200
+
 
 mainColumn : Model -> Element Msg
 mainColumn model =
     column mainColumnStyle
-        [ column [ spacing 36, width (px (panelWidth + 40)), height (px 700), paddingXY 20 0 ]
+        [ column [ spacing 36, width (px (appWidth + 40)), height (px 700), paddingXY 20 0 ]
             [ title "MiniLaTeX B: Test"
-            ,  inputText model
+            , row [ spacing 12 ] [ inputText model, annotatedText model ]
             , renderedTextDisplay model
             , parsedTextDisplay model
-
-            --, appButton
             ]
         ]
 
+
+annotatedText model =
+    column
+        [ spacing 8
+        ]
+        [ el [ fontGray 0.9, Font.size 16 ] (text "Annotated source text")
+        , annotatedText_ model
+        ]
+
+
+annotatedText_ model =
+    column
+        [ spacing 12
+        , Font.size 14
+        , Background.color (Element.rgb 0.9 0.9 1.0)
+        , paddingXY 8 12
+        , width (px panelWidth)
+        , height (px (panelHeight - 4))
+        ]
+        (List.map (\s -> el [] (Element.text s)) (String.lines model.input))
+
+
 renderedTextDisplay model =
-        column [ spacing 8 ]
-            [ el [fontGray 0.9, Font.size 16] (text "Rendered text")
-            , renderedTextDisplay_ model]
+    column [ spacing 8 ]
+        [ el [ fontGray 0.9, Font.size 16 ] (text "Rendered text")
+        , renderedTextDisplay_ model
+        ]
+
 
 renderedTextDisplay_ : Model -> Element Msg
 renderedTextDisplay_ model =
-    column [ spacing 8
-             , Font.size 14
-             , Background.color (Element.rgb 1.0 1.0 1.0)
-             , Background.color (Element.rgb 1.0 1.0 1.0)
-             , paddingXY 8 12
-            , width (px 600)
-            , height (px panelHeight)
-            ]
-        [ mathNode model.counter model.input]
+    column
+        [ spacing 8
+        , Font.size 14
+        , Background.color (Element.rgb 1.0 1.0 1.0)
+        , Background.color (Element.rgb 1.0 1.0 1.0)
+        , paddingXY 8 12
+        , width (px panelWidth)
+        , height (px panelHeight)
+        ]
+        [ mathNode model.counter model.input ]
 
 
-mathNode: Int -> String -> Element Msg
+mathNode : Int -> String -> Element Msg
 mathNode counter content =
-    Html.Keyed.node "div" [] [(String.fromInt counter, render1 content)]
-      |> Element.html
-
+    Html.Keyed.node "div" [] [ ( String.fromInt counter, render1 content ) ]
+        |> Element.html
 
 
 render1 : String -> Html Msg
 render1 input =
-   input
-     |> Parser.Document.process
-     |> Parser.Document.toParsed
-     |> List.map (Render.render >> Html.div [HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5"])
-     |> Html.div []
+    input
+        |> Parser.Document.process
+        |> Parser.Document.toParsed
+        |> List.map (Render.render >> Html.div [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ])
+        |> Html.div []
+
 
 render2 : String -> List (Element nsg)
 render2 input =
-   input
-     |> Parser.Document.process
-     |> Parser.Document.toParsed
-     |> List.map (Render.render >> Html.div [HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5"])
-     |> List.map Element.html
+    input
+        |> Parser.Document.process
+        |> Parser.Document.toParsed
+        |> List.map (Render.render >> Html.div [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ])
+        |> List.map Element.html
+
 
 title : String -> Element msg
 title str =
     row [ centerX, Font.bold, fontGray 0.9 ] [ text str ]
 
 
-
-parsedTextDisplay : Model -> Element msg
+parsedTextDisplay : Model -> Element Msg
 parsedTextDisplay model =
     column [ spacing 8 ]
-        [ el [fontGray 0.9, Font.size 16] (text "Parsed text")
-        , parsedTextDisplay_ model]
+        [ appButton model
+        , parsedTextDisplay_ model
+        ]
 
-parsedTextDisplay_ : Model -> Element msg
+
+parsedTextDisplay_ : Model -> Element Msg
 parsedTextDisplay_ model =
-    column [ spacing 16
-             , Font.size 14
-             , Background.color (Element.rgb 1.0 1.0 1.0)
-             , paddingXY 8 12
-            , width (px panelWidth)
-            , height (px (panelHeight + 40) )]
-        (parse model.input |> List.indexedMap (\k s -> row [spacing 8] [text (String.fromInt k), text s]))
+    column
+        [ spacing 16
+        , Font.size 14
+        , Background.color (Element.rgb 1.0 1.0 1.0)
+        , paddingXY 8 12
+        , width (px (2 * panelWidth + 10))
+        , height (px (panelHeight + 40))
+        , Element.htmlAttribute (HA.style "line-height" "1.5")
+        ]
+        (renderParseResult model)
+
+
+renderParseResult model =
+    case model.viewMode of
+        ShowParsedText ->
+            model.parsedText |> parsedTextToString |> renderParsedText
+
+        ShowParseErrors ->
+            model.parsedText |> PP.getErrors |> parsedTextToString_ |> renderParsedText
+
+        ShowSourceMap ->
+            model.parsedText
+                |> PP.getErrors
+                |> List.map Parser.Expression.getSource
+                |> List.map Parser.Expression.sourceMapToString
+                |> renderParsedText
+
+
+renderParsedText : List String -> List (Element Msg)
+renderParsedText =
+    List.indexedMap (\k s -> row [ spacing 8 ] [ text (String.fromInt k), text s ])
 
 
 inputText : Model -> Element Msg
 inputText model =
-    Input.multiline [ width (px 600), height (px panelHeight), Font.size 16]
+    Input.multiline [ width (px panelWidth), height (px panelHeight), Font.size 16 ]
         { onChange = InputText
         , text = model.input
         , placeholder = Nothing
-        , label = Input.labelAbove [fontGray 0.9] <| el [Font.size 16] (text "Source Text")
+        , label = Input.labelAbove [ fontGray 0.9 ] <| el [ Font.size 16 ] (text "Source Text")
         , spellcheck = False
         }
 
---
---appButton : Element Msg
---appButton =
---    row [  ]
---        [ Input.button buttonStyle
---            { onPress = Just ReverseText
---            , label = el [ centerX, centerY ] (text "Reverse")
---            }
---        ]
+
+appButton : Model -> Element Msg
+appButton model =
+    let
+        title_ =
+            case model.viewMode of
+                ShowParseErrors ->
+                    "Parse Errors"
+
+                ShowParsedText ->
+                    "Parsed Text"
+
+                ShowSourceMap ->
+                    "SourceMaP"
+    in
+    row []
+        [ Input.button buttonStyle
+            { onPress = Just CycleViewMode
+            , label = el [ centerX, centerY ] (text title_)
+            }
+        ]
 
 
 
@@ -225,10 +346,19 @@ mainColumnStyle =
 
 
 buttonStyle =
-    [ Background.color (Element.rgb 0.5 0.5 1.0)
+    [ Background.color (Element.rgb 0.35 0.35 1.0)
     , Font.color (rgb255 255 255 255)
+    , Font.size 14
     , paddingXY 15 8
     ]
+
+
+noFocus : Element.FocusStyle
+noFocus =
+    { borderColor = Nothing
+    , backgroundColor = Nothing
+    , shadow = Nothing
+    }
 
 
 

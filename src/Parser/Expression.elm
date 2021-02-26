@@ -14,6 +14,41 @@ type alias SourceMap =
     { lineNumber : Int, length : Int, offset : Int }
 
 
+type alias Slice =
+    { left : String, middle : String, right : String }
+
+
+sliceWithSourceMap : SourceMap -> String -> Slice
+sliceWithSourceMap sm str =
+    slice sm.offset (sm.offset + sm.length) str
+
+
+slice : Int -> Int -> String -> Slice
+slice cut1 cut2 str =
+    let
+        middle =
+            String.slice cut1 cut2 str
+
+        left =
+            String.left cut1 str
+
+        right =
+            String.dropLeft cut2 str
+    in
+    { left = left, middle = middle, right = right }
+
+
+sourceMapToString : SourceMap -> String
+sourceMapToString sm =
+    "{ line = "
+        ++ String.fromInt sm.lineNumber
+        ++ ", offset = "
+        ++ String.fromInt sm.offset
+        ++ ", length = "
+        ++ String.fromInt sm.length
+        ++ "}"
+
+
 toString : Expression -> String
 toString expr =
     case expr of
@@ -104,7 +139,8 @@ problemAsString prob =
             "I was expecting a '$' to begin inline math"
 
         ExpectingTrailingDollarSign1 ->
-            "Close with '$'?"
+            -- EDITED
+            "Unmatched '$'"
 
         ExpectingTrailingDollarSign2 ->
             "I was expecting a matching '$' to end inline math (2)"
