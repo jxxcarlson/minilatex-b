@@ -43,6 +43,9 @@ renderExpr expr =
                 , Html.span Config.errorStyle [ Html.text (errorString p sm) ]
                 ]
 
+        LXNull () _ ->
+            Html.span [] [ Html.text " " ]
+
 
 errorString : Parser.Expression.Problem -> Parser.Expression.SourceMap -> String
 errorString p sm =
@@ -67,7 +70,7 @@ macro name optArg args =
 
 undefinedMacro : String -> Html msg
 undefinedMacro name =
-    Html.span [ HA.style "color" "ref" ] [ Html.text ("Undefined macro: " ++ name) ]
+    Html.span [ HA.style "color" "red" ] [ Html.text "Undefined macro: " ]
 
 
 mathText : DisplayMode -> String -> Html msg
@@ -142,4 +145,5 @@ macroDict =
     Dict.fromList
         [ ( "strong", \ms args -> render args |> Html.span [ HA.style "font-weight" "bold" ] )
         , ( "italic", \ms args -> render args |> Html.span [ HA.style "font-style" "italic" ] )
+        , ( "foo", \ms args -> Html.span [ HA.style "font-style" "italic" ] [ Html.text "Foo" ] )
         ]

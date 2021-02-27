@@ -1,15 +1,16 @@
-module Parser.Parser exposing
-    ( arg
-    , expression
-    , expressionList
-    , getErrors
-    , macro
-    , macroName
-    , many
-    , optArg
-    , optArg__
-    , parseLoop
-    )
+module Parser.Parser exposing (..)
+
+--( arg
+--, expression
+--, expressionList
+--, getErrors
+--, macro
+--, macroName
+--, many
+--, optArg
+--, optArg__
+--, parseLoop
+--)
 
 import Parser.Advanced as Parser exposing ((|.), (|=))
 import Parser.Expression as Expression exposing (Expression(..), Problem(..), SourceMap)
@@ -97,7 +98,7 @@ expressionList lineNumber =
 
 expression : Int -> Parser.Parser Context Problem Expression
 expression lineNumber =
-    Parser.oneOf [ macro lineNumber, displayMath lineNumber, inlineMath lineNumber, text lineNumber ]
+    Parser.oneOf [ Parser.backtrackable (bareMacro lineNumber), macro lineNumber, displayMath lineNumber, inlineMath lineNumber, text lineNumber ]
 
 
 getErrors : List (List Expression) -> List Expression
@@ -129,6 +130,14 @@ isError expr =
 text : Int -> Parser Expression
 text lineNumber =
     text_ lineNumber [ '$', '\\' ]
+
+
+rawTextP_ : Int -> Char -> List Char -> Parser ( String, SourceMap )
+rawTextP_ lineNumber prefixChar stopChars =
+    getChompedString lineNumber <|
+        Parser.succeed ()
+            |. Parser.chompIf (\c -> c == prefixChar) (ExpectingPrefix prefixChar)
+            |. Parser.chompWhile (\c -> not (List.member c stopChars))
 
 
 text_ : Int -> List Char -> Parser Expression
@@ -191,7 +200,24 @@ macro lineNo =
         |= many (arg lineNo)
 
 
-fixMacro : Int -> ( String, SourceMap ) -> Maybe ( String, SourceMap ) -> List ( String, SourceMap ) -> Expression
+bareMacro : Int -> Parser Expression
+bareMacro lineNo =
+    Parser.succeed (\( name, sm ) -> Macro name Nothing [] sm)
+        |= bareMacroName lineNo
+
+
+
+-- oneSpace : Int -> Expression
+
+
+oneSpace : Int -> Parser Expression
+oneSpace lineNo =
+    Parser.succeed (\offset -> LXNull () { lineNumber = lineNo, offset = offset, length = 1 })
+        |= Parser.getOffset
+        |. Parser.symbol (Parser.Token " " ExpectingSpace)
+
+
+fixMacro : Int -> ( String, SourceMap ) -> Maybe ( String, SourceMap ) -> List Expression -> Expression
 fixMacro lineNo ( name, sm1 ) optArg_ args_ =
     let
         lineNumber =
@@ -210,26 +236,13 @@ fixMacro lineNo ( name, sm1 ) optArg_ args_ =
         l2 =
             Debug.log "l2" (Maybe.map (Tuple.second >> .length) optArg_ |> Maybe.withDefault 0)
 
-        realArgs =
-            (args_ |> Debug.log "ARGS_") |> List.map (Tuple.first >> parseLoop (Debug.log "LINE NO" lineNo) >> .parsed) |> List.concat |> Debug.log "REAL ARGS"
-
         lengths_ =
-            Debug.log "lengths_" <|
-                (List.map (Tuple.second >> .length) args_
-                    |> List.maximum
-                    |> Maybe.withDefault 0
-                )
-
-        length =
-            Debug.log "length" <|
-                l1
-                    + l2
-                    + lengths_
+            (Expression.getSourceOfList args_).length
 
         sm =
             { lineNumber = lineNumber, offset = offset, length = lengths_ + 1 }
     in
-    Macro name (Maybe.map Tuple.first optArg_) realArgs sm
+    Macro name (Maybe.map Tuple.first optArg_) args_ sm
 
 
 macroName : Int -> Parser ( String, SourceMap )
@@ -237,6 +250,14 @@ macroName lineNo =
     Parser.succeed identity
         |. Parser.symbol (Parser.Token "\\" ExpectingLeadingBackslashForMacro)
         |= rawText lineNo [ '{', '[' ]
+
+
+bareMacroName : Int -> Parser ( String, SourceMap )
+bareMacroName lineNo =
+    Parser.succeed identity
+        |. Parser.symbol (Parser.Token "\\" ExpectingLeadingBackslashForMacro)
+        |= rawText lineNo [ ' ' ]
+        |. Parser.symbol (Parser.Token " " ExpectingSpace)
 
 
 optArg : Int -> Parser (Maybe ( String, SourceMap ))
@@ -252,12 +273,23 @@ optArg__ lineNo =
         |. Parser.symbol (Parser.Token "]" ExpectingRightBracketForOptArg)
 
 
-arg : Int -> Parser ( String, SourceMap )
+arg : Int -> Parser Expression
 arg lineNo =
-    Parser.succeed (\( s, m ) -> ( s, { m | length = m.length } ))
+    Parser.succeed (\o1 e o2 -> fixArg o1 e o2)
+        |= Parser.getOffset
         |. Parser.symbol (Parser.Token "{" ExpectingLeftBraceForArg)
-        |= rawText lineNo [ '}' ]
+        |= Parser.oneOf
+            [ inlineMath lineNo
+            , Parser.lazy (\_ -> Parser.oneOf [ Parser.backtrackable (bareMacro lineNo), macro lineNo ])
+            , text_ lineNo [ '}' ]
+            ]
         |. Parser.symbol (Parser.Token "}" ExpectingRightBraceForArg)
+        |= Parser.getOffset
+
+
+fixArg : Int -> Expression -> Int -> Expression
+fixArg k1 e k2 =
+    e
 
 
 

@@ -188,7 +188,7 @@ annotatedText model =
     column
         [ spacing 8
         ]
-        [ el [ fontGray 0.9, Font.size 16 ] (text "Annotated source text")
+        [ el [ fontGray 0.9, Font.size 16 ] (Element.text "Annotated source text")
         , annotatedText_ model
         ]
 
@@ -208,7 +208,7 @@ annotatedText_ model =
 
 renderedTextDisplay model =
     column [ spacing 8 ]
-        [ el [ fontGray 0.9, Font.size 16 ] (text "Rendered text")
+        [ el [ fontGray 0.9, Font.size 16 ] (Element.text "Rendered text")
         , renderedTextDisplay_ model
         ]
 
@@ -253,7 +253,7 @@ render2 input =
 
 title : String -> Element msg
 title str =
-    row [ centerX, Font.bold, fontGray 0.9 ] [ text str ]
+    row [ centerX, Font.bold, fontGray 0.9 ] [ Element.text str ]
 
 
 parsedTextDisplay : Model -> Element Msg
@@ -296,7 +296,7 @@ renderParseResult model =
 
 renderParsedText : List String -> List (Element Msg)
 renderParsedText =
-    List.indexedMap (\k s -> row [ spacing 8 ] [ text (String.fromInt k), text s ])
+    List.indexedMap (\k s -> row [ spacing 8 ] [ Element.text (String.fromInt k), Element.text s ])
 
 
 inputText : Model -> Element Msg
@@ -305,7 +305,7 @@ inputText model =
         { onChange = InputText
         , text = model.input
         , placeholder = Nothing
-        , label = Input.labelAbove [ fontGray 0.9 ] <| el [ Font.size 16 ] (text "Source Text")
+        , label = Input.labelAbove [ fontGray 0.9 ] <| el [ Font.size 16 ] (Element.text "Source Text")
         , spellcheck = False
         }
 
@@ -327,7 +327,7 @@ appButton model =
     row []
         [ Input.button buttonStyle
             { onPress = Just CycleViewMode
-            , label = el [ centerX, centerY ] (text title_)
+            , label = el [ centerX, centerY ] (Element.text title_)
             }
         ]
 

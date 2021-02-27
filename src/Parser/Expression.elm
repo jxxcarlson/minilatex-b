@@ -8,6 +8,7 @@ type Expression
     | Macro String (Maybe String) (List Expression) SourceMap
     | LXList (List Expression)
     | LXError String Problem SourceMap
+    | LXNull () SourceMap
 
 
 type alias SourceMap =
@@ -75,6 +76,27 @@ toString expr =
         LXList list ->
             List.foldl (\e acc -> acc ++ toString e) "" list
 
+        LXNull () _ ->
+            " "
+
+
+getSourceOfList : List Expression -> SourceMap
+getSourceOfList list =
+    let
+        sourceMaps =
+            List.map getSource list
+
+        length =
+            List.maximum (List.map .length sourceMaps) |> Maybe.withDefault 0
+
+        offset =
+            List.minimum (List.map .offset sourceMaps) |> Maybe.withDefault 0
+
+        lineNumber =
+            List.head sourceMaps |> Maybe.map .lineNumber |> Maybe.withDefault 0
+    in
+    { length = length, offset = offset, lineNumber = lineNumber }
+
 
 getSource : Expression -> SourceMap
 getSource expr =
@@ -96,6 +118,9 @@ getSource expr =
 
         LXList e ->
             List.map getSource e |> List.head |> Maybe.withDefault { lineNumber = -1, length = -1, offset = -1 }
+
+        LXNull _ source ->
+            source
 
 
 incrementOffset : Int -> Expression -> Expression
@@ -119,6 +144,9 @@ incrementOffset delta expr =
         LXList e ->
             LXList (List.map (incrementOffset delta) e)
 
+        LXNull () source ->
+            LXNull () { source | offset = source.offset + delta }
+
 
 type Problem
     = ExpectingLeadingDollarSign
@@ -135,6 +163,8 @@ type Problem
     | ExpectingLeftBraceForArg
     | ExpectingRightBraceForArg
     | GenericError
+    | ExpectingPrefix Char
+    | ExpectingSpace
 
 
 problemAsString : Problem -> String
@@ -182,3 +212,9 @@ problemAsString prob =
 
         ExpectingRightBraceForArg ->
             "Expecting brace for (14)"
+
+        ExpectingPrefix c ->
+            "Expecting prefix " ++ String.fromChar c ++ " (15)"
+
+        ExpectingSpace ->
+            "Expecting space (16)"
