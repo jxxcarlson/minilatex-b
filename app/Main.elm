@@ -34,12 +34,22 @@ type alias Model =
     { input : String
     , parsedText : List (List Expression)
     , counter : Int
-    , viewMode : ViewMode
+    , footerViewMode : FooterViewMode
+    , lhViewMode : LHViewMode
+    , rhViewMode : RHViewMode
     , message : String
     }
 
 
-type ViewMode
+type LHViewMode
+    = LHSourceText
+
+
+type RHViewMode
+    = RHRenderedText
+
+
+type FooterViewMode
     = ShowParsedText
     | ShowParseErrors
     | ShowSourceMap
@@ -58,7 +68,18 @@ type alias Flags =
 
 initialText : String
 initialText =
-    """This is a test: $a^2 + b^2 = c^2$"""
+    """
+This is a test: $a^2 + b^2 = c^2
+
+\\strong{\\italic{More stuff:}} $p^2 \\equiv 1$
+one
+two
+three
+
+$$
+
+Still more stuff
+"""
 
 
 parse : String -> List (List Expression)
@@ -102,7 +123,9 @@ init flags =
     ( { input = initialText
       , parsedText = parse initialText
       , counter = 0
-      , viewMode = ShowParsedText
+      , lhViewMode = LHSourceText
+      , rhViewMode = RHRenderedText
+      , footerViewMode = ShowParsedText
       , message = ""
       }
     , Cmd.none
@@ -125,7 +148,7 @@ update msg model =
         CycleViewMode ->
             let
                 viewMode =
-                    case model.viewMode of
+                    case model.footerViewMode of
                         ShowParsedText ->
                             ShowParseErrors
 
@@ -135,7 +158,7 @@ update msg model =
                         ShowSourceMap ->
                             ShowParsedText
             in
-            ( { model | viewMode = viewMode }, Cmd.none )
+            ( { model | footerViewMode = viewMode }, Cmd.none )
 
         LaTeXMsg sourceMap ->
             ( { model | message = Debug.toString sourceMap }, Cmd.none )
@@ -162,7 +185,7 @@ view model =
 
 panelHeight : Int
 panelHeight =
-    150
+    400
 
 
 appWidth : Int
@@ -181,13 +204,36 @@ parsedTextPeneWith =
 mainColumn : Model -> Element Msg
 mainColumn model =
     column mainColumnStyle
-        [ column [ spacing 36, width (px (appWidth + 40)), height (px 700), paddingXY 20 0 ]
+        [ column
+            [ spacing 36
+            , width (px (appWidth + 40))
+            , height (px 700)
+            , paddingXY 20 0
+            , clipX
+            , clipY
+            ]
             [ title "MiniLaTeX B: Test"
-            , row [ spacing 12 ] [ inputText model, annotatedText model ]
-            , row [ spacing 12 ] [ renderedTextDisplay model, messageDisplay model ]
+            , row [ spacing 12 ] [ lhView model, rhView model ]
+
+            --, row [ spacing 12 ] [ inputText model, annotatedText model ]
+            --, row [ spacing 12 ] [ renderedTextDisplay model, messageDisplay model ]
             , parsedTextDisplay model
             ]
         ]
+
+
+lhView : Model -> Element Msg
+lhView model =
+    case model.lhViewMode of
+        LHSourceText ->
+            inputText model
+
+
+rhView : Model -> Element Msg
+rhView model =
+    case model.rhViewMode of
+        RHRenderedText ->
+            renderedTextDisplay model
 
 
 messageDisplay model =
@@ -247,6 +293,7 @@ renderedTextDisplay_ model =
         , Background.color (Element.rgb 1.0 1.0 1.0)
         , Background.color (Element.rgb 1.0 1.0 1.0)
         , paddingXY 8 12
+        , scrollbarY
         , width (px panelWidth)
         , height (px panelHeight)
         ]
@@ -300,14 +347,16 @@ parsedTextDisplay_ model =
         , Background.color (Element.rgb 1.0 1.0 1.0)
         , paddingXY 8 12
         , width (px (2 * panelWidth + 10))
-        , height (px (panelHeight + 40))
+        , height (px 150)
         , Element.htmlAttribute (HA.style "line-height" "1.5")
+        , scrollbarY
+        , scrollbarX
         ]
         (renderParseResult model)
 
 
 renderParseResult model =
-    case model.viewMode of
+    case model.footerViewMode of
         ShowParsedText ->
             model.parsedText |> parsedTextToString |> renderParsedText
 
@@ -338,11 +387,15 @@ inputText model =
         }
 
 
+
+-- BUTTONS
+
+
 appButton : Model -> Element Msg
 appButton model =
     let
         title_ =
-            case model.viewMode of
+            case model.footerViewMode of
                 ShowParseErrors ->
                     "Parse Errors"
 
