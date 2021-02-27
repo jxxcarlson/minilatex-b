@@ -12,7 +12,7 @@ type Expression
 
 
 type alias SourceMap =
-    { lineNumber : Int, length : Int, offset : Int }
+    { chunk : Int, length : Int, offset : Int }
 
 
 type alias Slice =
@@ -47,7 +47,7 @@ slice cut1 cut2 str =
 sourceMapToString : SourceMap -> String
 sourceMapToString sm =
     "{ line = "
-        ++ String.fromInt sm.lineNumber
+        ++ String.fromInt sm.chunk
         ++ ", offset = "
         ++ String.fromInt sm.offset
         ++ ", length = "
@@ -93,9 +93,9 @@ getSourceOfList list =
             List.minimum (List.map .offset sourceMaps) |> Maybe.withDefault 0
 
         lineNumber =
-            List.head sourceMaps |> Maybe.map .lineNumber |> Maybe.withDefault 0
+            List.head sourceMaps |> Maybe.map .chunk |> Maybe.withDefault 0
     in
-    { length = length, offset = offset, lineNumber = lineNumber }
+    { length = length, offset = offset, chunk = lineNumber }
 
 
 getSource : Expression -> SourceMap
@@ -117,7 +117,7 @@ getSource expr =
             source
 
         LXList e ->
-            List.map getSource e |> List.head |> Maybe.withDefault { lineNumber = -1, length = -1, offset = -1 }
+            List.map getSource e |> List.head |> Maybe.withDefault { chunk = -1, length = -1, offset = -1 }
 
         LXNull _ source ->
             source

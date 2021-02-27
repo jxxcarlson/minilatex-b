@@ -79,7 +79,7 @@ handleError tc_ e =
     in
     { text = newText
     , lineNumber = tc_.lineNumber
-    , parsed = LXError errorText problem { lineNumber = tc_.lineNumber, length = errorColumn, offset = tc_.offset + errorColumn } :: tc_.parsed
+    , parsed = LXError errorText problem { chunk = tc_.lineNumber, length = errorColumn, offset = tc_.offset + errorColumn } :: tc_.parsed
     , stack = errorText :: tc_.stack
     , offset = tc_.offset + errorColumn
     }
@@ -186,7 +186,7 @@ displayMath lineNumber =
 -}
 getChompedString : Int -> Parser a -> Parser ( String, SourceMap )
 getChompedString lineNumber parser =
-    Parser.succeed (\first_ last_ source_ -> ( String.slice first_ last_ source_, { lineNumber = lineNumber, length = last_, offset = 0 } ))
+    Parser.succeed (\first_ last_ source_ -> ( String.slice first_ last_ source_, { chunk = lineNumber, length = last_, offset = 0 } ))
         |= Parser.getOffset
         |. parser
         |= Parser.getOffset
@@ -213,7 +213,7 @@ bareMacro lineNo =
 
 oneSpace : Int -> Parser Expression
 oneSpace lineNo =
-    Parser.succeed (\offset -> LXNull () { lineNumber = lineNo, offset = offset, length = 1 })
+    Parser.succeed (\offset -> LXNull () { chunk = lineNo, offset = offset, length = 1 })
         |= Parser.getOffset
         |. Parser.symbol (Parser.Token " " ExpectingSpace)
 
@@ -222,7 +222,7 @@ fixMacro : Int -> ( String, SourceMap ) -> Maybe ( String, SourceMap ) -> List E
 fixMacro lineNo ( name, sm1 ) optArg_ args_ =
     let
         lineNumber =
-            sm1.lineNumber
+            sm1.chunk
 
         _ =
             Debug.log "!!ARGS_" args_
@@ -241,7 +241,7 @@ fixMacro lineNo ( name, sm1 ) optArg_ args_ =
             (Expression.getSourceOfList args_).length
 
         sm =
-            { lineNumber = lineNumber, offset = offset, length = lengths_ + 1 }
+            { chunk = lineNumber, offset = offset, length = lengths_ + 1 }
     in
     Macro name (Maybe.map Tuple.first optArg_) args_ sm
 
