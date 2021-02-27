@@ -120,6 +120,9 @@ highLight str expressionList =
         sourceMaps : List Parser.Expression.SourceMap
         sourceMaps =
             PP.getErrors expressionList |> List.map Parser.Expression.getSource
+
+        _ =
+            Debug.log "(lines, sourceMaps)" ( List.length lines, List.length sourceMaps )
     in
     List.map2 highlightWithSourceMap sourceMaps lines
 

@@ -33,10 +33,6 @@ parseLoop initialLineNumber str =
 
 nextRound : TextCursor -> Step TextCursor TextCursor
 nextRound tc =
-    let
-        _ =
-            Debug.log "!TXT" tc.text
-    in
     if tc.text == "" then
         Done { tc | parsed = List.reverse tc.parsed }
 
@@ -45,10 +41,10 @@ nextRound tc =
             Ok expr ->
                 let
                     sourceMap =
-                        Expression.getSource expr |> Debug.log "SM"
+                        Expression.getSource expr
 
                     newText =
-                        String.dropLeft sourceMap.length tc.text |> Debug.log "NT"
+                        String.dropLeft sourceMap.length tc.text
 
                     newExpr =
                         Expression.incrementOffset tc.offset expr
@@ -224,18 +220,14 @@ fixMacro lineNo ( name, sm1 ) optArg_ args_ =
         lineNumber =
             sm1.chunk
 
-        _ =
-            Debug.log "!!ARGS_" args_
-
         offset =
             sm1.offset
 
         l1 =
-            Debug.log "l1"
-                sm1.length
+            sm1.length
 
         l2 =
-            Debug.log "l2" (Maybe.map (Tuple.second >> .length) optArg_ |> Maybe.withDefault 0)
+            Maybe.map (Tuple.second >> .length) optArg_ |> Maybe.withDefault 0
 
         lengths_ =
             (Expression.getSourceOfList args_).length
