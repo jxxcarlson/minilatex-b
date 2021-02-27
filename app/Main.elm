@@ -18,7 +18,7 @@ import Paragraph
 import Parser.Document
 import Parser.Expression exposing (Expression)
 import Parser.Parser as PP exposing (..)
-import Render.Render as Render
+import Render.Render as Render exposing (LaTeXMsg)
 
 
 main =
@@ -35,6 +35,7 @@ type alias Model =
     , parsedText : List (List Expression)
     , counter : Int
     , viewMode : ViewMode
+    , message : String
     }
 
 
@@ -48,6 +49,7 @@ type Msg
     = NoOp
     | InputText String
     | CycleViewMode
+    | LaTeXMsg LaTeXMsg
 
 
 type alias Flags =
@@ -101,6 +103,7 @@ init flags =
       , parsedText = parse initialText
       , counter = 0
       , viewMode = ShowParsedText
+      , message = ""
       }
     , Cmd.none
     )
@@ -133,6 +136,9 @@ update msg model =
                             ShowParsedText
             in
             ( { model | viewMode = viewMode }, Cmd.none )
+
+        LaTeXMsg sourceMap ->
+            ( { model | message = Debug.toString sourceMap }, Cmd.none )
 
 
 
@@ -178,9 +184,29 @@ mainColumn model =
         [ column [ spacing 36, width (px (appWidth + 40)), height (px 700), paddingXY 20 0 ]
             [ title "MiniLaTeX B: Test"
             , row [ spacing 12 ] [ inputText model, annotatedText model ]
-            , renderedTextDisplay model
+            , row [ spacing 12 ] [ renderedTextDisplay model, messageDisplay model ]
             , parsedTextDisplay model
             ]
+        ]
+
+
+messageDisplay model =
+    column [ spacing 8 ]
+        [ el [ fontGray 0.9, Font.size 14 ] (Element.text "Messages")
+        , messageDisplay_ model
+        ]
+
+
+messageDisplay_ model =
+    column
+        [ spacing 12
+        , Font.size 14
+        , Background.color (Element.rgb 0.9 0.9 1.0)
+        , paddingXY 8 12
+        , width (px panelWidth)
+        , height (px panelHeight)
+        ]
+        [ el [ Font.size 14 ] (Element.text model.message)
         ]
 
 
@@ -235,23 +261,25 @@ mathNode counter content =
 
 render1 : String -> Html Msg
 render1 input =
-    input
+    (input
         |> Parser.Document.process
         |> Parser.Document.toParsed
         |> List.map (Render.render >> Html.div [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ])
         |> Html.div []
+    )
+        |> Html.map LaTeXMsg
 
 
-render2 : String -> List (Element nsg)
+render2 : String -> List (Element Msg)
 render2 input =
     input
         |> Parser.Document.process
         |> Parser.Document.toParsed
         |> List.map (Render.render >> Html.div [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ])
-        |> List.map Element.html
+        |> List.map (Element.html >> Element.map LaTeXMsg)
 
 
-title : String -> Element msg
+title : String -> Element Msg
 title str =
     row [ centerX, Font.bold, fontGray 0.9 ] [ Element.text str ]
 

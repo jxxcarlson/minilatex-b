@@ -4,9 +4,14 @@ import Config
 import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes as HA
+import Html.Events exposing (onClick)
 import Json.Encode
-import Parser.Expression exposing (Expression(..))
+import Parser.Expression exposing (Expression(..), SourceMap)
 import Parser.Parser as PP
+
+
+type LaTeXMsg
+    = SendSourceMap SourceMap
 
 
 type DisplayMode
@@ -14,33 +19,37 @@ type DisplayMode
     | DisplayMathMode
 
 
-render : List Expression -> List (Html msg)
+render : List Expression -> List (Html LaTeXMsg)
 render exprs =
     List.map renderExpr exprs
 
 
-renderExpr : Expression -> Html msg
+clicker sm =
+    onClick (SendSourceMap sm)
+
+
+renderExpr : Expression -> Html LaTeXMsg
 renderExpr expr =
     case expr of
         Text s sm ->
-            Html.span Config.textSpanStyle [ Html.text s ]
+            Html.span (clicker sm :: Config.textSpanStyle) [ Html.text s ]
 
         InlineMath s sm ->
-            inlineMathText s
+            inlineMathText s sm
 
         DisplayMath s sm ->
-            displayMathText s
+            displayMathText s sm
 
         Macro name optArg args sm ->
-            macro name optArg args
+            macro name optArg args sm
 
         LXList list_ ->
             List.map renderExpr list_ |> Html.span Config.textSpanStyle
 
         LXError s p sm ->
             Html.span []
-                [ Html.span Config.errorStyle2 [ Html.text s ]
-                , Html.span Config.errorStyle [ Html.text (errorString p sm) ]
+                [ Html.span (clicker sm :: Config.errorStyle2) [ Html.text s ]
+                , Html.span (clicker sm :: Config.errorStyle) [ Html.text (errorString p sm) ]
                 ]
 
         LXNull () _ ->
@@ -51,34 +60,30 @@ errorString : Parser.Expression.Problem -> Parser.Expression.SourceMap -> String
 errorString p sm =
     " << "
         ++ Parser.Expression.problemAsString p
-        ++ " // Pos ("
-        ++ String.fromInt sm.lineNumber
-        ++ ", "
-        ++ String.fromInt sm.offset
-        ++ ")"
 
 
-macro : String -> Maybe String -> List Expression -> Html msg
-macro name optArg args =
+macro : String -> Maybe String -> List Expression -> SourceMap -> Html LaTeXMsg
+macro name optArg args sm =
     case Dict.get name macroDict of
         Nothing ->
-            undefinedMacro name
+            undefinedMacro name sm
 
         Just f ->
-            f optArg args
+            f optArg args sm
 
 
-undefinedMacro : String -> Html msg
-undefinedMacro name =
-    Html.span [ HA.style "color" "red" ] [ Html.text "Undefined macro: " ]
+undefinedMacro : String -> SourceMap -> Html LaTeXMsg
+undefinedMacro name sm =
+    Html.span [ clicker sm, HA.style "color" "red" ] [ Html.text "Undefined macro: " ]
 
 
-mathText : DisplayMode -> String -> Html msg
-mathText displayMode content =
+mathText : DisplayMode -> String -> SourceMap -> Html LaTeXMsg
+mathText displayMode content sm =
     Html.node "math-text"
         [ HA.property "delay" (Json.Encode.bool False)
         , HA.property "display" (Json.Encode.bool (isDisplayMathMode displayMode))
         , HA.property "content" (Json.Encode.string (content |> String.replace "\\ \\" "\\\\"))
+        , clicker sm
 
         --, HA.property "content" (Json.Encode.string content |> String.replace "\\ \\" "\\\\"))
         ]
@@ -95,14 +100,14 @@ isDisplayMathMode displayMode =
             True
 
 
-inlineMathText : String -> Html msg
-inlineMathText str_ =
-    mathText InlineMathMode (String.trim str_)
+inlineMathText : String -> SourceMap -> Html LaTeXMsg
+inlineMathText str_ sm =
+    mathText InlineMathMode (String.trim str_) sm
 
 
-displayMathText : String -> Html msg
-displayMathText str_ =
-    mathText DisplayMathMode (String.trim str_)
+displayMathText : String -> SourceMap -> Html LaTeXMsg
+displayMathText str_ sm =
+    mathText DisplayMathMode (String.trim str_) sm
 
 
 highLight : String -> List (List Expression) -> List (Html msg)
@@ -137,13 +142,13 @@ highlightWithSourceMap sm str =
 
 
 type alias MacroDict msg =
-    Dict String (Maybe String -> List Expression -> Html msg)
+    Dict String (Maybe String -> List Expression -> SourceMap -> Html msg)
 
 
-macroDict : MacroDict msg
+macroDict : MacroDict LaTeXMsg
 macroDict =
     Dict.fromList
-        [ ( "strong", \ms args -> render args |> Html.span [ HA.style "font-weight" "bold" ] )
-        , ( "italic", \ms args -> render args |> Html.span [ HA.style "font-style" "italic" ] )
-        , ( "foo", \ms args -> Html.span [ HA.style "font-style" "italic" ] [ Html.text "Foo" ] )
+        [ ( "strong", \ms args sm -> render args |> Html.span [ clicker sm, HA.style "font-weight" "bold" ] )
+        , ( "italic", \ms args sm -> render args |> Html.span [ clicker sm, HA.style "font-style" "italic" ] )
+        , ( "foo", \ms args sm -> Html.span [ clicker sm, HA.style "font-style" "italic" ] [ Html.text "Foo" ] )
         ]

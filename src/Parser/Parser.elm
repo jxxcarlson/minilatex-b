@@ -98,7 +98,8 @@ expressionList lineNumber =
 
 expression : Int -> Parser.Parser Context Problem Expression
 expression lineNumber =
-    Parser.oneOf [ Parser.backtrackable (bareMacro lineNumber), macro lineNumber, displayMath lineNumber, inlineMath lineNumber, text lineNumber ]
+    -- Parser.oneOf [ Parser.backtrackable (bareMacro lineNumber), macro lineNumber, displayMath lineNumber, inlineMath lineNumber, text lineNumber ]
+    Parser.oneOf [ macro lineNumber, displayMath lineNumber, inlineMath lineNumber, text lineNumber ]
 
 
 getErrors : List (List Expression) -> List Expression
@@ -280,7 +281,9 @@ arg lineNo =
         |. Parser.symbol (Parser.Token "{" ExpectingLeftBraceForArg)
         |= Parser.oneOf
             [ inlineMath lineNo
-            , Parser.lazy (\_ -> Parser.oneOf [ Parser.backtrackable (bareMacro lineNo), macro lineNo ])
+
+            --, Parser.lazy (\_ -> Parser.oneOf [ Parser.backtrackable (bareMacro lineNo), macro lineNo ])
+            , Parser.lazy (\_ -> macro lineNo)
             , text_ lineNo [ '}' ]
             ]
         |. Parser.symbol (Parser.Token "}" ExpectingRightBraceForArg)

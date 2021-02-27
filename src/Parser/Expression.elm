@@ -211,7 +211,7 @@ problemAsString prob =
             "Expecting brace (13)"
 
         ExpectingRightBraceForArg ->
-            "Expecting brace for (14)"
+            "Missing: }"
 
         ExpectingPrefix c ->
             "Expecting prefix " ++ String.fromChar c ++ " (15)"
