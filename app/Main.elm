@@ -180,12 +180,12 @@ bgGray g =
 
 view : Model -> Html Msg
 view model =
-    Element.layoutWith { options = [ focusStyle noFocus ] } [ bgGray 0.2 ] (mainColumn model)
+    Element.layoutWith { options = [ focusStyle noFocus ] } [ bgGray 0.2, clipX, clipY ] (mainColumn model)
 
 
 panelHeight : Int
 panelHeight =
-    400
+    380
 
 
 appWidth : Int
@@ -365,8 +365,8 @@ renderParseResult model =
 
         ShowSourceMap ->
             model.parsedText
-                |> PP.getErrors
-                |> List.map Parser.Expression.getSource
+                --|> PP.getErrors
+                |> List.map Parser.Expression.getSourceOfList
                 |> List.map Parser.Expression.sourceMapToString
                 |> renderParsedText
 
@@ -403,7 +403,7 @@ appButton model =
                     "Parsed Text"
 
                 ShowSourceMap ->
-                    "SourceMaP"
+                    "SourceMap"
     in
     row []
         [ Input.button buttonStyle
