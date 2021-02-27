@@ -1,10 +1,11 @@
 module Parser.TextCursor exposing (..)
 
-import Parser.Expression exposing(Expression)
+import Parser.Expression exposing (Expression)
+
 
 type alias TextCursor =
     { text : String
-    , lineNumber : Int
+    , chunkNumber : Int
     , parsed : List Expression
     , stack : List String
     , offset : Int
@@ -12,10 +13,13 @@ type alias TextCursor =
 
 
 empty : TextCursor
-empty = { text = "", lineNumber = 0, parsed = [], stack = [], offset = 0}
+empty =
+    { text = "", chunkNumber = 0, parsed = [], stack = [], offset = 0 }
 
-init : Int-> String -> TextCursor
-init initialLineNumber str = { text = str, lineNumber = initialLineNumber, parsed = [], stack = [], offset = 0}
+
+init : Int -> String -> TextCursor
+init initiaChunkNumber str =
+    { text = str, chunkNumber = initiaChunkNumber, parsed = [], stack = [], offset = 0 }
 
 
 {-| Append raw text to the current cursor.
@@ -23,4 +27,3 @@ init initialLineNumber str = { text = str, lineNumber = initialLineNumber, parse
 addText : String -> TextCursor -> TextCursor
 addText newText cursor =
     { cursor | text = cursor.text ++ newText }
-

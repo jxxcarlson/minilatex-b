@@ -28,16 +28,20 @@ type Context
 
 parseLoop : Int -> String -> TextCursor
 parseLoop initialLineNumber str =
-    loop (TextCursor.init initialLineNumber str) nextRound
+    loop (TextCursor.init (Debug.log "PL, line" initialLineNumber) str) nextRound
 
 
 nextRound : TextCursor -> Step TextCursor TextCursor
 nextRound tc =
+    let
+        _ =
+            Debug.log "TC" tc
+    in
     if tc.text == "" then
         Done { tc | parsed = List.reverse tc.parsed }
 
     else
-        case Parser.run (expression tc.lineNumber) tc.text of
+        case Parser.run (expression tc.chunkNumber) tc.text of
             Ok expr ->
                 let
                     sourceMap =
@@ -55,6 +59,7 @@ nextRound tc =
                 Loop (handleError tc e)
 
 
+handleError : TextCursor -> List (Parser.DeadEnd Context Problem) -> TextCursor
 handleError tc_ e =
     let
         -- Err [{ col = 10, contextStack = [], problem = ExpectingRightBraceForArg, row = 1 }]
@@ -74,8 +79,8 @@ handleError tc_ e =
             String.dropLeft errorColumn tc_.text
     in
     { text = newText
-    , lineNumber = tc_.lineNumber
-    , parsed = LXError errorText problem { chunk = tc_.lineNumber, length = errorColumn, offset = tc_.offset + errorColumn } :: tc_.parsed
+    , chunkNumber = tc_.chunkNumber
+    , parsed = LXError errorText problem { chunk = tc_.chunkNumber, length = errorColumn, offset = tc_.offset + errorColumn } :: tc_.parsed
     , stack = errorText :: tc_.stack
     , offset = tc_.offset + errorColumn
     }
