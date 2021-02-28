@@ -28,15 +28,11 @@ type Context
 
 parseLoop : Int -> String -> TextCursor
 parseLoop initialLineNumber str =
-    loop (TextCursor.init (Debug.log "PL, line" initialLineNumber) str) nextRound
+    loop (TextCursor.init initialLineNumber str) nextRound
 
 
 nextRound : TextCursor -> Step TextCursor TextCursor
 nextRound tc =
-    let
-        _ =
-            Debug.log "TC" tc
-    in
     if tc.text == "" then
         Done { tc | parsed = List.reverse tc.parsed }
 
@@ -80,7 +76,7 @@ handleError tc_ e =
     in
     { text = newText
     , chunkNumber = tc_.chunkNumber
-    , parsed = LXError errorText problem { chunk = tc_.chunkNumber, length = errorColumn, offset = tc_.offset + errorColumn } :: tc_.parsed
+    , parsed = LXError errorText problem { chunkOffset = tc_.chunkNumber, length = errorColumn, offset = tc_.offset + errorColumn } :: tc_.parsed
     , stack = errorText :: tc_.stack
     , offset = tc_.offset + errorColumn
     }
@@ -187,7 +183,7 @@ displayMath lineNumber =
 -}
 getChompedString : Int -> Parser a -> Parser ( String, SourceMap )
 getChompedString lineNumber parser =
-    Parser.succeed (\first_ last_ source_ -> ( String.slice first_ last_ source_, { chunk = lineNumber, length = last_, offset = 0 } ))
+    Parser.succeed (\first_ last_ source_ -> ( String.slice first_ last_ source_, { chunkOffset = lineNumber, length = last_, offset = 0 } ))
         |= Parser.getOffset
         |. parser
         |= Parser.getOffset
@@ -214,7 +210,7 @@ bareMacro lineNo =
 
 oneSpace : Int -> Parser Expression
 oneSpace lineNo =
-    Parser.succeed (\offset -> LXNull () { chunk = lineNo, offset = offset, length = 1 })
+    Parser.succeed (\offset -> LXNull () { chunkOffset = lineNo, offset = offset, length = 1 })
         |= Parser.getOffset
         |. Parser.symbol (Parser.Token " " ExpectingSpace)
 
@@ -223,7 +219,7 @@ fixMacro : Int -> ( String, SourceMap ) -> Maybe ( String, SourceMap ) -> List E
 fixMacro lineNo ( name, sm1 ) optArg_ args_ =
     let
         lineNumber =
-            sm1.chunk
+            sm1.chunkOffset
 
         offset =
             sm1.offset
@@ -238,7 +234,7 @@ fixMacro lineNo ( name, sm1 ) optArg_ args_ =
             (Expression.getSourceOfList args_).length
 
         sm =
-            { chunk = lineNumber, offset = offset, length = lengths_ + 1 }
+            { chunkOffset = lineNumber, offset = offset, length = lengths_ + 1 }
     in
     Macro name (Maybe.map Tuple.first optArg_) args_ sm
 

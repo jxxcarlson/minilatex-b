@@ -6,6 +6,7 @@ import Html exposing (Html)
 import Html.Attributes as HA
 import Html.Events exposing (onClick)
 import Json.Encode
+import List.Extra
 import Parser.Expression exposing (Expression(..), SourceMap)
 import Parser.Parser as PP
 
@@ -108,6 +109,11 @@ inlineMathText str_ sm =
 displayMathText : String -> SourceMap -> Html LaTeXMsg
 displayMathText str_ sm =
     mathText DisplayMathMode (String.trim str_) sm
+
+
+locate : SourceMap -> String -> Maybe String
+locate sm str =
+    String.lines str |> List.Extra.getAt sm.chunkOffset
 
 
 highLight : String -> List (List Expression) -> List (Html msg)

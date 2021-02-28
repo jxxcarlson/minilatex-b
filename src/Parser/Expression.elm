@@ -1,5 +1,7 @@
 module Parser.Expression exposing (..)
 
+import List.Extra
+
 
 type Expression
     = Text String SourceMap
@@ -12,11 +14,37 @@ type Expression
 
 
 type alias SourceMap =
-    { chunk : Int, length : Int, offset : Int }
+    { chunkOffset : Int, length : Int, offset : Int }
 
 
 type alias Slice =
     { left : String, middle : String, right : String }
+
+
+makeIndex : List Int -> List (List Int)
+makeIndex list =
+    let
+        n =
+            List.Extra.last list |> Maybe.withDefault -1
+
+        list2 =
+            list
+                |> List.drop 1
+                |> List.map (\x -> x - 2)
+                |> (\x -> x ++ [ n ])
+
+        pairs =
+            List.map2 (\x y -> ( x, y )) list list2
+    in
+    List.map (\( x, y ) -> List.range x y) pairs
+
+
+sourceMapIndex : List (List Expression) -> List (List Int)
+sourceMapIndex list =
+    list
+        |> List.map getSourceOfList
+        |> List.map .chunkOffset
+        |> makeIndex
 
 
 sliceWithSourceMap1 : SourceMap -> String -> Slice
@@ -46,8 +74,8 @@ slice cut1 cut2 str =
 
 sourceMapToString : SourceMap -> String
 sourceMapToString sm =
-    "{ line = "
-        ++ String.fromInt sm.chunk
+    "{ chunkOffset = "
+        ++ String.fromInt sm.chunkOffset
         ++ ", offset = "
         ++ String.fromInt sm.offset
         ++ ", length = "
@@ -93,9 +121,9 @@ getSourceOfList list =
             List.minimum (List.map .offset sourceMaps) |> Maybe.withDefault 0
 
         lineNumber =
-            List.head sourceMaps |> Maybe.map .chunk |> Maybe.withDefault 0
+            List.head sourceMaps |> Maybe.map .chunkOffset |> Maybe.withDefault 0
     in
-    { length = length, offset = offset, chunk = lineNumber }
+    { length = length, offset = offset, chunkOffset = lineNumber }
 
 
 getSource : Expression -> SourceMap
@@ -117,7 +145,7 @@ getSource expr =
             source
 
         LXList e ->
-            List.map getSource e |> List.head |> Maybe.withDefault { chunk = -1, length = -1, offset = -1 }
+            List.map getSource e |> List.head |> Maybe.withDefault { chunkOffset = -1, length = -1, offset = -1 }
 
         LXNull _ source ->
             source
