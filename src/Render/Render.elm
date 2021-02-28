@@ -2,13 +2,13 @@ module Render.Render exposing (..)
 
 import Config
 import Dict exposing (Dict)
+import Element exposing (Element)
 import Html exposing (Html)
 import Html.Attributes as HA
 import Html.Events exposing (onClick)
 import Json.Encode
 import List.Extra
 import Parser.Expression exposing (Expression(..), SourceMap)
-import Parser.Parser as PP
 
 
 type LaTeXMsg
@@ -116,34 +116,56 @@ at k str =
     String.lines str |> List.Extra.getAt k
 
 
-highLight : String -> List (List Expression) -> List (Html msg)
-highLight str expressionList =
+
+--highLight : String -> List (List Expression) -> List (Html msg)
+--highLight str expressionList =
+--    let
+--        lines : List String
+--        lines =
+--            String.lines str
+--
+--        sourceMaps : List Parser.Expression.SourceMap
+--        sourceMaps =
+--            PP.getErrors expressionList |> List.map Parser.Expression.getSource
+--
+--        _ =
+--            Debug.log "(lines, sourceMaps)" ( List.length lines, List.length sourceMaps )
+--    in
+--    List.map2 highlightWithSourceMap sourceMaps lines
+
+
+highlightWithSourceMap : Parser.Expression.SourceMap -> String -> List (List Int) -> Html msg
+highlightWithSourceMap sm str sourceMapIndex_ =
     let
-        lines : List String
-        lines =
-            String.lines str
+        selection =
+            Parser.Expression.getSelectionFromSourceMap sm str sourceMapIndex_
 
-        sourceMaps : List Parser.Expression.SourceMap
-        sourceMaps =
-            PP.getErrors expressionList |> List.map Parser.Expression.getSource
-
-        _ =
-            Debug.log "(lines, sourceMaps)" ( List.length lines, List.length sourceMaps )
+        idxs =
+            String.indices selection str
     in
-    List.map2 highlightWithSourceMap sourceMaps lines
+    case List.head idxs of
+        Nothing ->
+            Html.span [] [ Html.text str ]
 
+        Just offset ->
+            let
+                left =
+                    String.left offset str
 
-highlightWithSourceMap : Parser.Expression.SourceMap -> String -> Html msg
-highlightWithSourceMap sm str =
-    let
-        slice =
-            Parser.Expression.sliceWithSourceMap sm str
-    in
-    Html.span []
-        [ Html.span [] [ Html.text slice.left ]
-        , Html.span [ HA.style "background-color" "pink" ] [ Html.text slice.middle ]
-        , Html.span [] [ Html.text slice.right ]
-        ]
+                remainder =
+                    String.dropLeft offset str
+
+                middle =
+                    String.left sm.length remainder
+
+                right =
+                    String.dropLeft sm.length remainder
+            in
+            Html.div []
+                [ Html.span [] [ Html.text left ]
+                , Html.span [ HA.style "background-color" "pink" ] [ Html.text middle ]
+                , Html.span [] [ Html.text right ]
+                ]
 
 
 

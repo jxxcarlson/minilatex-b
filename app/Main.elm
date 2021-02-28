@@ -35,6 +35,7 @@ main =
 type alias Model =
     { input : String
     , parsedText : List (List Expression)
+    , sourceMap : Parser.Expression.SourceMap
     , sourceMapIndex : List (List Int)
     , counter : Int
     , footerViewMode : FooterViewMode
@@ -47,11 +48,11 @@ type alias Model =
 
 type LHViewMode
     = LHSourceText
+    | LHAnnotatedSource
 
 
 type RHViewMode
     = RHRenderedText
-    | RHAnnotatedSource
 
 
 type FooterViewMode
@@ -66,6 +67,7 @@ type Msg
     | InputText String
     | CycleViewMode
     | CycleRHViewMode
+    | CycleLHViewMode
     | LaTeXMsg LaTeXMsg
     | InputCommand String
     | RunCommand
@@ -130,6 +132,7 @@ init : Flags -> ( Model, Cmd Msg )
 init flags =
     ( { input = initialText
       , parsedText = parse initialText
+      , sourceMap = Parser.Expression.dummySourceMap
       , sourceMapIndex = Parser.Expression.sourceMapIndex (parse initialText)
       , counter = 0
       , lhViewMode = LHSourceText
@@ -155,17 +158,20 @@ update msg model =
         InputText str ->
             ( { model | input = str, parsedText = parse str, counter = model.counter + 1 }, Cmd.none )
 
-        CycleRHViewMode ->
+        CycleLHViewMode ->
             let
-                rhViewMode =
-                    case model.rhViewMode of
-                        RHAnnotatedSource ->
-                            RHRenderedText
+                lhViewMode =
+                    case model.lhViewMode of
+                        LHSourceText ->
+                            LHAnnotatedSource
 
-                        RHRenderedText ->
-                            RHAnnotatedSource
+                        LHAnnotatedSource ->
+                            LHSourceText
             in
-            ( { model | rhViewMode = rhViewMode }, Cmd.none )
+            ( { model | lhViewMode = lhViewMode }, Cmd.none )
+
+        CycleRHViewMode ->
+            ( model, Cmd.none )
 
         CycleViewMode ->
             let
@@ -206,12 +212,16 @@ update msg model =
                     ( { model | message = "No command" }, Cmd.none )
 
         LaTeXMsg (SendSourceMap sourceMap) ->
-            -- ( { model | message = Debug.toString sourceMap }, Cmd.none )
-            ( { model | message = Parser.Expression.getSelectionFromSourceMap sourceMap model.input model.sourceMapIndex }, Cmd.none )
+            ( { model
+                | sourceMap = sourceMap
+                , lhViewMode = LHAnnotatedSource
+                , message = Parser.Expression.getSelectionFromSourceMap sourceMap model.input model.sourceMapIndex
+              }
+            , Cmd.none
+            )
 
 
 
--- getSelectionFromSourceMap sourceMap str sourceMapIndex_
 --
 -- VIEW
 --
@@ -261,9 +271,6 @@ mainColumn model =
             ]
             [ row [ spacing 8 ] [ inputCommand model, runCommandButton ]
             , row [ spacing 12 ] [ lhView model, rhView model ]
-
-            --, row [ spacing 12 ] [ inputText model, annotatedText model ]
-            --, row [ spacing 12 ] [ renderedTextDisplay model, messageDisplay model ]
             , parsedTextDisplay model
             ]
         ]
@@ -275,15 +282,15 @@ lhView model =
         LHSourceText ->
             inputText model
 
+        LHAnnotatedSource ->
+            annotatedText model
+
 
 rhView : Model -> Element Msg
 rhView model =
     case model.rhViewMode of
         RHRenderedText ->
             renderedTextDisplay model
-
-        RHAnnotatedSource ->
-            annotatedText model
 
 
 messageDisplay model =
@@ -306,16 +313,18 @@ messageDisplay_ model =
     el [ Font.size 14, fontGray 0.9 ] (Element.text model.message)
 
 
+annotatedText : Model -> Element Msg
 annotatedText model =
     column
         [ spacing 8
         , moveUp 8
         ]
-        [ rhViewModeButton model
+        [ lhViewModeButton model
         , annotatedText_ model
         ]
 
 
+annotatedText_ : Model -> Element msg
 annotatedText_ model =
     column
         [ spacing 12
@@ -325,8 +334,7 @@ annotatedText_ model =
         , width (px panelWidth)
         , height (px panelHeight)
         ]
-        -- (List.map (\s -> el [] (Element.text s)) (String.lines model.input))
-        (Render.highLight model.input model.parsedText |> List.map Element.html)
+        [ Render.highlightWithSourceMap model.sourceMap model.input model.sourceMapIndex |> Element.html ]
 
 
 renderedTextDisplay model =
@@ -437,7 +445,7 @@ inputText model =
         { onChange = InputText
         , text = model.input
         , placeholder = Nothing
-        , label = Input.labelAbove [ fontGray 0.9 ] <| el [ Font.size 16 ] (Element.text "Source Text")
+        , label = Input.labelAbove [] <| lhViewModeButton model
         , spellcheck = False
         }
 
@@ -463,13 +471,29 @@ rhViewModeButton model =
             case model.rhViewMode of
                 RHRenderedText ->
                     "Rendered Text"
-
-                RHAnnotatedSource ->
-                    "Annotated Source"
     in
     row []
         [ Input.button buttonStyle
             { onPress = Just CycleRHViewMode
+            , label = el [ centerX, centerY ] (Element.text title_)
+            }
+        ]
+
+
+lhViewModeButton : Model -> Element Msg
+lhViewModeButton model =
+    let
+        title_ =
+            case model.lhViewMode of
+                LHAnnotatedSource ->
+                    "Annotated text (*)"
+
+                LHSourceText ->
+                    "Source text (*)"
+    in
+    row []
+        [ Input.button buttonStyle
+            { onPress = Just CycleLHViewMode
             , label = el [ centerX, centerY ] (Element.text title_)
             }
         ]

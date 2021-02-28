@@ -22,6 +22,10 @@ type alias Slice =
     { left : String, middle : String, right : String }
 
 
+dummySourceMap =
+    { chunkOffset = 0, length = 0, offset = 0 }
+
+
 getSelectionFromSourceMap : SourceMap -> String -> List (List Int) -> String
 getSelectionFromSourceMap sourceMap str sourceMapIndex_ =
     let
