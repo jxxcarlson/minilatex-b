@@ -20,7 +20,7 @@ import Paragraph
 import Parser.Document
 import Parser.Expression exposing (Expression)
 import Parser.Parser as PP exposing (..)
-import Render.Render as Render exposing (LaTeXMsg)
+import Render.Render as Render exposing (LaTeXMsg(..))
 
 
 main =
@@ -58,6 +58,7 @@ type FooterViewMode
     = ShowParsedText
     | ShowParseErrors
     | ShowSourceMap
+    | ShowSourceMapIndex
 
 
 type Msg
@@ -76,8 +77,7 @@ type alias Flags =
 
 initialText : String
 initialText =
-    """
-This is a test: $a^2 + b^2 = c^2
+    """This is a test: $a^2 + b^2 = c^2
 
 \\strong{\\italic{More stuff:}} $p^2 \\equiv 1$
 one
@@ -178,6 +178,9 @@ update msg model =
                             ShowSourceMap
 
                         ShowSourceMap ->
+                            ShowSourceMapIndex
+
+                        ShowSourceMapIndex ->
                             ShowParsedText
             in
             ( { model | footerViewMode = viewMode }, Cmd.none )
@@ -189,15 +192,12 @@ update msg model =
             case CommandInterpreter.get model.command of
                 Just command ->
                     case command.name of
-                        "locate" ->
+                        "at" ->
                             let
-                                sm =
-                                    { chunkOffset = CommandInterpreter.getIntArg 0 command.args |> Debug.log "CO"
-                                    , length = 0
-                                    , offset = 0
-                                    }
+                                k =
+                                    CommandInterpreter.getIntArg 0 command.args
                             in
-                            ( { model | message = Render.locate sm model.input |> Debug.toString }, Cmd.none )
+                            ( { model | message = Render.at k model.input |> Debug.toString }, Cmd.none )
 
                         _ ->
                             ( { model | message = Debug.toString command }, Cmd.none )
@@ -205,12 +205,13 @@ update msg model =
                 _ ->
                     ( { model | message = "No command" }, Cmd.none )
 
-        LaTeXMsg sourceMap ->
-            ( { model | message = Debug.toString sourceMap }, Cmd.none )
+        LaTeXMsg (SendSourceMap sourceMap) ->
+            -- ( { model | message = Debug.toString sourceMap }, Cmd.none )
+            ( { model | message = Parser.Expression.getSelectionFromSourceMap sourceMap model.input model.sourceMapIndex }, Cmd.none )
 
 
 
---( { model | message = Debug.toString (Render.locate sourceMap model.input) }, Cmd.none )
+-- getSelectionFromSourceMap sourceMap str sourceMapIndex_
 --
 -- VIEW
 --
@@ -420,11 +421,9 @@ renderParseResult model =
                 |> List.map Parser.Expression.sourceMapToString
                 |> renderParsedText
 
-
-
---|> List.map .chunkOffset
---|> Parser.Expression.makeIndex
---|> List.map (Debug.toString >> Element.text)
+        ShowSourceMapIndex ->
+            model.sourceMapIndex
+                |> List.map (Debug.toString >> (\x -> el [] (Element.text x)))
 
 
 renderParsedText : List String -> List (Element Msg)
@@ -496,6 +495,9 @@ footerViewModeButton model =
 
                 ShowSourceMap ->
                     "SourceMap"
+
+                ShowSourceMapIndex ->
+                    "SourceMap Index"
     in
     row []
         [ Input.button buttonStyle

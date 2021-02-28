@@ -1,5 +1,6 @@
 module Parser.Expression exposing (..)
 
+import CommandInterpreter
 import List.Extra
 
 
@@ -19,6 +20,36 @@ type alias SourceMap =
 
 type alias Slice =
     { left : String, middle : String, right : String }
+
+
+getSelectionFromSourceMap : SourceMap -> String -> List (List Int) -> String
+getSelectionFromSourceMap sourceMap str sourceMapIndex_ =
+    let
+        lines =
+            String.lines str
+
+        n =
+            List.length lines
+
+        data : List Int
+        data =
+            linesOfChunkOffset sourceMap.chunkOffset sourceMapIndex_
+                |> List.map Tuple.second
+                |> List.head
+                |> Maybe.withDefault []
+
+        sel_ : List String
+        sel_ =
+            List.foldl (\i acc -> (List.Extra.getAt i lines |> Maybe.withDefault "") :: acc) [] data
+
+        selectedLines : String
+        selectedLines =
+            List.foldl (\l acc -> acc ++ "\n" ++ l) "" (List.reverse sel_)
+
+        selection =
+            String.slice (sourceMap.offset + 1) (sourceMap.offset + sourceMap.length + 1) selectedLines
+    in
+    selection
 
 
 makeIndex : List Int -> List (List Int)
@@ -45,6 +76,25 @@ sourceMapIndex list =
         |> List.map getSourceOfList
         |> List.map .chunkOffset
         |> makeIndex
+
+
+indexedList : List a -> List ( Int, a )
+indexedList list =
+    let
+        n =
+            List.length list - 1
+    in
+    List.map2 (\k a -> ( k, a )) (List.range 0 n) list
+
+
+indexedFilter : (a -> Bool) -> List a -> List ( Int, a )
+indexedFilter predicate list =
+    List.filter (\( k, a ) -> predicate a) (indexedList list)
+
+
+linesOfChunkOffset : a -> List (List a) -> List ( Int, List a )
+linesOfChunkOffset chunkOffset sourceMapIndex_ =
+    indexedFilter (\chunks -> List.member chunkOffset chunks) sourceMapIndex_
 
 
 sliceWithSourceMap1 : SourceMap -> String -> Slice

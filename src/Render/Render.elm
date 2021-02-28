@@ -111,9 +111,9 @@ displayMathText str_ sm =
     mathText DisplayMathMode (String.trim str_) sm
 
 
-locate : SourceMap -> String -> Maybe String
-locate sm str =
-    String.lines str |> List.Extra.getAt sm.chunkOffset
+at : Int -> String -> Maybe String
+at k str =
+    String.lines str |> List.Extra.getAt k
 
 
 highLight : String -> List (List Expression) -> List (Html msg)

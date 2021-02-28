@@ -16,7 +16,7 @@ get str =
 
 getIntArg : Int -> List String -> Int
 getIntArg k args =
-    List.Extra.getAt 0 args |> Maybe.andThen String.toInt |> Maybe.withDefault 0
+    List.Extra.getAt k args |> Maybe.andThen String.toInt |> Maybe.withDefault 0
 
 
 commandParser : Parser Command
