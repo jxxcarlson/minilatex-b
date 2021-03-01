@@ -1,9 +1,33 @@
-module Parser.Expression exposing (..)
+module Parser.Expression exposing
+    ( Expression(..), Problem(..), SourceMap
+    , dummySourceMap, getSelectionFromSourceMap, getSource, getSourceOfList, sourceMapIndex, sourceMapToString
+    , incrementOffset, problemAsString
+    )
 
-import CommandInterpreter
+{-|
+
+
+# Types
+
+@docs Expression, Problem, SourceMap
+
+
+# SourceMap
+
+@docs dummySourceMap, getSelectionFromSourceMap, getSource, getSourceOfList, sourceMapIndex, sourceMapToString
+
+
+# Other
+
+@docs incrementOffset, problemAsString
+
+-}
+
 import List.Extra
 
 
+{-| The type of the MiniLaTeX AST
+-}
 type Expression
     = Text String SourceMap
     | InlineMath String SourceMap
@@ -14,6 +38,8 @@ type Expression
     | LXNull () SourceMap
 
 
+{-| Identifies the source text corresponding to part of the AST
+-}
 type alias SourceMap =
     { chunkOffset : Int, length : Int, offset : Int }
 
@@ -22,10 +48,16 @@ type alias Slice =
     { left : String, middle : String, right : String }
 
 
+{-| -}
+dummySourceMap : SourceMap
 dummySourceMap =
     { chunkOffset = 0, length = 0, offset = 0 }
 
 
+{-| Return the string in the source text identified by the SourceMap.
+The auxiliary data structure SourdeMapIndex: List (List Int),
+typicallly computed by sourceMapIndex and stored in the model, is needed for this.
+-}
 getSelectionFromSourceMap : SourceMap -> String -> List (List Int) -> String
 getSelectionFromSourceMap sourceMap str sourceMapIndex_ =
     let
@@ -76,6 +108,9 @@ makeIndex numberOfLines list =
     List.map (\( x, y ) -> List.range x y) pairs
 
 
+{-| Compute the SourceMapIndex of an AST given the number of lines
+in the input.
+-}
 sourceMapIndex : Int -> List (List Expression) -> List (List Int)
 sourceMapIndex numberOfLines list =
     list
@@ -129,6 +164,8 @@ slice cut1 cut2 str =
     { left = left, middle = middle, right = right }
 
 
+{-| String representation of a SourceMap
+-}
 sourceMapToString : SourceMap -> String
 sourceMapToString sm =
     "{ chunkOffset = "
@@ -165,6 +202,8 @@ toString expr =
             " "
 
 
+{-| Return a SourceMap for a list of Expression.
+-}
 getSourceOfList : List Expression -> SourceMap
 getSourceOfList list =
     let
@@ -183,6 +222,8 @@ getSourceOfList list =
     { length = length, offset = offset, chunkOffset = lineNumber }
 
 
+{-| Return the SourceMap component of an Expression
+-}
 getSource : Expression -> SourceMap
 getSource expr =
     case expr of
@@ -208,6 +249,8 @@ getSource expr =
             source
 
 
+{-| incrmeent the offset field of the SourceMap component of an Expression
+-}
 incrementOffset : Int -> Expression -> Expression
 incrementOffset delta expr =
     case expr of
@@ -233,6 +276,8 @@ incrementOffset delta expr =
             LXNull () { source | offset = source.offset + delta }
 
 
+{-| Used to identify parse errors
+-}
 type Problem
     = ExpectingLeadingDollarSign
     | ExpectingTrailingDollarSign1
@@ -252,6 +297,8 @@ type Problem
     | ExpectingSpace
 
 
+{-| String representation of a Problem. Used in error reporting.
+-}
 problemAsString : Problem -> String
 problemAsString prob =
     case prob of
