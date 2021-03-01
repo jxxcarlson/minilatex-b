@@ -1,20 +1,10 @@
-module Parser.Document exposing (process, toParsed)
+module Parser.Document exposing (process)
 
 {-| The main function in this module is process, which takes as input
 a string representing a MiniLaTeX document and produces as output
-a value of type State. The `output` field of State hold the AST
-of the source text.
+a value of type AST = List (List Expression).
 
-    type alias State =
-        { input : List String
-        , lineNumber : Int
-        , blockType : BlockType
-        , blockContents : List String
-        , blockTypeStack : List BlockType
-        , output : List TextCursor
-        }
-
-@docs process, toParsed
+@docs process
 
 -}
 
@@ -54,11 +44,32 @@ type LineType
     | EndEnvBlock String
 
 
-{-| Compute the final State of a string of source text.
-The output field of State hold the AST of the source text.
+{-| Compute the AST of a string of source text.
+
+    process =
+        runProcess >> toParsed
+
+Function runProcess operates a state machine which identifies logical
+chunks of text, parses these using Parser.Parser.parseLoop,
+and prepends them to a list of TextCursor. The function
+toParsed extracts the AST from State.
+
 -}
-process : String -> State
-process str =
+process : String -> List (List Expression)
+process =
+    runProcess >> toParsed
+
+
+{-| Compute the final State of a string of source text.
+The output field of State holds the AST of the source text.
+
+Function process operates a state machine which identifies logical
+chunks of text, parses these using Parser.Parser.parseLoop,
+and prepends them to a list of TextCursor.
+
+-}
+runProcess : String -> State
+runProcess str =
     loop (init str) nextState
 
 

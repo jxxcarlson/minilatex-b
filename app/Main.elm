@@ -95,7 +95,6 @@ parse : String -> List (List Expression)
 parse input =
     input
         |> Parser.Document.process
-        |> Parser.Document.toParsed
 
 
 parsedTextToString : List (List Expression) -> List String
@@ -384,7 +383,6 @@ render1 : String -> Html Msg
 render1 input =
     (input
         |> Parser.Document.process
-        |> Parser.Document.toParsed
         |> List.map (Render.render >> Html.div [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ])
         |> Html.div []
     )
@@ -395,7 +393,6 @@ render2 : String -> List (Element Msg)
 render2 input =
     input
         |> Parser.Document.process
-        |> Parser.Document.toParsed
         |> List.map (Render.render >> Html.div [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ])
         |> List.map (Element.html >> Element.map LaTeXMsg)
 
