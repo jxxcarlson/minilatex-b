@@ -163,5 +163,7 @@ macroDict =
     Dict.fromList
         [ ( "strong", \ms args sm -> render args |> Html.span [ clicker sm, HA.style "font-weight" "bold" ] )
         , ( "italic", \ms args sm -> render args |> Html.span [ clicker sm, HA.style "font-style" "italic" ] )
+        , ( "red", \ms args sm -> render args |> Html.span [ clicker sm, HA.style "color" Config.redColor ] )
+        , ( "blue", \ms args sm -> render args |> Html.span [ clicker sm, HA.style "color" Config.blueColor ] )
         , ( "foo", \ms args sm -> Html.span [ clicker sm, HA.style "font-style" "italic" ] [ Html.text "Foo" ] )
         ]

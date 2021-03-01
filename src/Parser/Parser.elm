@@ -50,8 +50,16 @@ type alias Parser a =
 
 
 type Context
-    = Foo
-    | Bar
+    = InlineMathContext
+    | DisplayMathContext
+    | MacroNameContext
+    | OptArgContext
+    | ArgContext
+    | WordContext
+
+
+
+-- PARSELOOP
 
 
 {-| parseLoop takes as input an integer representing a "chunkOffset" and
@@ -114,6 +122,10 @@ handleError tc_ e =
     }
 
 
+
+-- EXPRESSION
+
+
 {-|
 
 > run expressionList "foo bar $a^2$ baz"
@@ -129,6 +141,10 @@ expression : Int -> Parser.Parser Context Problem Expression
 expression lineNumber =
     -- Parser.oneOf [ Parser.backtrackable (bareMacro lineNumber), macro lineNumber, displayMath lineNumber, inlineMath lineNumber, text lineNumber ]
     Parser.oneOf [ macro lineNumber, displayMath lineNumber, inlineMath lineNumber, text lineNumber ]
+
+
+
+-- ERRORS
 
 
 {-| getErrors takes parsed text as input and produces a list of errors as output.
@@ -190,20 +206,22 @@ rawText lineNumber stopChars =
 
 inlineMath : Int -> Parser Expression
 inlineMath lineNumber =
-    Parser.succeed (\( s, t ) -> InlineMath s { t | length = t.length + 1 })
-        |. Parser.symbol (Parser.Token "$" ExpectingLeadingDollarSign)
-        |= getChompedString lineNumber (Parser.chompUntil (Parser.Token "$" ExpectingTrailingDollarSign1))
-        |. Parser.symbol (Parser.Token "$" ExpectingTrailingDollarSign2)
-        |. Parser.spaces
+    Parser.inContext InlineMathContext <|
+        Parser.succeed (\( s, t ) -> InlineMath s { t | length = t.length + 1 })
+            |. Parser.symbol (Parser.Token "$" ExpectingLeadingDollarSign)
+            |= getChompedString lineNumber (Parser.chompUntil (Parser.Token "$" ExpectingTrailingDollarSign))
+            |. Parser.symbol (Parser.Token "$" ExpectingTrailingDollarSign)
+            |. Parser.spaces
 
 
 displayMath : Int -> Parser Expression
 displayMath lineNumber =
-    Parser.succeed (\( s, t ) -> DisplayMath s { t | length = t.length + 2 })
-        |. Parser.symbol (Parser.Token "$$" ExpectingLeadingDoubleDollarSign)
-        |= getChompedString lineNumber (Parser.chompUntil (Parser.Token "$$" ExpectingLTrailingDoubleDollarSign1))
-        |. Parser.symbol (Parser.Token "$$" ExpectingLTrailingDoubleDollarSign2)
-        |. Parser.spaces
+    Parser.inContext DisplayMathContext <|
+        Parser.succeed (\( s, t ) -> DisplayMath s { t | length = t.length + 2 })
+            |. Parser.symbol (Parser.Token "$$" ExpectingLeadingDoubleDollarSign)
+            |= getChompedString lineNumber (Parser.chompUntil (Parser.Token "$$" ExpectingTrailingDoubleDollarSign))
+            |. Parser.symbol (Parser.Token "$$" ExpectingTrailingDoubleDollarSign)
+            |. Parser.spaces
 
 
 
@@ -236,10 +254,6 @@ bareMacro : Int -> Parser Expression
 bareMacro lineNo =
     Parser.succeed (\( name, sm ) -> Macro name Nothing [] sm)
         |= bareMacroName lineNo
-
-
-
--- oneSpace : Int -> Expression
 
 
 oneSpace : Int -> Parser Expression
@@ -275,15 +289,16 @@ fixMacro lineNo ( name, sm1 ) optArg_ args_ =
 
 macroName : Int -> Parser ( String, SourceMap )
 macroName lineNo =
-    Parser.succeed identity
-        |. Parser.symbol (Parser.Token "\\" ExpectingLeadingBackslashForMacro)
-        |= rawText lineNo [ '{', '[' ]
+    Parser.inContext MacroNameContext <|
+        Parser.succeed identity
+            |. Parser.symbol (Parser.Token "\\" ExpectingBackslash)
+            |= rawText lineNo [ '{', '[' ]
 
 
 bareMacroName : Int -> Parser ( String, SourceMap )
 bareMacroName lineNo =
     Parser.succeed identity
-        |. Parser.symbol (Parser.Token "\\" ExpectingLeadingBackslashForMacro)
+        |. Parser.symbol (Parser.Token "\\" ExpectingBackslash)
         |= rawText lineNo [ ' ' ]
         |. Parser.symbol (Parser.Token " " ExpectingSpace)
 
@@ -295,26 +310,28 @@ optArg lineNo =
 
 optArg__ : Int -> Parser ( String, SourceMap )
 optArg__ lineNo =
-    Parser.succeed identity
-        |. Parser.symbol (Parser.Token "[" ExpectingLeftBracketForOptArg)
-        |= rawText lineNo [ ']' ]
-        |. Parser.symbol (Parser.Token "]" ExpectingRightBracketForOptArg)
+    Parser.inContext OptArgContext <|
+        Parser.succeed identity
+            |. Parser.symbol (Parser.Token "[" ExpectingLeftBracket)
+            |= rawText lineNo [ ']' ]
+            |. Parser.symbol (Parser.Token "]" ExpectingRightBracket)
 
 
 arg : Int -> Parser Expression
 arg lineNo =
-    Parser.succeed (\o1 e o2 -> fixArg o1 e o2)
-        |= Parser.getOffset
-        |. Parser.symbol (Parser.Token "{" ExpectingLeftBraceForArg)
-        |= Parser.oneOf
-            [ inlineMath lineNo
+    Parser.inContext ArgContext <|
+        Parser.succeed (\o1 e o2 -> fixArg o1 e o2)
+            |= Parser.getOffset
+            |. Parser.symbol (Parser.Token "{" ExpectingLeftBrace)
+            |= Parser.oneOf
+                [ inlineMath lineNo
 
-            --, Parser.lazy (\_ -> Parser.oneOf [ Parser.backtrackable (bareMacro lineNo), macro lineNo ])
-            , Parser.lazy (\_ -> macro lineNo)
-            , text_ lineNo [ '}' ]
-            ]
-        |. Parser.symbol (Parser.Token "}" ExpectingRightBraceForArg)
-        |= Parser.getOffset
+                --, Parser.lazy (\_ -> Parser.oneOf [ Parser.backtrackable (bareMacro lineNo), macro lineNo ])
+                , Parser.lazy (\_ -> macro lineNo)
+                , text_ lineNo [ '}' ]
+                ]
+            |. Parser.symbol (Parser.Token "}" ExpectingRightBrace)
+            |= Parser.getOffset
 
 
 fixArg : Int -> Expression -> Int -> Expression
@@ -323,13 +340,18 @@ fixArg k1 e k2 =
 
 
 
--- TOOLS
+-- WORD
 
 
 word : Int -> Parser ( String, SourceMap )
 word lineNumber =
-    Parser.succeed identity
-        |= getChompedString lineNumber (Parser.chompUntil (Parser.Token " " ExpectingEndOfWordSpace))
+    Parser.inContext WordContext <|
+        Parser.succeed identity
+            |= getChompedString lineNumber (Parser.chompUntil (Parser.Token " " ExpectingEndOfWordSpace))
+
+
+
+-- LOOP
 
 
 loop : state -> (state -> Step state a) -> a
@@ -368,7 +390,3 @@ manyHelp p vs =
 eof : Parser ()
 eof =
     Parser.end EndOfInput
-
-
-
--- ROUND TRIP TESTING

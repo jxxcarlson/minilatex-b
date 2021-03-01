@@ -16,6 +16,14 @@ displayMathStyle =
     []
 
 
+redColor =
+    "#800"
+
+
+blueColor =
+    "#00c"
+
+
 textSpanStyle =
     [ lineHeight ]
 

@@ -38,6 +38,25 @@ type Expression
     | LXNull () SourceMap
 
 
+{-| Used to identify parse errors
+-}
+type Problem
+    = ExpectingLeadingDollarSign
+    | ExpectingLeadingDoubleDollarSign
+    | EndOfInput
+    | ExpectingEndOfWordSpace
+    | ExpectingLeftBracket
+    | ExpectingRightBracket
+    | ExpectingBackslash
+    | ExpectingLeftBrace
+    | ExpectingRightBrace
+    | ExpectingTrailingDollarSign
+    | ExpectingTrailingDoubleDollarSign
+    | GenericError
+    | ExpectingPrefix Char
+    | ExpectingSpace
+
+
 {-| Identifies the source text corresponding to part of the AST
 -}
 type alias SourceMap =
@@ -276,27 +295,6 @@ incrementOffset delta expr =
             LXNull () { source | offset = source.offset + delta }
 
 
-{-| Used to identify parse errors
--}
-type Problem
-    = ExpectingLeadingDollarSign
-    | ExpectingTrailingDollarSign1
-    | ExpectingTrailingDollarSign2
-    | ExpectingLeadingDoubleDollarSign
-    | ExpectingLTrailingDoubleDollarSign1
-    | ExpectingLTrailingDoubleDollarSign2
-    | EndOfInput
-    | ExpectingEndOfWordSpace
-    | ExpectingLeftBracketForOptArg
-    | ExpectingRightBracketForOptArg
-    | ExpectingLeadingBackslashForMacro
-    | ExpectingLeftBraceForArg
-    | ExpectingRightBraceForArg
-    | GenericError
-    | ExpectingPrefix Char
-    | ExpectingSpace
-
-
 {-| String representation of a Problem. Used in error reporting.
 -}
 problemAsString : Problem -> String
@@ -305,33 +303,26 @@ problemAsString prob =
         ExpectingLeadingDollarSign ->
             "Unmatched '$' (1)"
 
-        ExpectingTrailingDollarSign1 ->
-            -- EDITED
+        ExpectingTrailingDollarSign ->
             "Unmatched '$' (2)"
-
-        ExpectingTrailingDollarSign2 ->
-            "Unmatched '$' (3)"
 
         ExpectingLeadingDoubleDollarSign ->
             "Unmatched '$$' (4)"
 
-        ExpectingLTrailingDoubleDollarSign1 ->
+        ExpectingTrailingDoubleDollarSign ->
             "Unmatched '$$' (5)"
-
-        ExpectingLTrailingDoubleDollarSign2 ->
-            "Unamtched '$$' (6)"
 
         EndOfInput ->
             "Unexpected end of input (7)"
 
-        ExpectingLeadingBackslashForMacro ->
+        ExpectingBackslash ->
             "Expecting '\\' to begin a macro (8)"
 
-        ExpectingLeftBracketForOptArg ->
+        ExpectingLeftBracket ->
             "Expecting a left bracket (9)"
 
-        ExpectingRightBracketForOptArg ->
-            "Expecting a right bracket (10)"
+        ExpectingRightBracket ->
+            "Expecting right bracket (10)"
 
         GenericError ->
             "Generic error (11)s"
@@ -339,10 +330,10 @@ problemAsString prob =
         ExpectingEndOfWordSpace ->
             "Expecting space (12)"
 
-        ExpectingLeftBraceForArg ->
-            "Expecting brace (13)"
+        ExpectingLeftBrace ->
+            "Expecting left brace (13)"
 
-        ExpectingRightBraceForArg ->
+        ExpectingRightBrace ->
             "Missing: }"
 
         ExpectingPrefix c ->
