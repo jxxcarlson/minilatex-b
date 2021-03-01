@@ -33,6 +33,7 @@ type Expression
     | InlineMath String SourceMap
     | DisplayMath String SourceMap
     | Macro String (Maybe String) (List Expression) SourceMap
+      -- | Environment String (List Expression) Expression -- Environment name optArgs body
     | LXList (List Expression)
     | LXError String Problem SourceMap
     | LXNull () SourceMap
@@ -56,6 +57,7 @@ type Problem
     | ExpectingPrefix Char
     | ExpectingSpace
     | ExpectingMacroReservedWord
+    | ExpectingBegin
 
 
 {-| Identifies the source text corresponding to part of the AST
@@ -345,3 +347,6 @@ problemAsString prob =
 
         ExpectingMacroReservedWord ->
             "Expecting macro word (17)"
+
+        ExpectingBegin ->
+            "Expecting \\begin (18)"

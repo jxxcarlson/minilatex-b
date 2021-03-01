@@ -40,6 +40,7 @@ TO ADD: COMMENTS ON THE STACK
 
 -}
 
+import Dict
 import Parser.Advanced as Parser exposing ((|.), (|=))
 import Parser.Expression as Expression exposing (Expression(..), Problem(..), SourceMap)
 import Parser.TextCursor as TextCursor exposing (TextCursor)
@@ -57,6 +58,7 @@ type Context
     | OptArgContext
     | ArgContext
     | WordContext
+    | EnvNameContext
 
 
 
@@ -352,6 +354,40 @@ fixArg k1 e k2 =
 
 
 
+-- ENVIRONMENT
+
+
+{-| Capture the name of the environment in
+a \\begin{ENV} ... \\end{ENV}
+pair
+-}
+envName : Int -> Parser ( String, SourceMap )
+envName chunkOffset =
+    Parser.inContext EnvNameContext <|
+        Parser.succeed (\start str end -> ( str, { chunkOffset = chunkOffset, offset = start, length = end - start } ))
+            |= Parser.getOffset
+            |. Parser.symbol (Parser.Token "\\begin{" ExpectingBegin)
+            |= parseToSymbol ExpectingRightBrace "}"
+            |= Parser.getOffset
+
+
+environmentDict : Dict.Dict String (String -> String -> Parser Expression)
+environmentDict =
+    Dict.fromList
+        []
+
+
+
+--standardEnvironmentBody : String -> String -> Parser Expression
+--standardEnvironmentBody endWoord envType =
+--    Parser.succeed (Environment envType)
+--        |. ws
+--        |= itemList optionalArg
+--        |. ws
+--        |= (nonEmptyItemList latexExpression |> map LatexList)
+--        |. ws
+--        |. symbol (Token endWoord (ExpectingEndWord endWoord))
+--        |. ws
 -- WORD
 
 
@@ -402,3 +438,20 @@ manyHelp p vs =
 eof : Parser ()
 eof =
     Parser.end EndOfInput
+
+
+
+-- HELPERS
+
+
+{-| chomp to end of the marker and return the
+chomped string minus the marker.
+-}
+parseToSymbol : Problem -> String -> Parser String
+parseToSymbol problem marker =
+    (Parser.getChompedString <|
+        Parser.succeed identity
+            |= Parser.chompUntilEndOr marker
+            |. Parser.symbol (Parser.Token marker problem)
+    )
+        |> Parser.map (String.dropRight (String.length marker))
