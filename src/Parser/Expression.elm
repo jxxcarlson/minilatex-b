@@ -55,6 +55,7 @@ type Problem
     | GenericError
     | ExpectingPrefix Char
     | ExpectingSpace
+    | ExpectingMacroReservedWord
 
 
 {-| Identifies the source text corresponding to part of the AST
@@ -341,3 +342,6 @@ problemAsString prob =
 
         ExpectingSpace ->
             "Expecting space (16)"
+
+        ExpectingMacroReservedWord ->
+            "Expecting macro word (17)"

@@ -43,6 +43,7 @@ TO ADD: COMMENTS ON THE STACK
 import Parser.Advanced as Parser exposing ((|.), (|=))
 import Parser.Expression as Expression exposing (Expression(..), Problem(..), SourceMap)
 import Parser.TextCursor as TextCursor exposing (TextCursor)
+import Set
 
 
 type alias Parser a =
@@ -287,12 +288,23 @@ fixMacro lineNo ( name, sm1 ) optArg_ args_ =
     Macro name (Maybe.map Tuple.first optArg_) args_ sm
 
 
+macroName2 : Parser String
+macroName2 =
+    Parser.variable
+        { start = \c -> c == '\\'
+        , inner = \c -> Char.isAlphaNum c || c == '*'
+        , reserved = Set.fromList [ "\\begin", "\\end", "\\item", "\\bibitem" ]
+        , expecting = ExpectingMacroReservedWord
+        }
+        |> Parser.map (String.dropLeft 1)
+
+
 macroName : Int -> Parser ( String, SourceMap )
-macroName lineNo =
-    Parser.inContext MacroNameContext <|
-        Parser.succeed identity
-            |. Parser.symbol (Parser.Token "\\" ExpectingBackslash)
-            |= rawText lineNo [ '{', '[' ]
+macroName chunkOffset =
+    Parser.succeed (\start str end -> ( str, { chunkOffset = chunkOffset, length = end - start, offset = start } ))
+        |= Parser.getOffset
+        |= macroName2
+        |= Parser.getOffset
 
 
 bareMacroName : Int -> Parser ( String, SourceMap )
