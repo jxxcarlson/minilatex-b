@@ -1,5 +1,6 @@
 {
     "type": "application",
+    "exposed-modules": ["Parser.Document","Parser.Parser"],
     "source-directories": [
         "src",
         "app"

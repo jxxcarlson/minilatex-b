@@ -1,6 +1,25 @@
-module Parser.Document exposing (..)
+module Parser.Document exposing (process, toParsed)
+
+{-| The main function in this module is process, which takes as input
+a string representing a MiniLaTeX document and produces as output
+a value of type State. The `output` field of State hold the AST
+of the source text.
+
+    type alias State =
+        { input : List String
+        , lineNumber : Int
+        , blockType : BlockType
+        , blockContents : List String
+        , blockTypeStack : List BlockType
+        , output : List TextCursor
+        }
+
+@docs process, toParsed
+
+-}
 
 import Parser as P exposing ((|.), (|=))
+import Parser.Expression exposing (Expression)
 import Parser.Parser as Parser
 import Parser.TextCursor exposing (TextCursor)
 
@@ -35,11 +54,17 @@ type LineType
     | EndEnvBlock String
 
 
+{-| Compute the final State of a string of source text.
+The output field of State hold the AST of the source text.
+-}
 process : String -> State
 process str =
     loop (init str) nextState
 
 
+{-| Return the AST from the State.
+-}
+toParsed : State -> List (List Expression)
 toParsed state =
     state.output |> List.map .parsed
 

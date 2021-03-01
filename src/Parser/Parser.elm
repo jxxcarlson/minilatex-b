@@ -1,13 +1,7 @@
-module Parser.Parser exposing (getErrors, parseLoop)
+module Parser.Parser exposing (parseLoop, getErrors)
 
-{-
-
-   Uses:
-   - parseLoop in Parser.Document
-   - getErrors in Main
-
-   Function parserLoop takes as input an integer representing a "chunkNumber"
-   and as string representing a chunk of text. It produces as output a TextCursor:
+{-| Function parserLoop takes as input an integer representing a "chunkNumber"
+and as string representing a chunk of text. It produces as output a TextCursor:
 
        type alias TextCursor =
            { text : String
@@ -17,24 +11,32 @@ module Parser.Parser exposing (getErrors, parseLoop)
            , offset : Int
            }
 
-   parserLoop accomplishes this by initializing a TextCursor with given values of
-   chunkNumber and text, then repeatedly applying applying a function 'nextCursor.'
-   Function nextCursor runs the expression parser on the text, consuming part of the
-   text and producing a value of type Expression which is prepended to parsed, which
-   is a list of Expressions.
+parserLoop accomplishes this by initializing a TextCursor with given values of
+chunkNumber and text, then repeatedly applying applying a function 'nextCursor.'
+Function nextCursor runs the expression parser on the text, consuming part of the
+text and producing a value of type Expression which is prepended to parsed, which
+is a list of Expressions.
 
-   An Expression contains a SourceMap. It identifies the part of source
-   text from which it was derived.
+An Expression contains a SourceMap. It identifies the part of source
+text from which it was derived.
 
         type alias SourceMap =
             { chunkOffset : Int, length : Int, offset : Int }
 
-   The length field of the SourceMap is added to update the offset field of the
-   TextCursor. In this way, the offset and length identify the source text within
-   a chunk of text, while the chunkOffset identifies the chunk of text within
-   the full text.
+The length field of the SourceMap is added to update the offset field of the
+TextCursor. In this way, the offset and length identify the source text within
+a chunk of text, while the chunkOffset identifies the chunk of text within
+the full text.
 
-   TO ADD: COMMENTS ON THE STACK
+TO ADD: COMMENTS ON THE STACK
+
+@docs parseLoop, getErrors
+
+
+## Uses of Parser.Parser
+
+  - parseLoop in Parser.Document
+  - getErrors in Main
 
 -}
 
@@ -52,6 +54,10 @@ type Context
     | Bar
 
 
+{-| parseLoop takes as input an integer representing a "chunkOffset" and
+a string of source text, the "chunk." It returns a TextCursor, which
+is a data structure which includes the parsed source text.
+-}
 parseLoop : Int -> String -> TextCursor
 parseLoop initialLineNumber str =
     loop (TextCursor.init initialLineNumber str) nextCursor
@@ -125,6 +131,8 @@ expression lineNumber =
     Parser.oneOf [ macro lineNumber, displayMath lineNumber, inlineMath lineNumber, text lineNumber ]
 
 
+{-| getErrors takes parsed text as input and produces a list of errors as output.
+-}
 getErrors : List (List Expression) -> List Expression
 getErrors list =
     list
