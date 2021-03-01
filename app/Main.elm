@@ -133,7 +133,7 @@ init flags =
     ( { input = initialText
       , parsedText = parse initialText
       , sourceMap = Parser.Expression.dummySourceMap
-      , sourceMapIndex = Parser.Expression.sourceMapIndex (parse initialText)
+      , sourceMapIndex = Parser.Expression.sourceMapIndex (numberOfLines initialText) (parse initialText)
       , counter = 0
       , lhViewMode = LHSourceText
       , rhViewMode = RHRenderedText
@@ -143,6 +143,11 @@ init flags =
       }
     , Cmd.none
     )
+
+
+numberOfLines : String -> Int
+numberOfLines str =
+    str |> String.lines |> List.length
 
 
 subscriptions model =
@@ -156,7 +161,18 @@ update msg model =
             ( model, Cmd.none )
 
         InputText str ->
-            ( { model | input = str, parsedText = parse str, counter = model.counter + 1 }, Cmd.none )
+            let
+                parsedText =
+                    parse str
+            in
+            ( { model
+                | input = str
+                , parsedText = parsedText
+                , sourceMapIndex = Parser.Expression.sourceMapIndex (numberOfLines str) parsedText
+                , counter = model.counter + 1
+              }
+            , Cmd.none
+            )
 
         CycleLHViewMode ->
             let
@@ -317,7 +333,7 @@ annotatedText : Model -> Element Msg
 annotatedText model =
     column
         [ spacing 8
-        , moveUp 8
+        , moveUp 0
         ]
         [ lhViewModeButton model
         , annotatedText_ model
@@ -338,7 +354,7 @@ annotatedText_ model =
 
 
 renderedTextDisplay model =
-    column [ spacing 8, moveUp 8 ]
+    column [ spacing 8, moveUp 0 ]
         [ row [ spacing 12 ] [ rhViewModeButton model ]
         , renderedTextDisplay_ model
         ]
@@ -473,7 +489,7 @@ rhViewModeButton model =
                     "Rendered Text"
     in
     row []
-        [ Input.button buttonStyle
+        [ Input.button buttonStyleInactive
             { onPress = Just CycleRHViewMode
             , label = el [ centerX, centerY ] (Element.text title_)
             }
@@ -486,10 +502,10 @@ lhViewModeButton model =
         title_ =
             case model.lhViewMode of
                 LHAnnotatedSource ->
-                    "Annotated text (*)"
+                    "Annotated text"
 
                 LHSourceText ->
-                    "Source text (*)"
+                    "Source text"
     in
     row []
         [ Input.button buttonStyle
@@ -546,7 +562,15 @@ mainColumnStyle =
 
 
 buttonStyle =
-    [ Background.color (Element.rgb 0.35 0.35 1.0)
+    [ Background.color (Element.rgb 0.25 0.25 0.8)
+    , Font.color (rgb255 255 255 255)
+    , Font.size 14
+    , paddingXY 15 8
+    ]
+
+
+buttonStyleInactive =
+    [ Background.color (Element.rgb 0.25 0.25 0.25)
     , Font.color (rgb255 255 255 255)
     , Font.size 14
     , paddingXY 15 8

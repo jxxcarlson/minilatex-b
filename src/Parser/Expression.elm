@@ -56,17 +56,19 @@ getSelectionFromSourceMap sourceMap str sourceMapIndex_ =
     selection
 
 
-makeIndex : List Int -> List (List Int)
-makeIndex list =
+makeIndex : Int -> List Int -> List (List Int)
+makeIndex numberOfLines list =
     let
-        n =
-            List.Extra.last list |> Maybe.withDefault -1
-
         list2 =
             list
+                |> Debug.log "LIST 1"
+                |> List.filter (\x -> x /= 0)
+                |> (\x -> 0 :: x)
+                |> Debug.log "LIST 1.5"
                 |> List.drop 1
                 |> List.map (\x -> x - 2)
-                |> (\x -> x ++ [ n ])
+                |> (\x -> x ++ [ numberOfLines - 1 ])
+                |> Debug.log "LIST 2"
 
         pairs =
             List.map2 (\x y -> ( x, y )) list list2
@@ -74,12 +76,13 @@ makeIndex list =
     List.map (\( x, y ) -> List.range x y) pairs
 
 
-sourceMapIndex : List (List Expression) -> List (List Int)
-sourceMapIndex list =
+sourceMapIndex : Int -> List (List Expression) -> List (List Int)
+sourceMapIndex numberOfLines list =
     list
         |> List.map getSourceOfList
         |> List.map .chunkOffset
-        |> makeIndex
+        |> makeIndex numberOfLines
+        |> Debug.log "Source Index"
 
 
 indexedList : List a -> List ( Int, a )
