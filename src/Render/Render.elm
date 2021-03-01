@@ -48,9 +48,9 @@ renderExpr expr =
             List.map renderExpr list_ |> Html.span Config.textSpanStyle
 
         LXError s p sm ->
-            Html.span []
-                [ Html.span (clicker sm :: Config.errorStyle2) [ Html.text s ]
-                , Html.span (clicker sm :: Config.errorStyle) [ Html.text (errorString p sm) ]
+            Html.span [ clicker (Debug.log "SM" { sm | offset = sm.offset - sm.length }) ]
+                [ Html.span Config.errorStyle2 [ Html.text s ]
+                , Html.span Config.errorStyle [ Html.text (errorString p sm) ]
                 ]
 
         LXNull () _ ->
@@ -114,24 +114,6 @@ displayMathText str_ sm =
 at : Int -> String -> Maybe String
 at k str =
     String.lines str |> List.Extra.getAt k
-
-
-
---highLight : String -> List (List Expression) -> List (Html msg)
---highLight str expressionList =
---    let
---        lines : List String
---        lines =
---            String.lines str
---
---        sourceMaps : List Parser.Expression.SourceMap
---        sourceMaps =
---            PP.getErrors expressionList |> List.map Parser.Expression.getSource
---
---        _ =
---            Debug.log "(lines, sourceMaps)" ( List.length lines, List.length sourceMaps )
---    in
---    List.map2 highlightWithSourceMap sourceMaps lines
 
 
 highlightWithSourceMap : Parser.Expression.SourceMap -> String -> List (List Int) -> Html msg
