@@ -33,7 +33,7 @@ type Expression
     | InlineMath String SourceMap
     | DisplayMath String SourceMap
     | Macro String (Maybe String) (List Expression) SourceMap
-      -- | Environment String (List Expression) Expression -- Environment name optArgs body
+    | Environment String (List Expression) Expression SourceMap -- Environment name optArgs body
     | LXList (List Expression)
     | LXError String Problem SourceMap
     | LXNull () SourceMap
@@ -214,6 +214,10 @@ toString expr =
         Macro name optArg args str ->
             "\\" ++ name ++ Maybe.withDefault "OptArg: Null" optArg ++ (List.map toString args |> String.join "")
 
+        Environment name optArgs body sm ->
+            -- TODO: incomplete
+            "\\begin{" ++ name ++ "} ... \\end{" ++ name ++ "}"
+
         LXError str p sm ->
             "((( Error at " ++ String.fromInt sm.offset ++ ": " ++ problemAsString p ++ " [" ++ str ++ "]  )))"
 
@@ -264,6 +268,9 @@ getSource expr =
         LXError _ _ source ->
             source
 
+        Environment _ _ _ source ->
+            source
+
         LXList e ->
             List.map getSource e |> List.head |> Maybe.withDefault { chunkOffset = -1, length = -1, offset = -1 }
 
@@ -287,6 +294,9 @@ incrementOffset delta expr =
 
         Macro n o a source ->
             Macro n o a { source | offset = source.offset + delta }
+
+        Environment n a e source ->
+            Environment n a e { source | offset = source.offset + delta }
 
         LXError e p source ->
             LXError e p { source | offset = source.offset + delta }
