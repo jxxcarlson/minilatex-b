@@ -15,11 +15,10 @@ import Element.Input as Input
 import Html exposing (Html)
 import Html.Attributes as HA
 import Html.Keyed
-import List.Extra
 import Paragraph
 import Parser.Document
 import Parser.Expression exposing (Expression)
-import Parser.Parser as PP exposing (..)
+import Parser.Parser as Parser
 import Render.Render as Render exposing (LaTeXMsg(..))
 
 
@@ -437,7 +436,7 @@ renderParseResult model =
             model.parsedText |> parsedTextToString |> renderParsedText
 
         ShowParseErrors ->
-            model.parsedText |> PP.getErrors |> parsedTextToString_ |> renderParsedText
+            model.parsedText |> Parser.getErrors |> parsedTextToString_ |> renderParsedText
 
         ShowSourceMap ->
             model.parsedText

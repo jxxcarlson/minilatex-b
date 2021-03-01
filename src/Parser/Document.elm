@@ -2,7 +2,7 @@ module Parser.Document exposing (..)
 
 import Parser as P exposing ((|.), (|=))
 import Parser.Parser as Parser
-import Parser.TextCursor as TextCursor exposing (TextCursor)
+import Parser.TextCursor exposing (TextCursor)
 
 
 type alias State =

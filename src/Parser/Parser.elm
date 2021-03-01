@@ -1,16 +1,42 @@
-module Parser.Parser exposing (..)
+module Parser.Parser exposing (getErrors, parseLoop)
 
---( arg
---, expression
---, expressionList
---, getErrors
---, macro
---, macroName
---, many
---, optArg
---, optArg__
---, parseLoop
---)
+{-
+
+   Uses:
+   - parseLoop in Parser.Document
+   - getErrors in Main
+
+   Function parserLoop takes as input an integer representing a "chunkNumber"
+   and as string representing a chunk of text. It produces as output a TextCursor:
+
+       type alias TextCursor =
+           { text : String
+           , chunkNumber : Int
+           , parsed : List Expression
+           , stack : List String
+           , offset : Int
+           }
+
+   parserLoop accomplishes this by initializing a TextCursor with given values of
+   chunkNumber and text, then repeatedly applying applying a function 'nextCursor.'
+   Function nextCursor runs the expression parser on the text, consuming part of the
+   text and producing a value of type Expression which is prepended to parsed, which
+   is a list of Expressions.
+
+   An Expression contains a SourceMap. It identifies the part of source
+   text from which it was derived.
+
+        type alias SourceMap =
+            { chunkOffset : Int, length : Int, offset : Int }
+
+   The length field of the SourceMap is added to update the offset field of the
+   TextCursor. In this way, the offset and length identify the source text within
+   a chunk of text, while the chunkOffset identifies the chunk of text within
+   the full text.
+
+   TO ADD: COMMENTS ON THE STACK
+
+-}
 
 import Parser.Advanced as Parser exposing ((|.), (|=))
 import Parser.Expression as Expression exposing (Expression(..), Problem(..), SourceMap)
@@ -28,11 +54,11 @@ type Context
 
 parseLoop : Int -> String -> TextCursor
 parseLoop initialLineNumber str =
-    loop (TextCursor.init initialLineNumber str) nextRound
+    loop (TextCursor.init initialLineNumber str) nextCursor
 
 
-nextRound : TextCursor -> Step TextCursor TextCursor
-nextRound tc =
+nextCursor : TextCursor -> Step TextCursor TextCursor
+nextCursor tc =
     if tc.text == "" then
         Done { tc | parsed = List.reverse tc.parsed }
 
