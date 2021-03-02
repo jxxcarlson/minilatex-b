@@ -1,4 +1,7 @@
-module Parser.Parser exposing (parseLoop, getErrors)
+module Parser.Parser exposing
+    ( parseLoop, getErrors
+    , envName, environment, expression, many, nonEmptyItemList, standardEnvironmentBody
+    )
 
 {-| Function parserLoop takes as input an integer representing a "chunkNumber"
 and as string representing a chunk of text. It produces as output a TextCursor:
@@ -78,9 +81,9 @@ nextCursor : TextCursor -> Step TextCursor TextCursor
 nextCursor tc =
     let
         _ =
-            Debug.log "TC" tc
+            Debug.log "TC" ( tc.count, tc.text )
     in
-    if tc.text == "" then
+    if tc.text == "" || tc.count > 40 then
         Done { tc | parsed = List.reverse tc.parsed }
 
     else
@@ -96,7 +99,7 @@ nextCursor tc =
                     newExpr =
                         Expression.incrementOffset tc.offset expr
                 in
-                Loop { tc | text = newText, parsed = newExpr :: tc.parsed, offset = tc.offset + sourceMap.length }
+                Loop { tc | count = tc.count + 1, text = newText, parsed = newExpr :: tc.parsed, offset = tc.offset + sourceMap.length }
 
             Err e ->
                 Loop (handleError tc e)
@@ -126,6 +129,7 @@ handleError tc_ e =
     , parsed = LXError errorText problem { chunkOffset = tc_.chunkNumber, length = errorColumn, offset = tc_.offset + errorColumn } :: tc_.parsed
     , stack = errorText :: tc_.stack
     , offset = tc_.offset + errorColumn
+    , count = 0
     }
 
 
@@ -146,7 +150,14 @@ expressionList lineNumber =
 
 expression : Int -> Parser.Parser Context Problem Expression
 expression lineNumber =
-    Parser.oneOf [ macro lineNumber, environment lineNumber, displayMath lineNumber, inlineMath lineNumber, text lineNumber ]
+    Parser.oneOf
+        [ macro lineNumber
+        , environment lineNumber
+        , displayMath lineNumber
+        , inlineMath lineNumber
+        , text lineNumber
+        , Parser.succeed (LXNull () Expression.dummySourceMap) -- TODO: examine the wisdom of adding this
+        ]
 
 
 
@@ -192,6 +203,16 @@ rawTextP_ lineNumber prefixChar stopChars =
         Parser.succeed ()
             |. Parser.chompIf (\c -> c == prefixChar) (ExpectingPrefix prefixChar)
             |. Parser.chompWhile (\c -> not (List.member c stopChars))
+
+
+textNP : Int -> List Char -> List Char -> Parser Expression
+textNP lineNumber prefixChars stopChars =
+    (getChompedString lineNumber <|
+        Parser.succeed ()
+            |. Parser.chompIf (\c -> not (List.member c prefixChars)) (ExpectingPrefixes prefixChars)
+            |. Parser.chompWhile (\c -> not (List.member c stopChars))
+    )
+        |> Parser.map (\( s, sm_ ) -> Text s sm_)
 
 
 text_ : Int -> List Char -> Parser Expression
@@ -367,7 +388,7 @@ pair
 envName : Int -> Parser ( String, SourceMap )
 envName chunkOffset =
     Parser.inContext EnvNameContext <|
-        Parser.succeed (\start str end -> ( str, { chunkOffset = chunkOffset, offset = start, length = end - start } ))
+        Parser.succeed (\start str end -> ( Debug.log "envName" str, { chunkOffset = chunkOffset, offset = start, length = end - start } ))
             |= Parser.getOffset
             |. Parser.symbol (Parser.Token "\\begin{" ExpectingBegin)
             |= parseToSymbol ExpectingRightBrace "}"
@@ -387,28 +408,44 @@ environmentOfType : Int -> ( String, SourceMap ) -> Parser Expression
 environmentOfType chunkOffset ( envType, sm ) =
     let
         theEndWord =
-            "\\end{" ++ envType ++ "}"
+            Debug.log "END WORD" <|
+                "\\end{"
+                    ++ envType
+                    ++ "}"
 
         katex =
             [ "align", "matrix", "pmatrix", "bmatrix", "Bmatrix", "vmatrix", "Vmatrix" ]
 
         envKind =
-            if List.member envType ([ "equation", "eqnarray", "verbatim", "colored", "CD", "mathmacro", "textmacro", "listing", "verse" ] ++ katex) then
-                "passThrough"
+            Debug.log "ENV KIND" <|
+                if List.member envType ([ "equation", "eqnarray", "verbatim", "colored", "CD", "mathmacro", "textmacro", "listing", "verse" ] ++ katex) then
+                    "passThrough"
 
-            else
-                envType
+                else
+                    envType
     in
     environmentParser chunkOffset envKind theEndWord envType
 
 
 environmentParser : Int -> String -> String -> String -> Parser Expression
 environmentParser chunkOffset envKind theEndWord envType =
+    let
+        _ =
+            Debug.log "environmentParser" ( envKind, theEndWord, envType )
+    in
     case Dict.get envKind environmentDict of
         Just p ->
+            let
+                _ =
+                    Debug.log "BR 1"
+            in
             p theEndWord envType
 
         Nothing ->
+            let
+                _ =
+                    Debug.log "BR 2"
+            in
             standardEnvironmentBody chunkOffset theEndWord envType
 
 
@@ -420,16 +457,76 @@ environmentDict =
 
 standardEnvironmentBody : Int -> String -> String -> Parser Expression
 standardEnvironmentBody chunkOffset endWoord envType =
-    Parser.succeed (\start oas body end -> Environment envType oas body { chunkOffset = chunkOffset, offset = start, length = end - start })
+    let
+        _ =
+            Debug.log "standardEnvironmentBody" ( endWoord, envType )
+    in
+    Parser.succeed (\start oa body end -> Environment envType oa body { chunkOffset = chunkOffset, offset = start, length = end - start })
         |= Parser.getOffset
         |. Parser.spaces
         |= many (optionalArg chunkOffset)
         |. Parser.spaces
-        |= (nonEmptyItemList (expression chunkOffset) |> Parser.map LXList)
+        |= (many (Parser.oneOf [ inlineMath chunkOffset, textNP chunkOffset [ '$', '\\' ] [ '$', '\\' ] ]) |> Parser.map LXList)
         |. Parser.spaces
         |. Parser.symbol (Parser.Token endWoord (ExpectingEndWord endWoord))
         |. Parser.spaces
         |= Parser.getOffset
+
+
+{-| The body of the environment is parsed as an LXString.
+This parser is used for environments whose body is to be
+passed to MathJax for processing and also for the verbatim
+environment.
+-}
+
+
+
+-- TODO
+
+
+passThroughBody : String -> String -> Parser Expression
+passThroughBody endWoord envType =
+    --  inContext "passThroughBody" <|
+    Parser.succeed identity
+        |= parseToSymbol ExpectingEndForPassThroughBody endWoord
+        |. Parser.spaces
+        |> Parser.map (passThroughEnv envType)
+
+
+passThroughEnv : String -> String -> Expression
+passThroughEnv envType source =
+    let
+        lines =
+            source |> String.trim |> String.lines |> List.filter (\l -> String.length l > 0)
+
+        optArgs_ =
+            -- TODO: copout
+            runParser (itemList (optionalArg 0)) (List.head lines |> Maybe.withDefault "")
+
+        body : String
+        body =
+            if optArgs_ == [] then
+                lines |> String.join "\n"
+
+            else
+                List.drop 1 lines |> String.join "\n"
+    in
+    -- TODO: remove cop out!
+    Environment envType optArgs_ (Text body Expression.dummySourceMap) Expression.dummySourceMap
+
+
+runParser : Parser (List Expression) -> String -> List Expression
+runParser p str =
+    let
+        expr =
+            Parser.run p str
+    in
+    case expr of
+        Ok latexExpr ->
+            latexExpr
+
+        Err error ->
+            [ LXError "error running Parser" GenericError Expression.dummySourceMap ]
 
 
 optionalArg : Int -> Parser Expression

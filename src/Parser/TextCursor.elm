@@ -17,19 +17,20 @@ type alias TextCursor =
     , parsed : List Expression
     , stack : List String
     , offset : Int
+    , count : Int
     }
 
 
 empty : TextCursor
 empty =
-    { text = "", chunkNumber = 0, parsed = [], stack = [], offset = 0 }
+    { count = 0, text = "", chunkNumber = 0, parsed = [], stack = [], offset = 0 }
 
 
 {-| Return a TextCursor with given chunkNumber and text
 -}
 init : Int -> String -> TextCursor
 init initiaChunkNumber text =
-    { text = text, chunkNumber = initiaChunkNumber, parsed = [], stack = [], offset = 0 }
+    { count = 0, text = text, chunkNumber = initiaChunkNumber, parsed = [], stack = [], offset = 0 }
 
 
 {-| Append raw text to the current cursor.

@@ -60,6 +60,8 @@ type Problem
     | ExpectingBegin
     | ExpectingEndWord String
     | ExpectingValidOptionArgWord
+    | ExpectingEndForPassThroughBody
+    | ExpectingPrefixes (List Char)
 
 
 {-| Identifies the source text corresponding to part of the AST
@@ -117,14 +119,11 @@ makeIndex numberOfLines list =
     let
         list2 =
             list
-                |> Debug.log "LIST 1"
                 |> List.filter (\x -> x /= 0)
                 |> (\x -> 0 :: x)
-                |> Debug.log "LIST 1.5"
                 |> List.drop 1
                 |> List.map (\x -> x - 2)
                 |> (\x -> x ++ [ numberOfLines - 1 ])
-                |> Debug.log "LIST 2"
 
         pairs =
             List.map2 (\x y -> ( x, y )) list list2
@@ -368,3 +367,9 @@ problemAsString prob =
 
         ExpectingValidOptionArgWord ->
             "Expecting valid option arg word (20)"
+
+        ExpectingEndForPassThroughBody ->
+            "Expecting end for pass-through body (21)"
+
+        ExpectingPrefixes _ ->
+            "Expecting prefixes ... (22)"
