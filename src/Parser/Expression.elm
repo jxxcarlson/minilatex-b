@@ -39,6 +39,12 @@ type Expression
     | LXNull () SourceMap
 
 
+{-| Identifies the source text corresponding to part of the AST
+-}
+type alias SourceMap =
+    { chunkOffset : Int, length : Int, offset : Int }
+
+
 {-| Used to identify parse errors
 -}
 type Problem
@@ -62,12 +68,6 @@ type Problem
     | ExpectingValidOptionArgWord
     | ExpectingEndForPassThroughBody
     | ExpectingPrefixes (List Char)
-
-
-{-| Identifies the source text corresponding to part of the AST
--}
-type alias SourceMap =
-    { chunkOffset : Int, length : Int, offset : Int }
 
 
 type alias Slice =

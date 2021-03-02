@@ -42,7 +42,7 @@ renderExpr state expr =
             macro state name optArg args sm
 
         Environment name args body sm ->
-            environment name args body sm
+            environment state name args body sm
 
         LXList list_ ->
             List.map (renderExpr state) list_ |> Html.span Config.textSpanStyle
@@ -78,9 +78,13 @@ undefinedMacro name sm =
     Html.span [ clicker sm, HA.style "color" "red" ] [ Html.text "Undefined macro: " ]
 
 
-environment name args body sm =
+environment state name args body sm =
     -- TODO: Implement environment renderer
     Html.span [] [ Html.text <| "Environment: " ++ name ++ " ... not implemented" ]
+
+
+
+-- END: RENDER ENVIO
 
 
 mathText : DisplayMode -> String -> SourceMap -> Html LaTeXMsg
