@@ -2,6 +2,7 @@ module Parser.Expression exposing
     ( Expression(..), Problem(..), SourceMap
     , dummySourceMap, getSelectionFromSourceMap, getSource, getSourceOfList, sourceMapIndex, sourceMapToString
     , incrementOffset, problemAsString
+    , setSourceMap
     )
 
 {-|
@@ -42,7 +43,7 @@ type Expression
 {-| Identifies the source text corresponding to part of the AST
 -}
 type alias SourceMap =
-    { chunkOffset : Int, length : Int, offset : Int }
+    { chunkOffset : Int, length : Int, offset : Int, content : String }
 
 
 {-| Used to identify parse errors
@@ -77,7 +78,7 @@ type alias Slice =
 {-| -}
 dummySourceMap : SourceMap
 dummySourceMap =
-    { chunkOffset = 0, length = 0, offset = 0 }
+    { chunkOffset = 0, length = 0, offset = 0, content = "" }
 
 
 {-| Return the string in the source text identified by the SourceMap.
@@ -245,8 +246,11 @@ getSourceOfList list =
 
         lineNumber =
             List.head sourceMaps |> Maybe.map .chunkOffset |> Maybe.withDefault 0
+
+        content =
+            List.head sourceMaps |> Maybe.map .content |> Maybe.withDefault ""
     in
-    { length = length, offset = offset, chunkOffset = lineNumber }
+    { length = length, offset = offset, chunkOffset = lineNumber, content = content }
 
 
 {-| Return the SourceMap component of an Expression
@@ -273,7 +277,7 @@ getSource expr =
             source
 
         LXList e ->
-            List.map getSource e |> List.head |> Maybe.withDefault { chunkOffset = -1, length = -1, offset = -1 }
+            List.map getSource e |> List.head |> Maybe.withDefault { content = "nada", chunkOffset = -1, length = -1, offset = -1 }
 
         LXNull _ source ->
             source
@@ -307,6 +311,34 @@ incrementOffset delta expr =
 
         LXNull () source ->
             LXNull () { source | offset = source.offset + delta }
+
+
+setSourceMap : SourceMap -> Expression -> Expression
+setSourceMap sm expr =
+    case expr of
+        Text e _ ->
+            Text e sm
+
+        InlineMath e _ ->
+            InlineMath e sm
+
+        DisplayMath e _ ->
+            DisplayMath e sm
+
+        Macro n o a _ ->
+            Macro n o a sm
+
+        Environment n a e _ ->
+            Environment n a e sm
+
+        LXError e p _ ->
+            LXError e p sm
+
+        LXList e ->
+            LXList (List.map (setSourceMap sm) e)
+
+        LXNull () _ ->
+            LXNull () sm
 
 
 {-| String representation of a Problem. Used in error reporting.

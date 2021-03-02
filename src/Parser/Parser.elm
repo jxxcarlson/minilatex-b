@@ -126,7 +126,7 @@ handleError tc_ e =
     in
     { text = newText
     , chunkNumber = tc_.chunkNumber
-    , parsed = LXError errorText problem { chunkOffset = tc_.chunkNumber, length = errorColumn, offset = tc_.offset + errorColumn } :: tc_.parsed
+    , parsed = LXError errorText problem { content = errorText, chunkOffset = tc_.chunkNumber, length = errorColumn, offset = tc_.offset + errorColumn } :: tc_.parsed
     , stack = errorText :: tc_.stack
     , offset = tc_.offset + errorColumn
     , count = 0
@@ -156,8 +156,13 @@ expression lineNumber =
         , displayMath lineNumber
         , inlineMath lineNumber
         , text lineNumber
-        , Parser.succeed (LXNull () Expression.dummySourceMap) -- TODO: examine the wisdom of adding this
+
+        --, alwaysP -- TODO: examine the wisdom of adding this
         ]
+
+
+alwaysP =
+    Parser.succeed (LXNull () { chunkOffset = 0, length = 1, offset = 0, content = "" })
 
 
 
@@ -207,12 +212,21 @@ rawTextP_ lineNumber prefixChar stopChars =
 
 textNP : Int -> List Char -> List Char -> Parser Expression
 textNP lineNumber prefixChars stopChars =
-    (getChompedString lineNumber <|
-        Parser.succeed ()
-            |. Parser.chompIf (\c -> not (List.member c prefixChars)) (ExpectingPrefixes prefixChars)
-            |. Parser.chompWhile (\c -> not (List.member c stopChars))
-    )
-        |> Parser.map (\( s, sm_ ) -> Text s sm_)
+    let
+        sm : Int -> Int -> String -> Expression
+        sm start end src =
+            let
+                sm_ =
+                    { content = src, length = end - start, chunkOffset = lineNumber, offset = start }
+            in
+            Text src sm_
+    in
+    Parser.succeed sm
+        |= Parser.getOffset
+        |. Parser.chompIf (\c -> not (List.member c prefixChars)) (ExpectingPrefixes prefixChars)
+        |. Parser.chompWhile (\c -> not (List.member c stopChars))
+        |= Parser.getOffset
+        |= Parser.getSource
 
 
 text_ : Int -> List Char -> Parser Expression
@@ -262,7 +276,15 @@ displayMath lineNumber =
 -}
 getChompedString : Int -> Parser a -> Parser ( String, SourceMap )
 getChompedString lineNumber parser =
-    Parser.succeed (\first_ last_ source_ -> ( String.slice first_ last_ source_, { chunkOffset = lineNumber, length = last_, offset = 0 } ))
+    let
+        sm first_ last_ source_ =
+            let
+                src =
+                    String.slice first_ last_ source_
+            in
+            ( src, { content = src, chunkOffset = lineNumber, length = last_, offset = 0 } )
+    in
+    Parser.succeed sm
         |= Parser.getOffset
         |. parser
         |= Parser.getOffset
@@ -271,10 +293,13 @@ getChompedString lineNumber parser =
 
 macro : Int -> Parser Expression
 macro lineNo =
-    Parser.succeed (\n o a -> fixMacro lineNo n o a)
+    Parser.succeed (\start n o a end src_ -> fixMacro start lineNo n o a end src_)
+        |= Parser.getOffset
         |= macroName lineNo
         |= optArg lineNo
         |= many (arg lineNo)
+        |= Parser.getOffset
+        |= Parser.getSource
 
 
 bareMacro : Int -> Parser Expression
@@ -285,31 +310,19 @@ bareMacro lineNo =
 
 oneSpace : Int -> Parser Expression
 oneSpace lineNo =
-    Parser.succeed (\offset -> LXNull () { chunkOffset = lineNo, offset = offset, length = 1 })
+    Parser.succeed (\offset -> LXNull () { content = " ", chunkOffset = lineNo, offset = offset, length = 1 })
         |= Parser.getOffset
         |. Parser.symbol (Parser.Token " " ExpectingSpace)
 
 
-fixMacro : Int -> ( String, SourceMap ) -> Maybe ( String, SourceMap ) -> List Expression -> Expression
-fixMacro lineNo ( name, sm1 ) optArg_ args_ =
+fixMacro : Int -> Int -> ( String, SourceMap ) -> Maybe ( String, SourceMap ) -> List Expression -> Int -> String -> Expression
+fixMacro start lineNo ( name, sm1 ) optArg_ args_ end src_ =
     let
         lineNumber =
             sm1.chunkOffset
 
-        offset =
-            sm1.offset
-
-        l1 =
-            sm1.length
-
-        l2 =
-            Maybe.map (Tuple.second >> .length) optArg_ |> Maybe.withDefault 0
-
-        lengths_ =
-            (Expression.getSourceOfList args_).length
-
         sm =
-            { chunkOffset = lineNumber, offset = offset, length = lengths_ + 1 }
+            { content = src_, chunkOffset = lineNumber, offset = start, length = end - start }
     in
     Macro name (Maybe.map Tuple.first optArg_) args_ sm
 
@@ -327,7 +340,7 @@ macroName2 =
 
 macroName : Int -> Parser ( String, SourceMap )
 macroName chunkOffset =
-    Parser.succeed (\start str end -> ( str, { chunkOffset = chunkOffset, length = end - start, offset = start } ))
+    Parser.succeed (\start str end -> ( str, { content = str, chunkOffset = chunkOffset, length = end - start, offset = start } ))
         |= Parser.getOffset
         |= macroName2
         |= Parser.getOffset
@@ -388,16 +401,28 @@ pair
 envName : Int -> Parser ( String, SourceMap )
 envName chunkOffset =
     Parser.inContext EnvNameContext <|
-        Parser.succeed (\start str end -> ( Debug.log "envName" str, { chunkOffset = chunkOffset, offset = start, length = end - start } ))
+        Parser.succeed (\start str end src -> ( Debug.log "envName" str, { content = src, chunkOffset = chunkOffset, offset = start, length = end - start } ))
             |= Parser.getOffset
             |. Parser.symbol (Parser.Token "\\begin{" ExpectingBegin)
             |= parseToSymbol ExpectingRightBrace "}"
             |= Parser.getOffset
+            |= Parser.getSource
+
+
+
+--environment : Int -> Parser Expression
 
 
 environment : Int -> Parser Expression
 environment chunkOffset =
-    envName chunkOffset |> Parser.andThen (environmentOfType chunkOffset)
+    Parser.succeed
+        (\start expr end src ->
+            Expression.setSourceMap { chunkOffset = chunkOffset, length = end - start, offset = start, content = src } expr
+        )
+        |= Parser.getOffset
+        |= (envName chunkOffset |> Parser.andThen (environmentOfType chunkOffset))
+        |= Parser.getOffset
+        |= Parser.getSource
 
 
 
@@ -461,16 +486,28 @@ standardEnvironmentBody chunkOffset endWoord envType =
         _ =
             Debug.log "standardEnvironmentBody" ( endWoord, envType )
     in
-    Parser.succeed (\start oa body end -> Environment envType oa body { chunkOffset = chunkOffset, offset = start, length = end - start })
+    Parser.succeed (\start oa body end src -> Environment envType oa body { content = src, chunkOffset = chunkOffset, offset = start, length = end - start })
         |= Parser.getOffset
-        |. Parser.spaces
+        --|. Parser.spaces
         |= many (optionalArg chunkOffset)
-        |. Parser.spaces
-        |= (many (Parser.oneOf [ environment chunkOffset, macro chunkOffset, inlineMath chunkOffset, environmentText chunkOffset ]) |> Parser.map LXList)
-        |. Parser.spaces
+        --|. Parser.spaces
+        |= (many
+                (Parser.oneOf
+                    [ environment chunkOffset
+                    , macro chunkOffset
+                    , inlineMath chunkOffset
+                    , environmentText chunkOffset
+
+                    --, alwaysP
+                    ]
+                )
+                |> Parser.map LXList
+           )
+        --|. Parser.spaces
         |. Parser.symbol (Parser.Token endWoord (ExpectingEndWord endWoord))
-        |. Parser.spaces
+        -- |. Parser.spaces
         |= Parser.getOffset
+        |= Parser.getSource
 
 
 environmentText chunkOffset =
