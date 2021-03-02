@@ -58,6 +58,8 @@ type Problem
     | ExpectingSpace
     | ExpectingMacroReservedWord
     | ExpectingBegin
+    | ExpectingEndWord String
+    | ExpectingValidOptionArgWord
 
 
 {-| Identifies the source text corresponding to part of the AST
@@ -360,3 +362,9 @@ problemAsString prob =
 
         ExpectingBegin ->
             "Expecting \\begin (18)"
+
+        ExpectingEndWord str ->
+            "Expecting end word " ++ str ++ " (19)"
+
+        ExpectingValidOptionArgWord ->
+            "Expecting valid option arg word (20)"

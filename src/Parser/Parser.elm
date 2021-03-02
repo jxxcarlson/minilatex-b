@@ -76,6 +76,10 @@ parseLoop initialLineNumber str =
 
 nextCursor : TextCursor -> Step TextCursor TextCursor
 nextCursor tc =
+    let
+        _ =
+            Debug.log "TC" tc
+    in
     if tc.text == "" then
         Done { tc | parsed = List.reverse tc.parsed }
 
@@ -142,8 +146,7 @@ expressionList lineNumber =
 
 expression : Int -> Parser.Parser Context Problem Expression
 expression lineNumber =
-    -- Parser.oneOf [ Parser.backtrackable (bareMacro lineNumber), macro lineNumber, displayMath lineNumber, inlineMath lineNumber, text lineNumber ]
-    Parser.oneOf [ macro lineNumber, displayMath lineNumber, inlineMath lineNumber, text lineNumber ]
+    Parser.oneOf [ macro lineNumber, environment lineNumber, displayMath lineNumber, inlineMath lineNumber, text lineNumber ]
 
 
 
@@ -371,23 +374,143 @@ envName chunkOffset =
             |= Parser.getOffset
 
 
+environment : Int -> Parser Expression
+environment chunkOffset =
+    envName chunkOffset |> Parser.andThen (environmentOfType chunkOffset)
+
+
+
+{- DISPATCHER AND SUBPARSERS -}
+
+
+environmentOfType : Int -> ( String, SourceMap ) -> Parser Expression
+environmentOfType chunkOffset ( envType, sm ) =
+    let
+        theEndWord =
+            "\\end{" ++ envType ++ "}"
+
+        katex =
+            [ "align", "matrix", "pmatrix", "bmatrix", "Bmatrix", "vmatrix", "Vmatrix" ]
+
+        envKind =
+            if List.member envType ([ "equation", "eqnarray", "verbatim", "colored", "CD", "mathmacro", "textmacro", "listing", "verse" ] ++ katex) then
+                "passThrough"
+
+            else
+                envType
+    in
+    environmentParser chunkOffset envKind theEndWord envType
+
+
+environmentParser : Int -> String -> String -> String -> Parser Expression
+environmentParser chunkOffset envKind theEndWord envType =
+    case Dict.get envKind environmentDict of
+        Just p ->
+            p theEndWord envType
+
+        Nothing ->
+            standardEnvironmentBody chunkOffset theEndWord envType
+
+
 environmentDict : Dict.Dict String (String -> String -> Parser Expression)
 environmentDict =
     Dict.fromList
         []
 
 
+standardEnvironmentBody : Int -> String -> String -> Parser Expression
+standardEnvironmentBody chunkOffset endWoord envType =
+    Parser.succeed (\start oas body end -> Environment envType oas body { chunkOffset = chunkOffset, offset = start, length = end - start })
+        |= Parser.getOffset
+        |. Parser.spaces
+        |= many (optionalArg chunkOffset)
+        |. Parser.spaces
+        |= (nonEmptyItemList (expression chunkOffset) |> Parser.map LXList)
+        |. Parser.spaces
+        |. Parser.symbol (Parser.Token endWoord (ExpectingEndWord endWoord))
+        |. Parser.spaces
+        |= Parser.getOffset
 
---standardEnvironmentBody : String -> String -> Parser Expression
---standardEnvironmentBody endWoord envType =
---    Parser.succeed (Environment envType)
---        |. ws
---        |= itemList optionalArg
---        |. ws
---        |= (nonEmptyItemList latexExpression |> map LatexList)
---        |. ws
---        |. symbol (Token endWoord (ExpectingEndWord endWoord))
---        |. ws
+
+optionalArg : Int -> Parser Expression
+optionalArg chunkOffset =
+    Parser.succeed identity
+        |. Parser.symbol (Parser.Token "[" ExpectingLeftBracket)
+        |= itemList (Parser.oneOf [ optArg2 chunkOffset, inlineMath chunkOffset ])
+        |. Parser.symbol (Parser.Token "]" ExpectingRightBracket)
+        |> Parser.map LXList
+
+
+optArg2 : Int -> Parser Expression
+optArg2 chunkOffset =
+    optArg__ chunkOffset |> Parser.map (\( s, sm ) -> Text s sm)
+
+
+{-| Use `inWord` to parse a word.
+
+import Parser
+
+inWord : Char -> Bool
+inWord c = not (c == ' ')
+
+LXParser.run word "this is a test"
+--> Ok "this"
+
+-}
+word_ : Problem -> (Char -> Bool) -> Parser String
+word_ problem inWord =
+    Parser.succeed String.slice
+        |. Parser.spaces
+        |= Parser.getOffset
+        |. Parser.chompIf inWord problem
+        |. Parser.chompWhile inWord
+        |. Parser.spaces
+        |= Parser.getOffset
+        |= Parser.getSource
+
+
+inOptionArgWord : Char -> Bool
+inOptionArgWord c =
+    not (c == '\\' || c == '$' || c == ']' || c == ' ' || c == '\n')
+
+
+manyNonEmpty : Parser a -> Parser (List a)
+manyNonEmpty p =
+    p
+        |> Parser.andThen (\x -> itemList_ [ x ] p)
+
+
+nonEmptyItemList : Parser a -> Parser (List a)
+nonEmptyItemList itemParser =
+    itemParser
+        |> Parser.andThen (\x -> itemList_ [ x ] itemParser)
+
+
+itemList : Parser a -> Parser (List a)
+itemList itemParser =
+    itemList_ [] itemParser
+
+
+
+-- manyHelp : Parser a -> List a -> Parser (Parser.Step (List a) (List a))
+
+
+itemList_ : List a -> Parser a -> Parser (List a)
+itemList_ initialList itemParser =
+    Parser.loop initialList (itemListHelper itemParser)
+
+
+itemListHelper : Parser a -> List a -> Parser (Parser.Step (List a) (List a))
+itemListHelper itemParser revItems =
+    Parser.oneOf
+        [ Parser.succeed (\item_ -> Parser.Loop (item_ :: revItems))
+            |= itemParser
+        , Parser.succeed ()
+            |> Parser.map (\_ -> Parser.Done (List.reverse revItems))
+        ]
+
+
+
 -- WORD
 
 
