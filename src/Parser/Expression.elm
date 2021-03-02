@@ -395,7 +395,7 @@ problemAsString prob =
             "Expecting \\begin (18)"
 
         ExpectingEndWord str ->
-            "Expecting end word " ++ str ++ " (19)"
+            "Expecting " ++ str ++ " (19)"
 
         ExpectingValidOptionArgWord ->
             "Expecting valid option arg word (20)"

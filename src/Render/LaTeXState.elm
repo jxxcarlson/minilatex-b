@@ -1,4 +1,8 @@
-module Render.LaTeXState exposing (..)
+module Render.LaTeXState exposing
+    ( LaTeXMsg(..)
+    , LaTeXState
+    , getCounter
+    )
 
 import Dict
 import Html exposing (Attribute)
