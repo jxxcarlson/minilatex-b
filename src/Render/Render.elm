@@ -9,10 +9,7 @@ import Html.Events exposing (onClick)
 import Json.Encode
 import List.Extra
 import Parser.Expression exposing (Expression(..), SourceMap)
-
-
-type LaTeXMsg
-    = SendSourceMap SourceMap
+import Render.LaTeXState as LaTexState exposing (LaTeXMsg(..), LaTeXState)
 
 
 type DisplayMode
@@ -20,20 +17,20 @@ type DisplayMode
     | DisplayMathMode
 
 
-render : List Expression -> List (Html LaTeXMsg)
-render exprs =
-    List.map renderExpr exprs
+render : LaTeXState -> List Expression -> List (Html LaTeXMsg)
+render state exprs =
+    List.map (renderExpr state) exprs
 
 
 clicker sm =
     onClick (SendSourceMap sm)
 
 
-renderExpr : Expression -> Html LaTeXMsg
-renderExpr expr =
+renderExpr : LaTeXState -> Expression -> Html LaTeXMsg
+renderExpr state expr =
     case expr of
         Text s sm ->
-            Html.span (clicker sm :: Config.textSpanStyle) [ Html.text s ]
+            Html.span (clicker sm :: state.config.textSpanStyle) [ Html.text s ]
 
         InlineMath s sm ->
             inlineMathText s sm
@@ -42,13 +39,13 @@ renderExpr expr =
             displayMathText s sm
 
         Macro name optArg args sm ->
-            macro name optArg args sm
+            macro state name optArg args sm
 
         Environment name args body sm ->
             environment name args body sm
 
         LXList list_ ->
-            List.map renderExpr list_ |> Html.span Config.textSpanStyle
+            List.map (renderExpr state) list_ |> Html.span Config.textSpanStyle
 
         LXError s p sm ->
             Html.span [ clicker (Debug.log "SM" { sm | offset = sm.offset - sm.length }) ]
@@ -66,14 +63,14 @@ errorString p sm =
         ++ Parser.Expression.problemAsString p
 
 
-macro : String -> Maybe String -> List Expression -> SourceMap -> Html LaTeXMsg
-macro name optArg args sm =
+macro : LaTeXState -> String -> Maybe String -> List Expression -> SourceMap -> Html LaTeXMsg
+macro state name optArg args sm =
     case Dict.get name macroDict of
         Nothing ->
             undefinedMacro name sm
 
         Just f ->
-            f optArg args sm
+            f state optArg args sm
 
 
 undefinedMacro : String -> SourceMap -> Html LaTeXMsg
@@ -162,16 +159,19 @@ highlightWithSourceMap sm str sourceMapIndex_ =
 -- MACRO DICT
 
 
-type alias MacroDict msg =
-    Dict String (Maybe String -> List Expression -> SourceMap -> Html msg)
+type alias MacroDict =
+    Dict String (LaTeXState -> Maybe String -> List Expression -> SourceMap -> Html LaTeXMsg)
 
 
-macroDict : MacroDict LaTeXMsg
+
+--macroDict : MacroDict
+
+
 macroDict =
     Dict.fromList
-        [ ( "strong", \ms args sm -> render args |> Html.span [ clicker sm, HA.style "font-weight" "bold" ] )
-        , ( "italic", \ms args sm -> render args |> Html.span [ clicker sm, HA.style "font-style" "italic" ] )
-        , ( "red", \ms args sm -> render args |> Html.span [ clicker sm, HA.style "color" Config.redColor ] )
-        , ( "blue", \ms args sm -> render args |> Html.span [ clicker sm, HA.style "color" Config.blueColor ] )
-        , ( "foo", \ms args sm -> Html.span [ clicker sm, HA.style "font-style" "italic" ] [ Html.text "Foo" ] )
+        [ ( "strong", \state ms args sm -> render state args |> Html.span [ clicker sm, HA.style "font-weight" "bold" ] )
+        , ( "italic", \state ms args sm -> render state args |> Html.span [ clicker sm, HA.style "font-style" "italic" ] )
+        , ( "red", \state ms args sm -> render state args |> Html.span [ clicker sm, HA.style "color" Config.redColor ] )
+        , ( "blue", \state ms args sm -> render state args |> Html.span [ clicker sm, HA.style "color" Config.blueColor ] )
+        , ( "foo", \state ms args sm -> Html.span [ clicker sm, HA.style "font-style" "italic" ] [ Html.text "Foo" ] )
         ]

@@ -466,11 +466,15 @@ standardEnvironmentBody chunkOffset endWoord envType =
         |. Parser.spaces
         |= many (optionalArg chunkOffset)
         |. Parser.spaces
-        |= (many (Parser.oneOf [ inlineMath chunkOffset, textNP chunkOffset [ '$', '\\' ] [ '$', '\\' ] ]) |> Parser.map LXList)
+        |= (many (Parser.oneOf [ environment chunkOffset, macro chunkOffset, inlineMath chunkOffset, environmentText chunkOffset ]) |> Parser.map LXList)
         |. Parser.spaces
         |. Parser.symbol (Parser.Token endWoord (ExpectingEndWord endWoord))
         |. Parser.spaces
         |= Parser.getOffset
+
+
+environmentText chunkOffset =
+    textNP chunkOffset [ '$', '\\' ] [ '$', '\\' ]
 
 
 {-| The body of the environment is parsed as an LXString.

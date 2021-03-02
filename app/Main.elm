@@ -19,7 +19,8 @@ import Paragraph
 import Parser.Document
 import Parser.Expression exposing (Expression)
 import Parser.Parser as Parser
-import Render.Render as Render exposing (LaTeXMsg(..))
+import Render.LaTeXState as LaTeXState exposing (LaTeXMsg(..))
+import Render.Render as Render
 
 
 main =
@@ -383,7 +384,7 @@ render1 : String -> Html Msg
 render1 input =
     (input
         |> Parser.Document.process
-        |> List.map (Render.render >> Html.div [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ])
+        |> List.map (Render.render LaTeXState.init >> Html.div [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ])
         |> Html.div []
     )
         |> Html.map LaTeXMsg
@@ -393,7 +394,7 @@ render2 : String -> List (Element Msg)
 render2 input =
     input
         |> Parser.Document.process
-        |> List.map (Render.render >> Html.div [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ])
+        |> List.map (Render.render LaTeXState.init >> Html.div [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ])
         |> List.map (Element.html >> Element.map LaTeXMsg)
 
 
