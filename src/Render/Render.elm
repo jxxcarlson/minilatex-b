@@ -10,6 +10,7 @@ import List.Extra
 import Parser.Expression exposing (Expression(..), SourceMap)
 import Parser.Helpers
 import Render.LaTeXState as LaTeXState exposing (LaTeXMsg(..), LaTeXState)
+import Utility
 
 
 type DisplayMode
@@ -95,7 +96,7 @@ renderEnvironment state name args body =
             f state args body
 
         Nothing ->
-            renderDefaultEnvironment name
+            renderDefaultEnvironment state name args body
 
 
 renderEnvironmentDict : Dict.Dict String (LaTeXState -> List Expression -> Expression -> Html LaTeXMsg)
@@ -148,20 +149,20 @@ theoremLikeEnvironments =
     ]
 
 
-renderDefaultEnvironment : String -> LaTeXState -> List Expression -> Expression -> Html msg
-renderDefaultEnvironment name latexState args body =
+renderDefaultEnvironment : LaTeXState -> String -> List Expression -> Expression -> Html LaTeXMsg
+renderDefaultEnvironment state name args body =
     if List.member name theoremLikeEnvironments then
-        renderTheoremLikeEnvironment latexState name args body
+        renderTheoremLikeEnvironment state name args body
 
     else
-        renderDefaultEnvironment2 latexState (Utility.capitalize name) args body
+        renderDefaultEnvironment2 state (Utility.capitalize name) args body
 
 
-renderTheoremLikeEnvironment : LaTeXState -> String -> List LaTeXState -> LaTeXState -> Html msg
+renderTheoremLikeEnvironment : LaTeXState -> String -> List Expression -> Expression -> Html LaTeXMsg
 renderTheoremLikeEnvironment latexState name args body =
     let
         r =
-            render latexState body
+            render latexState [ body ]
 
         eqno =
             LaTeXState.getCounter "eqno" latexState
@@ -181,34 +182,32 @@ renderTheoremLikeEnvironment latexState name args body =
     in
     Html.div [ HA.class "environment" ]
         [ Html.strong [] [ Html.text (Utility.capitalize name ++ tnoString) ]
-        , Html.div [ HA.class "italic" ] [ r ]
+        , Html.div [ HA.class "italic" ] r
         ]
 
 
-renderDefaultEnvironment2 : String -> LatexState -> String -> List LatexExpression -> LatexExpression -> Html msg
-renderDefaultEnvironment2 source latexState name args body =
+renderDefaultEnvironment2 : LaTeXState -> String -> List Expression -> Expression -> Html LaTeXMsg
+renderDefaultEnvironment2 latexState name args body =
     let
         r =
-            render source latexState body
+            render latexState [ body ]
     in
     Html.div [ HA.class "environment" ]
         [ Html.strong [] [ Html.text name ]
-        , Html.div [] [ r ]
+        , Html.div [] r
         ]
 
 
 
 -- RENDER INDIVIDUAL ENVIRONMENTS
-
-
-renderSvg : SourceText -> LatexState -> LatexExpression -> Html msg
-renderSvg source latexState body =
-    case SvgParser.parse (Internal.RenderToString.render latexState body) of
-        Ok html_ ->
-            html_
-
-        Err _ ->
-            Html.span [ HA.class "X6" ] [ Html.text "SVG parse error" ]
+--renderSvg : SourceText -> LatexState -> LatexExpression -> Html msg
+--renderSvg source latexState body =
+--    case SvgParser.parse (Internal.RenderToString.render latexState body) of
+--        Ok html_ ->
+--            html_
+--
+--        Err _ ->
+--            Html.span [ HA.class "X6" ] [ Html.text "SVG parse error" ]
 
 
 renderMathEnvironment : String -> LaTeXState -> List Expression -> Expression -> Html LaTeXMsg
@@ -279,202 +278,200 @@ displayMathTextWithLabel_ latexState sm str label =
 
 --mathText : DisplayMode -> String -> SourceMap -> Html LaTeXMsg
 --mathText displayMode content sm
-
-
-displayMathJaxTextWithLabel_ : LaTeXState -> String -> String -> Html msg
-displayMathJaxTextWithLabel_ latexState str label =
-    Html.div
-        []
-        [ Html.div [ HA.style "float" "right", HA.style "margin-top" "3px" ]
-            [ Html.text label ]
-        , Html.div []
-            -- [ Html.text "MathJax"]
-            [ mathJaxText DisplayMathMode (String.trim str) ]
-        ]
-
-
-renderMathJaxEnvironment : EnvName -> SourceText -> LatexState -> LatexExpression -> Html msg
-renderMathJaxEnvironment envName source latexState body =
-    let
-        r =
-            Internal.RenderToString.render latexState body
-
-        eqno =
-            LaTeXState.getCounter "eqno" latexState
-
-        s1 =
-            LaTeXState.getCounter "s1" latexState
-
-        addendum =
-            if eqno > 0 then
-                if s1 > 0 then
-                    "\\tag{" ++ String.fromInt s1 ++ "." ++ String.fromInt eqno ++ "}"
-
-                else
-                    "\\tag{" ++ String.fromInt eqno ++ "}"
-
-            else
-                ""
-
-        innerContents =
-            case body of
-                LXString str ->
-                    str
-                        |> String.trim
-                        |> Internal.MathMacro.evalStr latexState.mathMacroDictionary
-                        |> String.replace "\\ \\" "\\\\"
-                        |> Internal.ParserHelpers.removeLabel
-                        |> (\x -> "\\begin{" ++ envName ++ "}\n" ++ x ++ "\n\\end{" ++ envName ++ "}")
-
-                _ ->
-                    ""
-
-        --  "Parser error in render align environment"
-        content =
-            -- REVIEW: changed for KaTeX
-            "\n\\begin{" ++ envName ++ "}\n" ++ innerContents ++ "\n\\end{" ++ envName ++ "}\n"
-
-        tag =
-            case Internal.ParserHelpers.getTag addendum of
-                Nothing ->
-                    ""
-
-                Just tag_ ->
-                    "(" ++ tag_ ++ ")"
-    in
-    displayMathJaxTextWithLabel_ latexState innerContents tag
-
-
-renderCenterEnvironment : SourceText -> LatexState -> LatexExpression -> Html msg
-renderCenterEnvironment source latexState body =
-    let
-        r =
-            render source latexState body
-    in
-    Html.div
-        [ HA.style "display" "flex"
-        , HA.style "flex-direction" "row"
-        , HA.style "justify-content" "center"
-        ]
-        [ r ]
-
-
-renderObeyLinesEnvironment : SourceText -> LatexState -> LatexExpression -> Html msg
-renderObeyLinesEnvironment source latexState body =
-    let
-        r =
-            render source latexState body
-    in
-    Html.div
-        [ HA.style "white-space" "pre"
-        ]
-        [ r ]
-
-
-renderCommentEnvironment : SourceText -> LatexState -> LatexExpression -> Html msg
-renderCommentEnvironment source latexState body =
-    Html.div [] []
-
-
-renderEnumerate : SourceText -> LatexState -> LatexExpression -> Html msg
-renderEnumerate source latexState body =
-    -- TODO: fix spacing issue
-    Html.ol [ HA.style "margin-top" "0px" ] [ render source latexState body ]
-
-
-renderDefItemEnvironment : SourceText -> LatexState -> List LatexExpression -> LatexExpression -> Html msg
-renderDefItemEnvironment source latexState optArgs body =
-    Html.div []
-        [ Html.strong [] [ Html.text <| Internal.RenderToString.renderArg 0 latexState optArgs ]
-        , Html.div [ HA.style "margin-left" "25px", HA.style "margin-top" "10px" ] [ render source latexState body ]
-        ]
-
-
-{-| XXX
--}
-renderEqnArray : SourceText -> LatexState -> LatexExpression -> Html msg
-renderEqnArray source latexState body =
-    let
-        body1 =
-            Internal.RenderToString.render latexState body
-
-        body2 =
-            -- REVIEW: changed for KaTeX
-            "\\begin{aligned}" ++ body1 ++ "\\end{aligned}"
-    in
-    displayMathText latexState body2
-
-
-renderEquationEnvironment : SourceText -> LatexState -> LatexExpression -> Html msg
-renderEquationEnvironment source latexState body =
-    let
-        eqno =
-            LaTeXState.getCounter "eqno" latexState
-
-        s1 =
-            LaTeXState.getCounter "s1" latexState
-
-        addendum =
-            if eqno > 0 then
-                if s1 > 0 then
-                    "\\tag{" ++ String.fromInt s1 ++ "." ++ String.fromInt eqno ++ "}"
-
-                else
-                    "\\tag{" ++ String.fromInt eqno ++ "}"
-
-            else
-                ""
-
-        contents =
-            case body of
-                LXString str ->
-                    str
-                        |> String.trim
-                        |> Internal.MathMacro.evalStr latexState.mathMacroDictionary
-                        |> Internal.ParserHelpers.removeLabel
-
-                _ ->
-                    "Parser error in render equation environment"
-
-        tag =
-            case Internal.ParserHelpers.getTag addendum of
-                Nothing ->
-                    ""
-
-                Just tag_ ->
-                    --   "\\qquad (" ++ tag_ ++ ")"
-                    "(" ++ tag_ ++ ")"
-    in
-    -- ("\\begin{equation}" ++ contents ++ addendum ++ "\\end{equation}")
-    -- REVIEW; changed for KaTeX
-    -- displayMathText_ latexState  (contents ++ tag)
-    displayMathTextWithLabel_ latexState contents tag
-
-
-renderIndentEnvironment : SourceText -> LatexState -> LatexExpression -> Html msg
-renderIndentEnvironment source latexState body =
-    Html.div [ HA.style "margin-left" "2em" ] [ render source latexState body ]
-
-
-renderItemize : SourceText -> LatexState -> LatexExpression -> Html msg
-renderItemize source latexState body =
-    -- TODO: fix space issue
-    Html.ul [ HA.style "margin-top" "0px" ] [ render source latexState body ]
-
-
-renderListing : SourceText -> LatexState -> LatexExpression -> Html msg
-renderListing _ latexState body =
-    let
-        text =
-            Internal.RenderToString.render latexState body
-
-        lines =
-            Utility.addLineNumbers text
-    in
-    Html.pre [ HA.class "verbatim" ] [ Html.text lines ]
-
-
-
+--
+--
+--displayMathJaxTextWithLabel_ : LaTeXState -> String -> String -> Html msg
+--displayMathJaxTextWithLabel_ latexState str label =
+--    Html.div
+--        []
+--        [ Html.div [ HA.style "float" "right", HA.style "margin-top" "3px" ]
+--            [ Html.text label ]
+--        , Html.div []
+--            -- [ Html.text "MathJax"]
+--            [ mathJaxText DisplayMathMode (String.trim str) ]
+--        ]
+--
+--
+--renderMathJaxEnvironment : EnvName -> SourceText -> LatexState -> LatexExpression -> Html msg
+--renderMathJaxEnvironment envName source latexState body =
+--    let
+--        r =
+--            Internal.RenderToString.render latexState body
+--
+--        eqno =
+--            LaTeXState.getCounter "eqno" latexState
+--
+--        s1 =
+--            LaTeXState.getCounter "s1" latexState
+--
+--        addendum =
+--            if eqno > 0 then
+--                if s1 > 0 then
+--                    "\\tag{" ++ String.fromInt s1 ++ "." ++ String.fromInt eqno ++ "}"
+--
+--                else
+--                    "\\tag{" ++ String.fromInt eqno ++ "}"
+--
+--            else
+--                ""
+--
+--        innerContents =
+--            case body of
+--                LXString str ->
+--                    str
+--                        |> String.trim
+--                        |> Internal.MathMacro.evalStr latexState.mathMacroDictionary
+--                        |> String.replace "\\ \\" "\\\\"
+--                        |> Internal.ParserHelpers.removeLabel
+--                        |> (\x -> "\\begin{" ++ envName ++ "}\n" ++ x ++ "\n\\end{" ++ envName ++ "}")
+--
+--                _ ->
+--                    ""
+--
+--        --  "Parser error in render align environment"
+--        content =
+--            -- REVIEW: changed for KaTeX
+--            "\n\\begin{" ++ envName ++ "}\n" ++ innerContents ++ "\n\\end{" ++ envName ++ "}\n"
+--
+--        tag =
+--            case Internal.ParserHelpers.getTag addendum of
+--                Nothing ->
+--                    ""
+--
+--                Just tag_ ->
+--                    "(" ++ tag_ ++ ")"
+--    in
+--    displayMathJaxTextWithLabel_ latexState innerContents tag
+--
+--
+--renderCenterEnvironment : SourceText -> LatexState -> LatexExpression -> Html msg
+--renderCenterEnvironment source latexState body =
+--    let
+--        r =
+--            render source latexState body
+--    in
+--    Html.div
+--        [ HA.style "display" "flex"
+--        , HA.style "flex-direction" "row"
+--        , HA.style "justify-content" "center"
+--        ]
+--        [ r ]
+--
+--
+--renderObeyLinesEnvironment : SourceText -> LatexState -> LatexExpression -> Html msg
+--renderObeyLinesEnvironment source latexState body =
+--    let
+--        r =
+--            render source latexState body
+--    in
+--    Html.div
+--        [ HA.style "white-space" "pre"
+--        ]
+--        [ r ]
+--
+--
+--renderCommentEnvironment : SourceText -> LatexState -> LatexExpression -> Html msg
+--renderCommentEnvironment source latexState body =
+--    Html.div [] []
+--
+--
+--renderEnumerate : SourceText -> LatexState -> LatexExpression -> Html msg
+--renderEnumerate source latexState body =
+--    -- TODO: fix spacing issue
+--    Html.ol [ HA.style "margin-top" "0px" ] [ render source latexState body ]
+--
+--
+--renderDefItemEnvironment : SourceText -> LatexState -> List LatexExpression -> LatexExpression -> Html msg
+--renderDefItemEnvironment source latexState optArgs body =
+--    Html.div []
+--        [ Html.strong [] [ Html.text <| Internal.RenderToString.renderArg 0 latexState optArgs ]
+--        , Html.div [ HA.style "margin-left" "25px", HA.style "margin-top" "10px" ] [ render source latexState body ]
+--        ]
+--
+--
+--{-| XXX
+---}
+--renderEqnArray : SourceText -> LatexState -> LatexExpression -> Html msg
+--renderEqnArray source latexState body =
+--    let
+--        body1 =
+--            Internal.RenderToString.render latexState body
+--
+--        body2 =
+--            -- REVIEW: changed for KaTeX
+--            "\\begin{aligned}" ++ body1 ++ "\\end{aligned}"
+--    in
+--    displayMathText latexState body2
+--
+--
+--renderEquationEnvironment : SourceText -> LatexState -> LatexExpression -> Html msg
+--renderEquationEnvironment source latexState body =
+--    let
+--        eqno =
+--            LaTeXState.getCounter "eqno" latexState
+--
+--        s1 =
+--            LaTeXState.getCounter "s1" latexState
+--
+--        addendum =
+--            if eqno > 0 then
+--                if s1 > 0 then
+--                    "\\tag{" ++ String.fromInt s1 ++ "." ++ String.fromInt eqno ++ "}"
+--
+--                else
+--                    "\\tag{" ++ String.fromInt eqno ++ "}"
+--
+--            else
+--                ""
+--
+--        contents =
+--            case body of
+--                LXString str ->
+--                    str
+--                        |> String.trim
+--                        |> Internal.MathMacro.evalStr latexState.mathMacroDictionary
+--                        |> Internal.ParserHelpers.removeLabel
+--
+--                _ ->
+--                    "Parser error in render equation environment"
+--
+--        tag =
+--            case Internal.ParserHelpers.getTag addendum of
+--                Nothing ->
+--                    ""
+--
+--                Just tag_ ->
+--                    --   "\\qquad (" ++ tag_ ++ ")"
+--                    "(" ++ tag_ ++ ")"
+--    in
+--    -- ("\\begin{equation}" ++ contents ++ addendum ++ "\\end{equation}")
+--    -- REVIEW; changed for KaTeX
+--    -- displayMathText_ latexState  (contents ++ tag)
+--    displayMathTextWithLabel_ latexState contents tag
+--
+--
+--renderIndentEnvironment : SourceText -> LatexState -> LatexExpression -> Html msg
+--renderIndentEnvironment source latexState body =
+--    Html.div [ HA.style "margin-left" "2em" ] [ render source latexState body ]
+--
+--
+--renderItemize : SourceText -> LatexState -> LatexExpression -> Html msg
+--renderItemize source latexState body =
+--    -- TODO: fix space issue
+--    Html.ul [ HA.style "margin-top" "0px" ] [ render source latexState body ]
+--
+--
+--renderListing : SourceText -> LatexState -> LatexExpression -> Html msg
+--renderListing _ latexState body =
+--    let
+--        text =
+--            Internal.RenderToString.render latexState body
+--
+--        lines =
+--            Utility.addLineNumbers text
+--    in
+--    Html.pre [ HA.class "verbatim" ] [ Html.text lines ]
+--
 -- END: RENDER ENVIRONMENT
 
 

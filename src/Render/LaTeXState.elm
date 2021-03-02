@@ -2,6 +2,7 @@ module Render.LaTeXState exposing
     ( LaTeXMsg(..)
     , LaTeXState
     , getCounter
+    , init
     )
 
 import Dict
