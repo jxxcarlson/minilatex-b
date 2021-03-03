@@ -101,8 +101,17 @@ nextCursor tc =
                     newText =
                         String.dropLeft sourceMap.length tc.text
 
+                    hihglight : Expression -> SourceMap -> Expression
+                    hihglight expr_ sm =
+                        Macro "blue" Nothing [ expr_ ] sm
+
                     newExpr =
-                        Expression.incrementOffset tc.offset expr
+                        case List.head tc.stack of
+                            Just "highlight" ->
+                                Expression.incrementOffset tc.offset (hihglight expr (Expression.getSource expr))
+
+                            _ ->
+                                Expression.incrementOffset tc.offset expr
                 in
                 Loop
                     { tc
@@ -119,8 +128,11 @@ nextCursor tc =
 handleError : TextCursor -> List (Parser.DeadEnd Context Problem) -> TextCursor
 handleError tc_ e =
     let
+        _ =
+            Debug.log "CHUNK" tc_.chunkNumber
+
         mFirstError =
-            e |> List.head
+            e |> List.head |> Debug.log "PROBLEM 1"
 
         problem =
             Maybe.map .problem mFirstError |> Maybe.withDefault GenericError
@@ -129,30 +141,47 @@ handleError tc_ e =
             mFirstError |> Maybe.map .col |> Maybe.withDefault 0
 
         errorText =
-            String.left errorColumn tc_.text
+            String.left errorColumn tc_.text |> Debug.log "ERR"
 
         newText_ =
             String.dropLeft errorColumn tc_.text
 
-        stack =
-            if List.member problem handledProblems then
-                tc_.stack
+        mRecoveryData : Maybe RecoveryData
+        mRecoveryData =
+            let
+                oldSourceMap =
+                    Expression.dummySourceMap
 
-            else
-                errorText :: tc_.stack
+                newSourceMap =
+                    { oldSourceMap | chunkOffset = tc_.chunkNumber }
+            in
+            getRecoveryData problem
+                |> Maybe.map (\r -> { r | parseSubstitute = Expression.setSourceMap newSourceMap r.parseSubstitute })
+
+        hi : Expression
+        hi =
+            LXInstruction Expression.IHighlight Expression.dummySourceMap
+
+        stack =
+            case mRecoveryData of
+                Just _ ->
+                    "highlight" :: tc_.stack
+
+                Nothing ->
+                    errorText :: "highlight" :: tc_.stack
 
         newText =
-            case textTruncation problem of
-                Just k ->
-                    String.dropLeft k tc_.text
+            case mRecoveryData of
+                Just rd ->
+                    String.dropLeft rd.textTruncation tc_.text
 
                 Nothing ->
                     newText_
 
         offset =
-            case problemOffset problem of
-                Just k ->
-                    tc_.offset + k
+            case mRecoveryData of
+                Just rd ->
+                    tc_.offset + rd.deltaOffset
 
                 Nothing ->
                     tc_.offset + errorColumn
@@ -161,9 +190,9 @@ handleError tc_ e =
             LXError errorText problem { content = errorText, chunkOffset = tc_.chunkNumber, length = errorColumn, offset = tc_.offset + errorColumn }
 
         parsed =
-            case parseSubstitute problem of
-                Just s ->
-                    s :: tc_.parsed
+            case mRecoveryData of
+                Just rd ->
+                    rd.parseSubstitute :: tc_.parsed
 
                 _ ->
                     lxError :: tc_.parsed
@@ -177,40 +206,87 @@ handleError tc_ e =
     }
 
 
-handledProblems =
-    [ ExpectingTrailingDollarSign ]
-
-
-problemOffsets : List ( Problem, Int, Int )
-problemOffsets =
-    [ ( ExpectingTrailingDollarSign, 2, 1 )
-    , ( ExpectingTrailingDoubleDollarSign, 2, 1 )
-    ]
-
-
-parseSubstitutes : List ( Problem, Expression )
-parseSubstitutes =
-    [ ( ExpectingTrailingDollarSign, substitute.mathText ) ]
-
-
-substitute =
-    { mathText = LXList [ Macro "red" Nothing [ InlineMath "???" { chunkOffset = 2, content = "x^2", length = 10, offset = 0 } ] { chunkOffset = 2, content = "\\red{$x^2$}", length = 11, offset = 0 } ]
+type alias RecoveryData =
+    { problem : Problem
+    , deltaOffset : Int
+    , textTruncation : Int
+    , parseSubstitute : Expression
     }
 
 
-parseSubstitute : Problem -> Maybe Expression
-parseSubstitute problem_ =
-    List.filter (\( p, _ ) -> p == problem_) parseSubstitutes |> List.head |> Maybe.map Tuple.second
+getRecoveryData : Problem -> Maybe RecoveryData
+getRecoveryData problem =
+    List.filter (\r -> Expression.equivalentProblem r.problem problem) recoveryData |> List.head
 
 
-problemOffset : Problem -> Maybe Int
-problemOffset problem_ =
-    List.filter (\( p, _, _ ) -> p == problem_) problemOffsets |> List.head |> Maybe.map Utility.secondOfTriple
+recoveryData : List RecoveryData
+recoveryData =
+    [ problemWithInlineMath, problemWithDisplayMath, problemWithEnvironment, problemWithMacro ]
 
 
-textTruncation : Problem -> Maybe Int
-textTruncation problem_ =
-    List.filter (\( p, _, _ ) -> p == problem_) problemOffsets |> List.head |> Maybe.map Utility.thirdOfTriple
+problemWithMacro : RecoveryData
+problemWithMacro =
+    { problem = ExpectingRightBrace
+    , deltaOffset = 0
+    , textTruncation = 1
+    , parseSubstitute =
+        LXList
+            [ Macro "red"
+                Nothing
+                [ Text "!! missing right brace in \\"
+                    Expression.dummySourceMap
+                ]
+                Expression.dummySourceMap
+            ]
+    }
+
+
+problemWithEnvironment : RecoveryData
+problemWithEnvironment =
+    { problem = ExpectingEndWord "dummy"
+    , deltaOffset = 3
+    , textTruncation = 2
+    , parseSubstitute =
+        LXList
+            [ Macro "red"
+                Nothing
+                [ DisplayMath "!! unmatched \\begin .. \\end: " Expression.dummySourceMap
+                ]
+                Expression.dummySourceMap
+            ]
+    }
+
+
+problemWithDisplayMath : RecoveryData
+problemWithDisplayMath =
+    { problem = ExpectingTrailingDoubleDollarSign
+    , deltaOffset = 2
+    , textTruncation = 2 -- corresponds to "$$"
+    , parseSubstitute =
+        LXList
+            [ Macro "red"
+                Nothing
+                [ Text ("!! unmatched $$ in" ++ String.fromChar '\u{00A0}') Expression.dummySourceMap
+                ]
+                Expression.dummySourceMap
+            ]
+    }
+
+
+problemWithInlineMath : RecoveryData
+problemWithInlineMath =
+    { problem = ExpectingTrailingDollarSign
+    , deltaOffset = 1
+    , textTruncation = 1
+    , parseSubstitute =
+        LXList
+            [ Macro "red"
+                Nothing
+                [ Text ("!! unmatched $ in" ++ String.fromChar '\u{00A0}') Expression.dummySourceMap
+                ]
+                Expression.dummySourceMap
+            ]
+    }
 
 
 
@@ -242,7 +318,7 @@ expression lineNumber =
 
 
 alwaysP =
-    Parser.succeed (LXNull () { chunkOffset = 0, length = 1, offset = 0, content = "" })
+    Parser.succeed (LXInstruction Expression.INoOp { chunkOffset = 0, length = 1, offset = 0, content = "" })
 
 
 
@@ -386,13 +462,6 @@ bareMacro : Int -> Parser Expression
 bareMacro lineNo =
     Parser.succeed (\( name, sm ) -> Macro name Nothing [] sm)
         |= bareMacroName lineNo
-
-
-oneSpace : Int -> Parser Expression
-oneSpace lineNo =
-    Parser.succeed (\offset -> LXNull () { content = " ", chunkOffset = lineNo, offset = offset, length = 1 })
-        |= Parser.getOffset
-        |. Parser.symbol (Parser.Token " " ExpectingSpace)
 
 
 fixMacro : Int -> Int -> ( String, SourceMap ) -> Maybe ( String, SourceMap ) -> List Expression -> Int -> String -> Expression
@@ -572,7 +641,7 @@ standardEnvironmentBody chunkOffset endWoord envType =
                     , inlineMath chunkOffset
                     ]
                 )
-                |> Parser.map (\x -> LXList (LXNull () Expression.dummySourceMap :: x))
+                |> Parser.map (\x -> LXList (LXInstruction Expression.INoOp Expression.dummySourceMap :: x))
            )
         |. Parser.spaces
         |. Parser.symbol (Parser.Token endWoord (ExpectingEndWord endWoord))

@@ -54,7 +54,7 @@ renderExpr state expr =
                 , Html.span Config.errorStyle [ Html.text (errorString p sm) ]
                 ]
 
-        LXNull () _ ->
+        LXInstruction _ _ ->
             Html.span [] [ Html.text " " ]
 
 

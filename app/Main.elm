@@ -86,7 +86,7 @@ one
 two
 three
 
-$$
+$$a^2b^3c^5
 
 Still more stuff
 """
@@ -230,7 +230,7 @@ update msg model =
             ( { model
                 | sourceMap = sourceMap
                 , lhViewMode = LHAnnotatedSource
-                , message = Parser.Expression.getSelectionFromSourceMap sourceMap model.input model.sourceMapIndex
+                , message = Debug.toString sourceMap ++ " :: " ++ Parser.Expression.getSelectionFromSourceMap sourceMap model.input model.sourceMapIndex
               }
             , Cmd.none
             )

@@ -2,7 +2,7 @@ module Parser.Expression exposing
     ( Expression(..), Problem(..), SourceMap
     , dummySourceMap, getSelectionFromSourceMap, getSource, getSourceOfList, sourceMapIndex, sourceMapToString
     , incrementOffset, problemAsString
-    , setSourceMap
+    , Instr(..), equivalentProblem, setSourceMap
     )
 
 {-|
@@ -37,7 +37,22 @@ type Expression
     | Environment String (List Expression) Expression SourceMap -- Environment name optArgs body
     | LXList (List Expression)
     | LXError String Problem SourceMap
-    | LXNull () SourceMap
+    | LXInstruction Instr SourceMap
+
+
+type Instr
+    = INoOp
+    | IHighlight
+
+
+instructionToString : Instr -> String
+instructionToString i =
+    case i of
+        INoOp ->
+            "NoOp"
+
+        IHighlight ->
+            "Highlight"
 
 
 {-| Identifies the source text corresponding to part of the AST
@@ -69,6 +84,22 @@ type Problem
     | ExpectingValidOptionArgWord
     | ExpectingEndForPassThroughBody
     | ExpectingPrefixes (List Char)
+
+
+equivalentProblem : Problem -> Problem -> Bool
+equivalentProblem p1 p2 =
+    case ( p1, p2 ) of
+        ( ExpectingPrefix _, ExpectingPrefix _ ) ->
+            True
+
+        ( ExpectingEndWord _, ExpectingEndWord _ ) ->
+            True
+
+        ( ExpectingPrefixes _, ExpectingPrefixes _ ) ->
+            True
+
+        _ ->
+            p1 == p2
 
 
 type alias Slice =
@@ -226,8 +257,8 @@ toString expr =
         LXList list ->
             List.foldl (\e acc -> acc ++ toString e) "" list
 
-        LXNull () _ ->
-            " "
+        LXInstruction instr _ ->
+            instructionToString instr
 
 
 {-| Return a SourceMap for a list of Expression.
@@ -279,7 +310,7 @@ getSource expr =
         LXList e ->
             List.map getSource e |> List.head |> Maybe.withDefault { content = "nada", chunkOffset = -1, length = -1, offset = -1 }
 
-        LXNull _ source ->
+        LXInstruction _ source ->
             source
 
 
@@ -309,8 +340,8 @@ incrementOffset delta expr =
         LXList e ->
             LXList (List.map (incrementOffset delta) e)
 
-        LXNull () source ->
-            LXNull () { source | offset = source.offset + delta }
+        LXInstruction instr source ->
+            LXInstruction instr { source | offset = source.offset + delta }
 
 
 setSourceMap : SourceMap -> Expression -> Expression
@@ -337,8 +368,8 @@ setSourceMap sm expr =
         LXList e ->
             LXList (List.map (setSourceMap sm) e)
 
-        LXNull () _ ->
-            LXNull () sm
+        LXInstruction instr _ ->
+            LXInstruction instr sm
 
 
 {-| String representation of a Problem. Used in error reporting.
