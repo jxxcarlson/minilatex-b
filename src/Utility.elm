@@ -1,7 +1,30 @@
-module Utility exposing (addLineNumbers, addLineNumbers_, capitalize, getAt)
+module Utility exposing
+    ( addLineNumbers
+    , addLineNumbers_
+    , capitalize
+    , firstOfTriple
+    , getAt
+    , secondOfTriple
+    , thirdOfTriple
+    )
 
 {-| From List.Extra
 -}
+
+
+firstOfTriple : ( a, b, c ) -> a
+firstOfTriple ( a, _, _ ) =
+    a
+
+
+secondOfTriple : ( a, b, c ) -> b
+secondOfTriple ( _, b, _ ) =
+    b
+
+
+thirdOfTriple : ( a, b, c ) -> c
+thirdOfTriple ( _, _, c ) =
+    c
 
 
 getAt : Int -> List a -> Maybe a

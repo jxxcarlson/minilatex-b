@@ -52,6 +52,7 @@ import Parser.Advanced as Parser exposing ((|.), (|=))
 import Parser.Expression as Expression exposing (Expression(..), Problem(..), SourceMap)
 import Parser.TextCursor as TextCursor exposing (TextCursor)
 import Set
+import Utility
 
 
 type alias Parser a =
@@ -118,7 +119,6 @@ nextCursor tc =
 handleError : TextCursor -> List (Parser.DeadEnd Context Problem) -> TextCursor
 handleError tc_ e =
     let
-        -- Err [{ col = 10, contextStack = [], problem = ExpectingRightBraceForArg, row = 1 }]
         mFirstError =
             e |> List.head
 
@@ -135,36 +135,35 @@ handleError tc_ e =
             String.dropLeft errorColumn tc_.text
 
         stack =
-            case problem of
-                ExpectingTrailingDollarSign ->
-                    tc_.stack
+            if List.member problem handledProblems then
+                tc_.stack
 
-                _ ->
-                    errorText :: tc_.stack
+            else
+                errorText :: tc_.stack
 
         newText =
-            case problem of
-                ExpectingTrailingDollarSign ->
-                    String.dropLeft 1 tc_.text
+            case textTruncation problem of
+                Just k ->
+                    String.dropLeft k tc_.text
 
-                _ ->
+                Nothing ->
                     newText_
 
         offset =
-            case problem of
-                ExpectingTrailingDollarSign ->
-                    tc_.offset + 2
+            case problemOffset problem of
+                Just k ->
+                    tc_.offset + k
 
-                _ ->
+                Nothing ->
                     tc_.offset + errorColumn
 
         lxError =
             LXError errorText problem { content = errorText, chunkOffset = tc_.chunkNumber, length = errorColumn, offset = tc_.offset + errorColumn }
 
         parsed =
-            case problem of
-                ExpectingTrailingDollarSign ->
-                    substitute.mathText :: tc_.parsed
+            case parseSubstitute problem of
+                Just s ->
+                    s :: tc_.parsed
 
                 _ ->
                     lxError :: tc_.parsed
@@ -178,9 +177,40 @@ handleError tc_ e =
     }
 
 
+handledProblems =
+    [ ExpectingTrailingDollarSign ]
+
+
+problemOffsets : List ( Problem, Int, Int )
+problemOffsets =
+    [ ( ExpectingTrailingDollarSign, 2, 1 )
+    , ( ExpectingTrailingDoubleDollarSign, 2, 1 )
+    ]
+
+
+parseSubstitutes : List ( Problem, Expression )
+parseSubstitutes =
+    [ ( ExpectingTrailingDollarSign, substitute.mathText ) ]
+
+
 substitute =
-    { mathText = LXList [ Macro "red" Nothing [ InlineMath "?^2" { chunkOffset = 2, content = "x^2", length = 10, offset = 0 } ] { chunkOffset = 2, content = "\\red{$x^2$}", length = 11, offset = 0 } ]
+    { mathText = LXList [ Macro "red" Nothing [ InlineMath "???" { chunkOffset = 2, content = "x^2", length = 10, offset = 0 } ] { chunkOffset = 2, content = "\\red{$x^2$}", length = 11, offset = 0 } ]
     }
+
+
+parseSubstitute : Problem -> Maybe Expression
+parseSubstitute problem_ =
+    List.filter (\( p, _ ) -> p == problem_) parseSubstitutes |> List.head |> Maybe.map Tuple.second
+
+
+problemOffset : Problem -> Maybe Int
+problemOffset problem_ =
+    List.filter (\( p, _, _ ) -> p == problem_) problemOffsets |> List.head |> Maybe.map Utility.secondOfTriple
+
+
+textTruncation : Problem -> Maybe Int
+textTruncation problem_ =
+    List.filter (\( p, _, _ ) -> p == problem_) problemOffsets |> List.head |> Maybe.map Utility.thirdOfTriple
 
 
 
