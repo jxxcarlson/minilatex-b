@@ -17,7 +17,7 @@ displayMathStyle =
 
 
 redColor =
-    "#800"
+    "#a00"
 
 
 blueColor =

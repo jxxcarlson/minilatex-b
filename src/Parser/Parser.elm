@@ -131,15 +131,55 @@ handleError tc_ e =
         errorText =
             String.left errorColumn tc_.text
 
-        newText =
+        newText_ =
             String.dropLeft errorColumn tc_.text
+
+        stack =
+            case problem of
+                ExpectingTrailingDollarSign ->
+                    tc_.stack
+
+                _ ->
+                    errorText :: tc_.stack
+
+        newText =
+            case problem of
+                ExpectingTrailingDollarSign ->
+                    String.dropLeft 1 tc_.text
+
+                _ ->
+                    newText_
+
+        offset =
+            case problem of
+                ExpectingTrailingDollarSign ->
+                    tc_.offset + 2
+
+                _ ->
+                    tc_.offset + errorColumn
+
+        lxError =
+            LXError errorText problem { content = errorText, chunkOffset = tc_.chunkNumber, length = errorColumn, offset = tc_.offset + errorColumn }
+
+        parsed =
+            case problem of
+                ExpectingTrailingDollarSign ->
+                    substitute.mathText :: tc_.parsed
+
+                _ ->
+                    lxError :: tc_.parsed
     in
     { text = newText
     , chunkNumber = tc_.chunkNumber
-    , parsed = LXError errorText problem { content = errorText, chunkOffset = tc_.chunkNumber, length = errorColumn, offset = tc_.offset + errorColumn } :: tc_.parsed
-    , stack = errorText :: tc_.stack
-    , offset = tc_.offset + errorColumn
+    , parsed = parsed
+    , stack = stack
+    , offset = offset
     , count = 0
+    }
+
+
+substitute =
+    { mathText = LXList [ Macro "red" Nothing [ InlineMath "?^2" { chunkOffset = 2, content = "x^2", length = 10, offset = 0 } ] { chunkOffset = 2, content = "\\red{$x^2$}", length = 11, offset = 0 } ]
     }
 
 
