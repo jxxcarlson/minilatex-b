@@ -80,11 +80,11 @@ undefinedMacro name sm =
 
 
 environment state name args body sm =
-    -- TODO: Implement environment renderer
-    Html.span [] [ Html.text <| "Environment: " ++ name ++ " ... not implemented" ]
+    renderEnvironment state name args body
 
 
 
+--
 -- BEGIN: RENDER ENVIRONMENT
 -- RENDER ENVIRONMENTS
 

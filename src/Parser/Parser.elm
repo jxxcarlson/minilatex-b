@@ -14,22 +14,26 @@ and as string representing a chunk of text. It produces as output a TextCursor:
            , offset : Int
            }
 
-parserLoop accomplishes this by initializing a TextCursor with given values of
-chunkNumber and text, then repeatedly applying applying a function 'nextCursor.'
-Function nextCursor runs the expression parser on the text, consuming part of the
-text and producing a value of type Expression which is prepended to parsed, which
-is a list of Expressions.
+parserLoop accomplishes this by initializing a TextCursor with the given values of
+chunkNumber and text, then repeatedly applying applying a function 'nextCursor'
+until the text is exhausted. Function nextCursor runs the expression parser on the
+text, consuming part of the text and producing a value of type Expression which
+is prepended to 'parsed', which is a list of Expressions.
 
 An Expression contains a SourceMap. It identifies the part of source
-text from which it was derived.
+text from which it was derived and contains a copy of that source text.
 
         type alias SourceMap =
-            { chunkOffset : Int, length : Int, offset : Int }
+            { chunkOffset : Int, length : Int, offset : Int, content: String }
 
 The length field of the SourceMap is added to update the offset field of the
 TextCursor. In this way, the offset and length identify the source text within
 a chunk of text, while the chunkOffset identifies the chunk of text within
-the full text.
+the full text. The actual snippet of source text is used in error reporting.
+
+The accuracy of the computation of the length of the text in each round of
+parsing is important. The input text is truncated by that amount; in the
+next round the truncated text is parsed.
 
 TO ADD: COMMENTS ON THE STACK
 
@@ -81,7 +85,7 @@ nextCursor : TextCursor -> Step TextCursor TextCursor
 nextCursor tc =
     let
         _ =
-            Debug.log "TC" ( tc.count, tc.text )
+            Debug.log "TC" ( tc.count, tc.text, tc.stack )
     in
     if tc.text == "" || tc.count > 40 then
         Done { tc | parsed = List.reverse tc.parsed }
@@ -99,7 +103,13 @@ nextCursor tc =
                     newExpr =
                         Expression.incrementOffset tc.offset expr
                 in
-                Loop { tc | count = tc.count + 1, text = newText, parsed = newExpr :: tc.parsed, offset = tc.offset + sourceMap.length }
+                Loop
+                    { tc
+                        | count = tc.count + 1
+                        , text = newText
+                        , parsed = newExpr :: tc.parsed
+                        , offset = tc.offset + sourceMap.length
+                    }
 
             Err e ->
                 Loop (handleError tc e)
@@ -401,7 +411,12 @@ pair
 envName : Int -> Parser ( String, SourceMap )
 envName chunkOffset =
     Parser.inContext EnvNameContext <|
-        Parser.succeed (\start str end src -> ( Debug.log "envName" str, { content = src, chunkOffset = chunkOffset, offset = start, length = end - start } ))
+        Parser.succeed
+            (\start str end src ->
+                ( Debug.log "envName, val" str
+                , { content = src, chunkOffset = chunkOffset, offset = start, length = Debug.log "envName LEN" end - start }
+                )
+            )
             |= Parser.getOffset
             |. Parser.symbol (Parser.Token "\\begin{" ExpectingBegin)
             |= parseToSymbol ExpectingRightBrace "}"
@@ -417,7 +432,7 @@ environment : Int -> Parser Expression
 environment chunkOffset =
     Parser.succeed
         (\start expr end src ->
-            Expression.setSourceMap { chunkOffset = chunkOffset, length = end - start, offset = start, content = src } expr
+            Expression.setSourceMap { chunkOffset = chunkOffset, length = end - start, offset = start, content = src } (Debug.log "EXPR" expr)
         )
         |= Parser.getOffset
         |= (envName chunkOffset |> Parser.andThen (environmentOfType chunkOffset))
@@ -433,31 +448,25 @@ environmentOfType : Int -> ( String, SourceMap ) -> Parser Expression
 environmentOfType chunkOffset ( envType, sm ) =
     let
         theEndWord =
-            Debug.log "END WORD" <|
-                "\\end{"
-                    ++ envType
-                    ++ "}"
+            "\\end{"
+                ++ envType
+                ++ "}"
 
         katex =
             [ "align", "matrix", "pmatrix", "bmatrix", "Bmatrix", "vmatrix", "Vmatrix" ]
 
         envKind =
-            Debug.log "ENV KIND" <|
-                if List.member envType ([ "equation", "eqnarray", "verbatim", "colored", "CD", "mathmacro", "textmacro", "listing", "verse" ] ++ katex) then
-                    "passThrough"
+            if List.member envType ([ "equation", "eqnarray", "verbatim", "colored", "CD", "mathmacro", "textmacro", "listing", "verse" ] ++ katex) then
+                "passThrough"
 
-                else
-                    envType
+            else
+                envType
     in
     environmentParser chunkOffset envKind theEndWord envType
 
 
 environmentParser : Int -> String -> String -> String -> Parser Expression
 environmentParser chunkOffset envKind theEndWord envType =
-    let
-        _ =
-            Debug.log "environmentParser" ( envKind, theEndWord, envType )
-    in
     case Dict.get envKind environmentDict of
         Just p ->
             let
@@ -482,30 +491,21 @@ environmentDict =
 
 standardEnvironmentBody : Int -> String -> String -> Parser Expression
 standardEnvironmentBody chunkOffset endWoord envType =
-    let
-        _ =
-            Debug.log "standardEnvironmentBody" ( endWoord, envType )
-    in
-    Parser.succeed (\start oa body end src -> Environment envType oa body { content = src, chunkOffset = chunkOffset, offset = start, length = end - start })
+    Parser.succeed (\start oa body end src -> Environment envType oa (Debug.log "BODY" body) { content = src, chunkOffset = Debug.log "CO" chunkOffset, offset = start, length = end - start })
         |= Parser.getOffset
-        --|. Parser.spaces
         |= many (optionalArg chunkOffset)
-        --|. Parser.spaces
-        |= (many
+        |. Parser.spaces
+        |= (many2 updateSourceMap
                 (Parser.oneOf
-                    [ environment chunkOffset
+                    [ environmentText chunkOffset
                     , macro chunkOffset
                     , inlineMath chunkOffset
-                    , environmentText chunkOffset
-
-                    --, alwaysP
                     ]
                 )
-                |> Parser.map LXList
+                |> Parser.map (\x -> LXList (LXNull () Expression.dummySourceMap :: x))
            )
-        --|. Parser.spaces
+        |. Parser.spaces
         |. Parser.symbol (Parser.Token endWoord (ExpectingEndWord endWoord))
-        -- |. Parser.spaces
         |= Parser.getOffset
         |= Parser.getSource
 
@@ -676,6 +676,42 @@ loop s nextState =
 type Step state a
     = Loop state
     | Done a
+
+
+many2 : (a -> Maybe a -> a) -> Parser a -> Parser (List a)
+many2 f p =
+    Parser.loop [] (manyHelp2 f p)
+
+
+manyHelp2 : (a -> Maybe a -> a) -> Parser a -> List a -> Parser (Parser.Step (List a) (List a))
+manyHelp2 f p vs =
+    Parser.oneOf
+        [ eof |> Parser.map (\_ -> Parser.Done (List.reverse vs))
+        , Parser.succeed (\v -> Parser.Loop (f v (List.head vs) :: vs))
+            |= p
+        , Parser.succeed ()
+            |> Parser.map (\_ -> Parser.Done (List.reverse vs))
+        ]
+
+
+updateSourceMap : Expression -> Maybe Expression -> Expression
+updateSourceMap e me =
+    case me of
+        Nothing ->
+            e
+
+        Just e1 ->
+            let
+                sm1 =
+                    Expression.getSource e1
+
+                sm =
+                    Expression.getSource e
+
+                sm2 =
+                    { sm | offset = sm.offset + sm1.length }
+            in
+            Expression.setSourceMap sm2 e1
 
 
 {-| Apply a parser zero or more times and return a list of the results.

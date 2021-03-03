@@ -13,6 +13,12 @@ Many primes!
 \\end{yada}"""
 
 
+x1 =
+    """\\begin{theorem}
+$p^3 = 2$ 
+\\end{theorem}"""
+
+
 env2b =
     """
 Many primes!
