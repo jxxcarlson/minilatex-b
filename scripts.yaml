@@ -13,5 +13,5 @@ scripts:
 
   cloc: cloc --by-file src/
 
-  yesterday: git log --after=`date -v-1d +%F` --oneline
-  
+  yes: git log --after=`date -v-1d +%F` --oneline
+

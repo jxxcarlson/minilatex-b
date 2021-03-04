@@ -654,10 +654,18 @@ environmentDict =
         []
 
 
+xxx =
+    """
+\\begin{theorem}
+Many primes!
+\\end{theorem}
+"""
+
+
 standardEnvironmentBody : Int -> String -> String -> Parser Expression
 standardEnvironmentBody chunkOffset endWoord envType =
     -- Parser.succeed (fixExpr chunkOffset envType)
-    Parser.succeed (\start oa body end -> Environment envType oa (Debug.log "BODY" body) { content = "???", chunkOffset = Debug.log "CO" chunkOffset, offset = start, length = end - start })
+    Parser.succeed (\start oa body end src -> Environment envType oa (Debug.log "BODY" body) { content = src, chunkOffset = Debug.log "CO" chunkOffset, offset = start, length = end - start })
         |= Parser.getOffset
         |= many (optionalArg chunkOffset)
         |. Parser.spaces
@@ -665,6 +673,7 @@ standardEnvironmentBody chunkOffset endWoord envType =
         |. Parser.spaces
         |. Parser.symbol (Parser.Token endWoord (ExpectingEndWord endWoord))
         |= Parser.getOffset
+        |= Parser.getSource
 
 
 innerParseEnvironment1 chunkOffset =
