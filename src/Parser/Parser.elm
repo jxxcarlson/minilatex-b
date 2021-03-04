@@ -108,10 +108,6 @@ operated by parseLoop is updated:
 -}
 nextCursor : TextCursor -> Step TextCursor TextCursor
 nextCursor tc =
-    let
-        _ =
-            Debug.log "TC" ( tc.count, tc.text, tc.stack )
-    in
     if tc.text == "" || tc.count > 10 then
         Done { tc | parsed = List.reverse tc.parsed }
 
@@ -152,7 +148,7 @@ handleError : TextCursor -> List (Parser.DeadEnd Context Problem) -> TextCursor
 handleError tc_ e =
     let
         mFirstError =
-            e |> List.head |> Debug.log "PROBLEM 1"
+            e |> List.head
 
         problem =
             mFirstError |> Maybe.map .problem |> Maybe.withDefault GenericError
@@ -161,7 +157,7 @@ handleError tc_ e =
             mFirstError |> Maybe.map .col |> Maybe.withDefault 0
 
         errorText =
-            String.left errorColumn tc_.text |> Debug.log "ERR"
+            String.left errorColumn tc_.text
 
         mRecoveryData : Maybe RecoveryData
         mRecoveryData =
@@ -561,10 +557,6 @@ arg lineNo =
 
 fixArg : Int -> Expression -> Int -> Expression
 fixArg k1 e k2 =
-    let
-        _ =
-            Debug.log "ARG OFF" ( k1, k2 )
-    in
     e
 
 
@@ -577,7 +569,7 @@ environment : Int -> Parser Expression
 environment chunkOffset =
     Parser.succeed
         (\start expr end src ->
-            Expression.setSourceMap { chunkOffset = chunkOffset, length = end - start, offset = start, content = src } (Debug.log "EXPR" expr)
+            Expression.setSourceMap { chunkOffset = chunkOffset, length = end - start, offset = start, content = src } expr
         )
         |= Parser.getOffset
         |= (envName chunkOffset |> Parser.andThen (environmentOfType chunkOffset))
@@ -594,9 +586,8 @@ envName chunkOffset =
     Parser.inContext EnvNameContext <|
         Parser.succeed
             (\start str end ->
-                ( Debug.log "envName, val" str
-                , { content = "\\begin{" ++ str ++ "}", chunkOffset = chunkOffset, offset = start, length = Debug.log "envName LEN" end - start }
-                    |> Debug.log "ENV NAME, SM"
+                ( str
+                , { content = "\\begin{" ++ str ++ "}", chunkOffset = chunkOffset, offset = start, length = end - start }
                 )
             )
             |= Parser.getOffset
@@ -634,17 +625,9 @@ environmentParser : Int -> String -> String -> String -> Parser Expression
 environmentParser chunkOffset envKind theEndWord envType =
     case Dict.get envKind environmentDict of
         Just p ->
-            let
-                _ =
-                    Debug.log "BR" 1
-            in
             p theEndWord envType
 
         Nothing ->
-            let
-                _ =
-                    Debug.log "BR" 2
-            in
             standardEnvironmentBody chunkOffset theEndWord envType
 
 
@@ -665,7 +648,7 @@ Many primes!
 standardEnvironmentBody : Int -> String -> String -> Parser Expression
 standardEnvironmentBody chunkOffset endWoord envType =
     -- Parser.succeed (fixExpr chunkOffset envType)
-    Parser.succeed (\start oa body end src -> Environment envType oa (Debug.log "BODY" body) { content = src, chunkOffset = Debug.log "CO" chunkOffset, offset = start, length = end - start })
+    Parser.succeed (\start oa body end src -> Environment envType oa body { content = src, chunkOffset = chunkOffset, offset = start, length = end - start })
         |= Parser.getOffset
         |= many (optionalArg chunkOffset)
         |. Parser.spaces
@@ -703,7 +686,7 @@ fixExpr chunkOffset envType start oa body end src =
         sm =
             Expression.getSource body
     in
-    Environment envType oa (Debug.log "BODY" body) { content = src, chunkOffset = Debug.log "CO" chunkOffset, offset = start, length = sm.length }
+    Environment envType oa body { content = src, chunkOffset = chunkOffset, offset = start, length = sm.length }
 
 
 environmentText chunkOffset =

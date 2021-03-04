@@ -49,7 +49,7 @@ renderExpr state expr =
             List.map (renderExpr state) list_ |> Html.span Config.textSpanStyle
 
         LXError s p sm ->
-            Html.span [ clicker (Debug.log "SM" { sm | offset = sm.offset - sm.length }) ]
+            Html.span [ clicker { sm | offset = sm.offset - sm.length } ]
                 [ Html.span Config.errorStyle2 [ Html.text s ]
                 , Html.span Config.errorStyle [ Html.text (errorString p sm) ]
                 ]
