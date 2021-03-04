@@ -13,27 +13,26 @@ suite =
     describe "The Parser module"
         [ describe "expressionList"
             -- Nest as many descriptions as you like.
-            [ test "roundTripCheck 1" <|
+            [ test "parse pure text" <|
                 \_ ->
-                    "foo bar $a^2$ baz"
-                        |> roundTripCheck
-                        |> Expect.equal True
-            , test "roundTripCheck 2" <|
+                    "a b c"
+                        |> run (expression 0)
+                        |> Expect.equal (Ok (Text "a b c" { chunkOffset = 0, content = "a b c", length = 5, offset = 0 }))
+            , test "parse inline math" <|
                 \_ ->
-                    "foo bar $a^2$ baz $$b^2$$ yada"
-                        |> roundTripCheck
-                        |> Expect.equal True
-            , test "parseAndRecompose" <|
+                    "$x^2$"
+                        |> run (expression 0)
+                        |> Expect.equal (Ok (InlineMath "x^2" { chunkOffset = 0, content = "x^2", length = 5, offset = 0 }))
+            , test "parse text and math" <|
                 \_ ->
-                    "foo bar $a^2$ baz $$b^2$$ yada"
-                        |> parseAndRecompose
-                        |> Expect.equal "foo bar  $a^2$  baz  $$b^2$$  yada"
-            , test "parseAndRecompose 2" <|
+                    "a quadratic: $x^2$"
+                        |> run (expressionList 0)
+                        |> Expect.equal (Ok [ Text "a quadratic: " { chunkOffset = 0, content = "a quadratic: ", length = 13, offset = 0 }, InlineMath "x^2" { chunkOffset = 0, content = "x^2", length = 18, offset = 0 } ])
+            , test "parse macro" <|
                 \_ ->
-                    "foo bar $a^2$ baz\n$$\nb^2\n$$\nyada"
-                        |> parseAndRecompose
-                        |> squeezeSpace
-                        |> Expect.equal ("foo bar $a^2$ baz\n$$\nb^2\n$$\nyada" |> squeezeSpace)
+                    "\\strong{stuff}"
+                        |> run (expression 0)
+                        |> Expect.equal (Ok (Macro "strong" Nothing [ Text "stuff" { chunkOffset = 0, content = "stuff", length = 5, offset = 0 } ] { chunkOffset = 0, content = "\\strong{stuff}", length = 14, offset = 0 }))
 
             -- fuzz runs the test 100 times with randomly-generated inputs!
             , fuzz string "restores the original string if you run it again" <|

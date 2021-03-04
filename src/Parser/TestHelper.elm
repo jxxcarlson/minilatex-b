@@ -1,27 +1,27 @@
 module Parser.TestHelper exposing (parseAndRecompose, roundTrip, roundTripCheck, squeezeSpace)
 
 import Parser.Advanced as Parser
-import Parser.Expression as LExpression exposing (Expression)
-import Parser.Parser as LParser
+import Parser.Expression as Expression exposing (Expression)
+import Parser.Parser as LXParser
 
 
 toStringFromList : List Expression -> String
 toStringFromList list =
     list
-        |> List.map LExpression.toString
+        |> List.map Expression.toString
         |> String.join " "
 
 
 parseAndRecompose : String -> String
 parseAndRecompose str =
-    str |> LParser.parseLoop 0 |> .parsed |> toStringFromList
+    str |> LXParser.parseLoop 0 |> .parsed |> toStringFromList
 
 
 roundTrip : String -> String
 roundTrip str =
-    case Parser.run (LParser.expressionList 0) str of
+    case Parser.run (LXParser.expressionList 0) str of
         Ok r ->
-            List.map LExpression.toString r |> String.join " "
+            List.map Expression.toString r |> String.join " "
 
         Err err ->
             Debug.toString err

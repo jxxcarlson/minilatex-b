@@ -2,7 +2,7 @@ module Parser.Expression exposing
     ( Expression(..), Problem(..), SourceMap
     , dummySourceMap, getSelectionFromSourceMap, getSource, getSourceOfList, sourceMapIndex, sourceMapToString
     , incrementOffset, problemAsString
-    , Instr(..), equivalentProblem, setSourceMap
+    , Instr(..), equivalentProblem, setSourceMap, toString
     )
 
 {-|
