@@ -78,7 +78,7 @@ type Problem
     | GenericError
     | ExpectingPrefix Char
     | ExpectingSpace
-    | ExpectingMacroReservedWord
+    | RejectMacroReservedWord
     | ExpectingBegin
     | ExpectingEndWord String
     | ExpectingValidOptionArgWord
@@ -419,7 +419,7 @@ problemAsString prob =
         ExpectingSpace ->
             "Expecting space (16)"
 
-        ExpectingMacroReservedWord ->
+        RejectMacroReservedWord ->
             "Expecting macro word (17)"
 
         ExpectingBegin ->

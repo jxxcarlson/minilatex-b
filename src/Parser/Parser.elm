@@ -1,7 +1,4 @@
-module Parser.Parser exposing
-    ( parseLoop, getErrors
-    , envName, environment, expression, expressionList, many, nonEmptyItemList, standardEnvironmentBody, textNP
-    )
+module Parser.Parser exposing (..)
 
 {-| Function parserLoop takes as input an integer representing a "chunkNumber"
 and as string representing a chunk of text. It produces as output a TextCursor:
@@ -46,6 +43,10 @@ TO ADD: COMMENTS ON THE STACK
   - getErrors in Main
 
 -}
+
+--( parseLoop, getErrors
+--, envName, environment, expression, expressionList, macroName, many, nonEmptyItemList, standardEnvironmentBody, textNP
+--)
 
 import Dict
 import Parser.Advanced as Parser exposing ((|.), (|=))
@@ -506,7 +507,7 @@ macroName2 =
         { start = \c -> c == '\\'
         , inner = \c -> Char.isAlphaNum c || c == '*'
         , reserved = Set.fromList [ "\\begin", "\\end", "\\item", "\\bibitem" ]
-        , expecting = ExpectingMacroReservedWord
+        , expecting = RejectMacroReservedWord
         }
         |> Parser.map (String.dropLeft 1)
 
@@ -560,6 +561,10 @@ arg lineNo =
 
 fixArg : Int -> Expression -> Int -> Expression
 fixArg k1 e k2 =
+    let
+        _ =
+            Debug.log "ARG OFF" ( k1, k2 )
+    in
     e
 
 
