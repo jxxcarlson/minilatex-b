@@ -661,18 +661,32 @@ standardEnvironmentBody chunkOffset endWoord envType =
         |= Parser.getOffset
         |= many (optionalArg chunkOffset)
         |. Parser.spaces
-        |= (many2 updateSourceMap
-                (Parser.oneOf
-                    [ environmentText chunkOffset
-                    , macro chunkOffset
-                    , inlineMath chunkOffset
-                    ]
-                )
-                |> Parser.map (\x -> LXList (LXInstruction Expression.INoOp Expression.dummySourceMap :: x))
-           )
+        |= innerParseEnvironment chunkOffset
         |. Parser.spaces
         |. Parser.symbol (Parser.Token endWoord (ExpectingEndWord endWoord))
         |= Parser.getOffset
+
+
+innerParseEnvironment1 chunkOffset =
+    many2 updateSourceMap
+        (Parser.oneOf
+            [ macro chunkOffset
+            , inlineMath chunkOffset
+            , environmentText chunkOffset
+            ]
+        )
+        |> Parser.map (\x -> LXList x)
+
+
+innerParseEnvironment chunkOffset =
+    many
+        (Parser.oneOf
+            [ macro chunkOffset
+            , inlineMath chunkOffset
+            , environmentText chunkOffset
+            ]
+        )
+        |> Parser.map (\x -> LXList x)
 
 
 fixExpr chunkOffset envType start oa body end src =
