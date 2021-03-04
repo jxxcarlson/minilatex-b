@@ -91,6 +91,10 @@ environment state name args body sm =
 
 renderEnvironment : LaTeXState -> String -> List Expression -> Expression -> Html LaTeXMsg
 renderEnvironment state name args body =
+    let
+        _ =
+            Debug.log "RENDER" name
+    in
     case Dict.get name renderEnvironmentDict of
         Just f ->
             f state args body
@@ -120,7 +124,8 @@ renderEnvironmentDict =
         --, ( "defitem", \s l e -> renderDefItemEnvironment s l e )
         --, ( "enumerate", \s l e -> renderEnumerate s l e )
         --, ( "eqnarray", \s l e -> renderEqnArray s l e )
-        --, ( "equation", \s l e -> renderEquationEnvironment s l e )
+        , ( "equation", \s _ e -> renderEquationEnvironment s e )
+
         --, ( "indent", \s l e -> renderIndentEnvironment s l e )
         --, ( "itemize", \s l e -> renderItemize s l e )
         --, ( "listing", \s l e -> renderListing s l e )
@@ -264,6 +269,55 @@ renderMathEnvironment envName latexState _ body =
     displayMathTextWithLabel_ latexState sourceMap content tag
 
 
+renderEquationEnvironment : LaTeXState -> Expression -> Html LaTeXMsg
+renderEquationEnvironment latexState body =
+    let
+        eqno =
+            LaTeXState.getCounter "eqno" latexState
+
+        s1 =
+            LaTeXState.getCounter "s1" latexState
+
+        addendum =
+            if eqno > 0 then
+                if s1 > 0 then
+                    "\\tag{" ++ String.fromInt s1 ++ "." ++ String.fromInt eqno ++ "}"
+
+                else
+                    "\\tag{" ++ String.fromInt eqno ++ "}"
+
+            else
+                ""
+
+        ( contents, sm ) =
+            case body of
+                Text str sm_ ->
+                    ( str
+                        |> String.trim
+                        --|> Internal.MathMacro.evalStr latexState.mathMacroDictionary
+                        -- TODO: implement macro expansion
+                        |> Parser.Helpers.removeLabel
+                    , sm_
+                    )
+
+                _ ->
+                    ( "Parser error in render equation environment", Parser.Expression.dummySourceMap )
+
+        tag =
+            case Parser.Helpers.getTag addendum of
+                Nothing ->
+                    ""
+
+                Just tag_ ->
+                    --   "\\qquad (" ++ tag_ ++ ")"
+                    "(" ++ tag_ ++ ")"
+    in
+    -- ("\\begin{equation}" ++ contents ++ addendum ++ "\\end{equation}")
+    -- REVIEW; changed for KaTeX
+    -- displayMathText_ latexState  (contents ++ tag)
+    displayMathTextWithLabel_ latexState sm contents tag
+
+
 displayMathTextWithLabel_ : LaTeXState -> SourceMap -> String -> String -> Html LaTeXMsg
 displayMathTextWithLabel_ latexState sm str label =
     Html.div
@@ -404,51 +458,7 @@ displayMathTextWithLabel_ latexState sm str label =
 --    displayMathText latexState body2
 --
 --
---renderEquationEnvironment : SourceText -> LatexState -> LatexExpression -> Html msg
---renderEquationEnvironment source latexState body =
---    let
---        eqno =
---            LaTeXState.getCounter "eqno" latexState
---
---        s1 =
---            LaTeXState.getCounter "s1" latexState
---
---        addendum =
---            if eqno > 0 then
---                if s1 > 0 then
---                    "\\tag{" ++ String.fromInt s1 ++ "." ++ String.fromInt eqno ++ "}"
---
---                else
---                    "\\tag{" ++ String.fromInt eqno ++ "}"
---
---            else
---                ""
---
---        contents =
---            case body of
---                LXString str ->
---                    str
---                        |> String.trim
---                        |> Internal.MathMacro.evalStr latexState.mathMacroDictionary
---                        |> Internal.ParserHelpers.removeLabel
---
---                _ ->
---                    "Parser error in render equation environment"
---
---        tag =
---            case Internal.ParserHelpers.getTag addendum of
---                Nothing ->
---                    ""
---
---                Just tag_ ->
---                    --   "\\qquad (" ++ tag_ ++ ")"
---                    "(" ++ tag_ ++ ")"
---    in
---    -- ("\\begin{equation}" ++ contents ++ addendum ++ "\\end{equation}")
---    -- REVIEW; changed for KaTeX
---    -- displayMathText_ latexState  (contents ++ tag)
---    displayMathTextWithLabel_ latexState contents tag
---
+--renderEquationEnvironment : SourceText
 --
 --renderIndentEnvironment : SourceText -> LatexState -> LatexExpression -> Html msg
 --renderIndentEnvironment source latexState body =

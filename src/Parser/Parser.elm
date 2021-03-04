@@ -625,24 +625,21 @@ environmentParser : Int -> String -> String -> String -> Parser Expression
 environmentParser chunkOffset envKind theEndWord envType =
     case Dict.get envKind environmentDict of
         Just p ->
-            p theEndWord envType
+            p chunkOffset theEndWord envType
 
         Nothing ->
             standardEnvironmentBody chunkOffset theEndWord envType
 
 
-environmentDict : Dict.Dict String (String -> String -> Parser Expression)
+environmentDict : Dict.Dict String (Int -> String -> String -> Parser Expression)
 environmentDict =
     Dict.fromList
-        []
-
-
-xxx =
-    """
-\\begin{theorem}
-Many primes!
-\\end{theorem}
-"""
+        [ -- ( "enumerate", \endWoord envType -> itemEnvironmentBody endWoord envType )
+          --, ( "itemize", \endWoord envType -> itemEnvironmentBody endWoord envType )
+          --, ( "thebibliography", \endWoord envType -> biblioEnvironmentBody endWoord envType )
+          --, ( "tabular", \endWoord envType -> tabularEnvironmentBody endWoord envType )
+          ( "passThrough", \chunkOffset endWoord envType -> passThroughBody chunkOffset endWoord envType )
+        ]
 
 
 standardEnvironmentBody : Int -> String -> String -> Parser Expression
@@ -659,17 +656,6 @@ standardEnvironmentBody chunkOffset endWoord envType =
         |= Parser.getSource
 
 
-innerParseEnvironment1 chunkOffset =
-    many2 updateSourceMap
-        (Parser.oneOf
-            [ macro chunkOffset
-            , inlineMath chunkOffset
-            , environmentText chunkOffset
-            ]
-        )
-        |> Parser.map (\x -> LXList x)
-
-
 innerParseEnvironment chunkOffset =
     many
         (Parser.oneOf
@@ -681,12 +667,13 @@ innerParseEnvironment chunkOffset =
         |> Parser.map (\x -> LXList x)
 
 
-fixExpr chunkOffset envType start oa body end src =
-    let
-        sm =
-            Expression.getSource body
-    in
-    Environment envType oa body { content = src, chunkOffset = chunkOffset, offset = start, length = sm.length }
+
+--fixExpr chunkOffset envType start oa body end src =
+--    let
+--        sm =
+--            Expression.getSource body
+--    in
+--    Environment envType oa body { content = src, chunkOffset = chunkOffset, offset = start, length = sm.length }
 
 
 environmentText chunkOffset =
@@ -704,35 +691,58 @@ environment.
 -- TODO
 
 
-passThroughBody : String -> String -> Parser Expression
-passThroughBody endWoord envType =
+passThroughBody : Int -> String -> String -> Parser Expression
+passThroughBody chunkOffset endWoord envType =
     --  inContext "passThroughBody" <|
     Parser.succeed identity
         |= parseToSymbol ExpectingEndForPassThroughBody endWoord
         |. Parser.spaces
-        |> Parser.map (passThroughEnv envType)
+        |> Parser.map (passThroughEnv chunkOffset envType)
 
 
-passThroughEnv : String -> String -> Expression
-passThroughEnv envType source =
+passThroughEnv : Int -> String -> String -> Expression
+passThroughEnv chunkOffset envType source =
     let
         lines =
             source |> String.trim |> String.lines |> List.filter (\l -> String.length l > 0)
 
-        optArgs_ =
+        data =
+            passThroughData envType source lines
+
+        sm =
+            { chunkOffset = chunkOffset, offset = data.offset, length = data.length, content = data.body }
+    in
+    Environment envType data.optArgs (Text data.body sm) sm
+
+
+passThroughData envType source lines =
+    let
+        optArgs =
             -- TODO: copout
             runParser (itemList (optionalArg 0)) (List.head lines |> Maybe.withDefault "")
 
+        envTypeLength =
+            String.length envType + 8
+
+        labelLength =
+            if String.contains "\\label" source then
+                lines |> List.head |> Maybe.map String.length |> Maybe.withDefault 0
+
+            else
+                0
+
         body : String
         body =
-            if optArgs_ == [] then
+            if optArgs == [] then
                 lines |> String.join "\n"
 
             else
                 List.drop 1 lines |> String.join "\n"
+
+        contentLength =
+            String.length body
     in
-    -- TODO: remove cop out!
-    Environment envType optArgs_ (Text body Expression.dummySourceMap) Expression.dummySourceMap
+    { offset = envTypeLength + labelLength + 1, length = contentLength - labelLength, body = body, optArgs = optArgs }
 
 
 runParser : Parser (List Expression) -> String -> List Expression
