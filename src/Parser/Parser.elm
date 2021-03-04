@@ -667,15 +667,6 @@ innerParseEnvironment chunkOffset =
         |> Parser.map (\x -> LXList x)
 
 
-
---fixExpr chunkOffset envType start oa body end src =
---    let
---        sm =
---            Expression.getSource body
---    in
---    Environment envType oa body { content = src, chunkOffset = chunkOffset, offset = start, length = sm.length }
-
-
 environmentText chunkOffset =
     textNP chunkOffset [ '$', '\\' ] [ '$', '\\' ]
 
@@ -685,12 +676,6 @@ This parser is used for environments whose body is to be
 passed to MathJax for processing and also for the verbatim
 environment.
 -}
-
-
-
--- TODO
-
-
 passThroughBody : Int -> String -> String -> Parser Expression
 passThroughBody chunkOffset endWoord envType =
     --  inContext "passThroughBody" <|
@@ -816,10 +801,6 @@ nonEmptyItemList itemParser =
 itemList : Parser a -> Parser (List a)
 itemList itemParser =
     itemList_ [] itemParser
-
-
-
--- manyHelp : Parser a -> List a -> Parser (Parser.Step (List a) (List a))
 
 
 itemList_ : List a -> Parser a -> Parser (List a)
