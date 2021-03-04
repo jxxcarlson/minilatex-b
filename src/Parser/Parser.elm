@@ -128,14 +128,11 @@ nextCursor tc =
 handleError : TextCursor -> List (Parser.DeadEnd Context Problem) -> TextCursor
 handleError tc_ e =
     let
-        _ =
-            Debug.log "CHUNK" tc_.chunkNumber
-
         mFirstError =
             e |> List.head |> Debug.log "PROBLEM 1"
 
         problem =
-            Maybe.map .problem mFirstError |> Maybe.withDefault GenericError
+            mFirstError |> Maybe.map .problem |> Maybe.withDefault GenericError
 
         errorColumn =
             mFirstError |> Maybe.map .col |> Maybe.withDefault 0
@@ -143,65 +140,18 @@ handleError tc_ e =
         errorText =
             String.left errorColumn tc_.text |> Debug.log "ERR"
 
-        newText_ =
-            String.dropLeft errorColumn tc_.text
-
         mRecoveryData : Maybe RecoveryData
         mRecoveryData =
-            let
-                oldSourceMap =
-                    Expression.dummySourceMap
-
-                newSourceMap =
-                    { oldSourceMap | chunkOffset = tc_.chunkNumber }
-            in
-            getRecoveryData problem
-                |> Maybe.map (\r -> { r | parseSubstitute = Expression.setSourceMap newSourceMap r.parseSubstitute })
-
-        hi : Expression
-        hi =
-            LXInstruction Expression.IHighlight Expression.dummySourceMap
-
-        stack =
-            case mRecoveryData of
-                Just _ ->
-                    "highlight" :: tc_.stack
-
-                Nothing ->
-                    errorText :: "highlight" :: tc_.stack
-
-        newText =
-            case mRecoveryData of
-                Just rd ->
-                    String.dropLeft rd.textTruncation tc_.text
-
-                Nothing ->
-                    newText_
-
-        offset =
-            case mRecoveryData of
-                Just rd ->
-                    tc_.offset + rd.deltaOffset
-
-                Nothing ->
-                    tc_.offset + errorColumn
+            getRecoveryData_ tc_ problem
 
         lxError =
             LXError errorText problem { content = errorText, chunkOffset = tc_.chunkNumber, length = errorColumn, offset = tc_.offset + errorColumn }
-
-        parsed =
-            case mRecoveryData of
-                Just rd ->
-                    rd.parseSubstitute :: tc_.parsed
-
-                _ ->
-                    lxError :: tc_.parsed
     in
-    { text = newText
+    { text = makeNewText tc_ errorColumn mRecoveryData
     , chunkNumber = tc_.chunkNumber
-    , parsed = parsed
-    , stack = stack
-    , offset = offset
+    , parsed = newParsed tc_ lxError mRecoveryData
+    , stack = newStack tc_ errorText mRecoveryData
+    , offset = newOffset tc_ errorColumn mRecoveryData
     , count = 0
     }
 
@@ -212,6 +162,55 @@ type alias RecoveryData =
     , textTruncation : Int
     , parseSubstitute : Expression
     }
+
+
+getRecoveryData_ : TextCursor -> Problem -> Maybe RecoveryData
+getRecoveryData_ tc_ problem =
+    let
+        oldSourceMap =
+            Expression.dummySourceMap
+
+        newSourceMap =
+            { oldSourceMap | chunkOffset = tc_.chunkNumber }
+    in
+    getRecoveryData problem
+        |> Maybe.map (\r -> { r | parseSubstitute = Expression.setSourceMap newSourceMap r.parseSubstitute })
+
+
+newOffset tc_ errorColumn_ mRecoveryData_ =
+    case mRecoveryData_ of
+        Just rd ->
+            tc_.offset + rd.deltaOffset
+
+        Nothing ->
+            tc_.offset + errorColumn_
+
+
+newParsed tc_ lxError_ mRecoveryData =
+    case mRecoveryData of
+        Just rd ->
+            rd.parseSubstitute :: tc_.parsed
+
+        _ ->
+            lxError_ :: tc_.parsed
+
+
+makeNewText tc_ errorColumn_ mRecoveryData =
+    case mRecoveryData of
+        Just rd ->
+            String.dropLeft rd.textTruncation tc_.text
+
+        Nothing ->
+            String.dropLeft errorColumn_ tc_.text
+
+
+newStack tc_ errorText_ mRecoveryData =
+    case mRecoveryData of
+        Just _ ->
+            "highlight" :: tc_.stack
+
+        Nothing ->
+            errorText_ :: "highlight" :: tc_.stack
 
 
 getRecoveryData : Problem -> Maybe RecoveryData
