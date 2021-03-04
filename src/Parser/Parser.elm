@@ -1,6 +1,6 @@
 module Parser.Parser exposing
     ( parseLoop, getErrors
-    , envName, environment, expression, many, nonEmptyItemList, standardEnvironmentBody
+    , envName, environment, expression, expressionList, many, nonEmptyItemList, standardEnvironmentBody, textNP
     )
 
 {-| Function parserLoop takes as input an integer representing a "chunkNumber"
@@ -82,13 +82,36 @@ parseLoop initialLineNumber str =
     loop (TextCursor.init initialLineNumber str) nextCursor
 
 
+{-| nextCursor operates by running the expression parser on
+`tc.text` with argument `tc.chunkNumber`. This argument is used
+to track the location in the source text of the piece of text
+parsed.
+
+Recall that parseLoop is fed chunks of text by
+Document.process. These chunks are "logical paragraphs,"
+which one may think of as forming an array of strings indexed
+by chunkNumber. A piece of text within a chunk is identified
+by an offset and a length:
+
+    piece =
+        String.slice offset (offset + length) chunk
+
+If parsing succeeds, resulting in a parsand `expr`, the textCursor
+operated by parseLoop is updated:
+
+    - the "program counter" tc.count is incremented
+    - the piece of text corresponding to the parsand
+      is removed from tc.text
+    - `expr` is prepended to `tc.parsed`
+
+-}
 nextCursor : TextCursor -> Step TextCursor TextCursor
 nextCursor tc =
     let
         _ =
             Debug.log "TC" ( tc.count, tc.text, tc.stack )
     in
-    if tc.text == "" || tc.count > 40 then
+    if tc.text == "" || tc.count > 10 then
         Done { tc | parsed = List.reverse tc.parsed }
 
     else
@@ -97,32 +120,31 @@ nextCursor tc =
                 let
                     sourceMap =
                         Expression.getSource expr
-
-                    newText =
-                        String.dropLeft sourceMap.length tc.text
-
-                    hihglight : Expression -> SourceMap -> Expression
-                    hihglight expr_ sm =
-                        Macro "blue" Nothing [ expr_ ] sm
-
-                    newExpr =
-                        case List.head tc.stack of
-                            Just "highlight" ->
-                                Expression.incrementOffset tc.offset (hihglight expr (Expression.getSource expr))
-
-                            _ ->
-                                Expression.incrementOffset tc.offset expr
                 in
                 Loop
                     { tc
                         | count = tc.count + 1
-                        , text = newText
-                        , parsed = newExpr :: tc.parsed
+                        , text = String.dropLeft sourceMap.length tc.text
+                        , parsed = newExpr tc expr :: tc.parsed
                         , offset = tc.offset + sourceMap.length
                     }
 
             Err e ->
                 Loop (handleError tc e)
+
+
+newExpr tc_ expr =
+    case List.head tc_.stack of
+        Just "highlight" ->
+            Expression.incrementOffset tc_.offset (highlight expr (Expression.getSource expr))
+
+        _ ->
+            Expression.incrementOffset tc_.offset expr
+
+
+highlight : Expression -> SourceMap -> Expression
+highlight expr_ sm =
+    Macro "blue" Nothing [ expr_ ] sm
 
 
 handleError : TextCursor -> List (Parser.DeadEnd Context Problem) -> TextCursor
@@ -371,10 +393,13 @@ textNP lineNumber prefixChars stopChars =
         sm : Int -> Int -> String -> Expression
         sm start end src =
             let
+                content =
+                    String.slice start end src
+
                 sm_ =
-                    { content = src, length = end - start, chunkOffset = lineNumber, offset = start }
+                    { content = content, length = end - start, chunkOffset = lineNumber, offset = start }
             in
-            Text src sm_
+            Text content sm_
     in
     Parser.succeed sm
         |= Parser.getOffset
@@ -540,29 +565,6 @@ fixArg k1 e k2 =
 
 
 -- ENVIRONMENT
-
-
-{-| Capture the name of the environment in
-a \\begin{ENV} ... \\end{ENV}
-pair
--}
-envName : Int -> Parser ( String, SourceMap )
-envName chunkOffset =
-    Parser.inContext EnvNameContext <|
-        Parser.succeed
-            (\start str end src ->
-                ( Debug.log "envName, val" str
-                , { content = src, chunkOffset = chunkOffset, offset = start, length = Debug.log "envName LEN" end - start }
-                )
-            )
-            |= Parser.getOffset
-            |. Parser.symbol (Parser.Token "\\begin{" ExpectingBegin)
-            |= parseToSymbol ExpectingRightBrace "}"
-            |= Parser.getOffset
-            |= Parser.getSource
-
-
-
 --environment : Int -> Parser Expression
 
 
@@ -576,6 +578,26 @@ environment chunkOffset =
         |= (envName chunkOffset |> Parser.andThen (environmentOfType chunkOffset))
         |= Parser.getOffset
         |= Parser.getSource
+
+
+{-| Capture the name of the environment in
+a \\begin{ENV} ... \\end{ENV}
+pair
+-}
+envName : Int -> Parser ( String, SourceMap )
+envName chunkOffset =
+    Parser.inContext EnvNameContext <|
+        Parser.succeed
+            (\start str end ->
+                ( Debug.log "envName, val" str
+                , { content = "\\begin{" ++ str ++ "}", chunkOffset = chunkOffset, offset = start, length = Debug.log "envName LEN" end - start }
+                    |> Debug.log "ENV NAME, SM"
+                )
+            )
+            |= Parser.getOffset
+            |. Parser.symbol (Parser.Token "\\begin{" ExpectingBegin)
+            |= parseToSymbol ExpectingRightBrace "}"
+            |= Parser.getOffset
 
 
 
@@ -609,14 +631,14 @@ environmentParser chunkOffset envKind theEndWord envType =
         Just p ->
             let
                 _ =
-                    Debug.log "BR 1"
+                    Debug.log "BR" 1
             in
             p theEndWord envType
 
         Nothing ->
             let
                 _ =
-                    Debug.log "BR 2"
+                    Debug.log "BR" 2
             in
             standardEnvironmentBody chunkOffset theEndWord envType
 
@@ -629,7 +651,8 @@ environmentDict =
 
 standardEnvironmentBody : Int -> String -> String -> Parser Expression
 standardEnvironmentBody chunkOffset endWoord envType =
-    Parser.succeed (\start oa body end src -> Environment envType oa (Debug.log "BODY" body) { content = src, chunkOffset = Debug.log "CO" chunkOffset, offset = start, length = end - start })
+    -- Parser.succeed (fixExpr chunkOffset envType)
+    Parser.succeed (\start oa body end -> Environment envType oa (Debug.log "BODY" body) { content = "???", chunkOffset = Debug.log "CO" chunkOffset, offset = start, length = end - start })
         |= Parser.getOffset
         |= many (optionalArg chunkOffset)
         |. Parser.spaces
@@ -645,7 +668,14 @@ standardEnvironmentBody chunkOffset endWoord envType =
         |. Parser.spaces
         |. Parser.symbol (Parser.Token endWoord (ExpectingEndWord endWoord))
         |= Parser.getOffset
-        |= Parser.getSource
+
+
+fixExpr chunkOffset envType start oa body end src =
+    let
+        sm =
+            Expression.getSource body
+    in
+    Environment envType oa (Debug.log "BODY" body) { content = src, chunkOffset = Debug.log "CO" chunkOffset, offset = start, length = sm.length }
 
 
 environmentText chunkOffset =
