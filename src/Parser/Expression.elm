@@ -62,6 +62,7 @@ type alias SourceMap =
     , length : Int
     , offset : Int
     , content : String
+    , generation : Int
     }
 
 
@@ -116,7 +117,7 @@ type alias Slice =
 {-| -}
 dummySourceMap : SourceMap
 dummySourceMap =
-    { chunkOffset = 0, length = 0, offset = 0, content = "" }
+    { chunkOffset = 0, length = 0, offset = 0, content = "", generation = 0 }
 
 
 {-| Return the string in the source text identified by the SourceMap.
@@ -286,8 +287,11 @@ getSourceOfList list =
 
         content =
             List.head sourceMaps |> Maybe.map .content |> Maybe.withDefault ""
+
+        generation =
+            List.head sourceMaps |> Maybe.map .generation |> Maybe.withDefault 0
     in
-    { length = length, offset = offset, chunkOffset = lineNumber, content = content }
+    { length = length, offset = offset, chunkOffset = lineNumber, content = content, generation = generation }
 
 
 {-| Return the SourceMap component of an Expression
@@ -314,7 +318,7 @@ getSource expr =
             source
 
         LXList e ->
-            List.map getSource e |> List.head |> Maybe.withDefault { content = "nada", chunkOffset = -1, length = -1, offset = -1 }
+            List.map getSource e |> List.head |> Maybe.withDefault dummySourceMap
 
         LXInstruction _ source ->
             source

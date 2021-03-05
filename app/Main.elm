@@ -113,10 +113,9 @@ Still more stuff
 """
 
 
-parse : String -> List (List Expression)
-parse input =
-    input
-        |> Parser.Document.process
+parse : Int -> String -> List (List Expression)
+parse generation input =
+    Parser.Document.process generation input
 
 
 parsedTextToString : List (List Expression) -> List String
@@ -148,9 +147,9 @@ formatted str =
 init : Flags -> ( Model, Cmd Msg )
 init flags =
     ( { input = initialText
-      , parsedText = parse initialText
+      , parsedText = parse 0 initialText
       , sourceMap = Parser.Expression.dummySourceMap
-      , sourceMapIndex = Parser.Expression.sourceMapIndex (numberOfLines initialText) (parse initialText)
+      , sourceMapIndex = Parser.Expression.sourceMapIndex (numberOfLines initialText) (parse 0 initialText)
       , counter = 0
       , lhViewMode = LHSourceText
       , rhViewMode = RHRenderedText
@@ -181,7 +180,7 @@ update msg model =
         InputText str ->
             let
                 parsedText =
-                    parse str
+                    parse model.counter str
             in
             ( { model
                 | input = str
@@ -380,14 +379,14 @@ renderedTextDisplay_ model =
 
 mathNode : Int -> String -> Element Msg
 mathNode counter content =
-    Html.Keyed.node "div" [] [ ( String.fromInt counter, render1 content ) ]
+    Html.Keyed.node "div" [] [ ( String.fromInt counter, render1 counter content ) ]
         |> Element.html
 
 
-render1 : String -> Html Msg
-render1 input =
+render1 : Int -> String -> Html Msg
+render1 generation input =
     (input
-        |> Parser.Document.process
+        |> Parser.Document.process generation
         |> List.map (Render.render LaTeXState.init >> Html.div [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ])
         |> Html.div []
     )

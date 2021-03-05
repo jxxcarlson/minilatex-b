@@ -17,6 +17,7 @@ import Parser.TextCursor exposing (TextCursor)
 type alias State =
     { input : List String
     , lineNumber : Int
+    , generation : Int
     , blockType : BlockType
     , blockContents : List String
     , blockTypeStack : List BlockType
@@ -55,9 +56,9 @@ and prepends them to a list of TextCursor. The function
 toParsed extracts the AST from State.
 
 -}
-process : String -> List (List Expression)
-process =
-    runProcess >> toParsed
+process : Int -> String -> List (List Expression)
+process generation =
+    runProcess generation >> toParsed
 
 
 {-| Compute the final State of a string of source text.
@@ -68,9 +69,9 @@ chunks of text, parses these using Parser.Parser.parseLoop,
 and prepends them to a list of TextCursor.
 
 -}
-runProcess : String -> State
-runProcess str =
-    loop (init str) nextState
+runProcess : Int -> String -> State
+runProcess generation str =
+    loop (init generation str) nextState
 
 
 {-| Return the AST from the State.
@@ -88,10 +89,11 @@ toInput state =
     state.output |> List.map .text
 
 
-init : String -> State
-init str =
+init : Int -> String -> State
+init generation str =
     { input = String.lines str
     , lineNumber = 0
+    , generation = generation
     , blockType = Start
     , blockContents = []
     , blockTypeStack = []
@@ -243,7 +245,7 @@ popBlockStack blockType_ currentLine_ state =
                 String.join "\n" (List.reverse (currentLine_ :: state.blockContents))
 
             tc_ =
-                Parser.parseLoop state.lineNumber input_
+                Parser.parseLoop state.generation state.lineNumber input_
 
             tc =
                 { tc_ | text = input_ }
@@ -266,12 +268,12 @@ popBlockStack blockType_ currentLine_ state =
 
 pushTC : State -> List TextCursor
 pushTC state =
-    Parser.parseLoop state.lineNumber (String.join "\n" (List.reverse state.blockContents)) :: state.output
+    Parser.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse state.blockContents)) :: state.output
 
 
 pushTC2 : String -> State -> List TextCursor
 pushTC2 str state =
-    Parser.parseLoop state.lineNumber (String.join "\n" (List.reverse (str :: state.blockContents))) :: state.output
+    Parser.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse (str :: state.blockContents))) :: state.output
 
 
 flush : State -> State
@@ -281,7 +283,7 @@ flush state =
             String.join "\n" (List.reverse state.blockContents)
 
         tc_ =
-            Parser.parseLoop state.lineNumber input
+            Parser.parseLoop state.generation state.lineNumber input
 
         tc =
             { tc_ | text = input }
