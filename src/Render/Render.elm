@@ -1,7 +1,7 @@
 module Render.Render exposing (..)
 
 import Dict exposing (Dict)
-import Html exposing (Html)
+import Html exposing (Attribute, Html)
 import Html.Attributes as HA
 import Html.Events exposing (onClick)
 import Json.Encode
@@ -17,9 +17,9 @@ type DisplayMode
     | DisplayMathMode
 
 
-render : LaTeXState -> List Expression -> List (Html LaTeXMsg)
-render state exprs =
-    List.map (renderExpr state) exprs
+render : String -> LaTeXState -> List Expression -> List (Html LaTeXMsg)
+render selectedId state exprs =
+    List.map (renderExpr selectedId state) exprs
 
 
 clicker sm =
@@ -27,34 +27,52 @@ clicker sm =
 
 
 id sm =
-    HA.id (String.fromInt sm.generation ++ "-" ++ String.fromInt sm.chunkOffset ++ "-" ++ String.fromInt sm.offset)
+    String.fromInt sm.generation ++ "-" ++ String.fromInt sm.chunkOffset ++ "-" ++ String.fromInt sm.offset
 
 
-renderExpr : LaTeXState -> Expression -> Html LaTeXMsg
-renderExpr state expr =
+active : SourceMap -> String -> List (Attribute LaTeXMsg)
+active sm selectedId =
+    let
+        id_ =
+            id sm
+    in
+    [ clicker sm, HA.id id_, highlight "#FAA" selectedId id_ ]
+
+
+highlight : String -> String -> String -> Attribute LaTeXMsg
+highlight color selectedId id_ =
+    if id_ == selectedId then
+        HA.style "background-color" color
+
+    else
+        HA.style "background-color" "clear"
+
+
+renderExpr : String -> LaTeXState -> Expression -> Html LaTeXMsg
+renderExpr selectedId state expr =
     case expr of
         Text s sm ->
-            Html.span (id sm :: clicker sm :: state.config.textSpanStyle) [ Html.text s ]
+            Html.span (state.config.textSpanStyle :: active sm selectedId) [ Html.text s ]
 
         InlineMath s sm ->
-            inlineMathText s sm
+            inlineMathText selectedId s sm
 
         DisplayMath s sm ->
-            displayMathText s sm
+            displayMathText selectedId s sm
 
         Macro name optArg args sm ->
-            macro state name optArg args sm
+            macro selectedId state name optArg args sm
 
         Environment name args body sm ->
-            environment state name args body sm
+            environment selectedId state name args body sm
 
         LXList list_ ->
-            List.map (renderExpr state) list_ |> Html.span state.config.textSpanStyle
+            List.map (renderExpr selectedId state) list_ |> Html.span [ state.config.textSpanStyle ]
 
         LXError s p sm ->
             Html.span [ clicker { sm | offset = sm.offset - sm.length } ]
-                [ Html.span (id sm :: state.config.errorStyle2) [ Html.text s ]
-                , Html.span (id sm :: state.config.errorStyle) [ Html.text (errorString p sm) ]
+                [ Html.span (active sm selectedId ++ state.config.errorStyle2) [ Html.text s ]
+                , Html.span (active sm selectedId ++ state.config.errorStyle) [ Html.text (errorString p sm) ]
                 ]
 
         LXInstruction _ _ ->
@@ -67,23 +85,23 @@ errorString p sm =
         ++ Parser.Expression.problemAsString p
 
 
-macro : LaTeXState -> String -> Maybe String -> List Expression -> SourceMap -> Html LaTeXMsg
-macro state name optArg args sm =
+macro : String -> LaTeXState -> String -> Maybe String -> List Expression -> SourceMap -> Html LaTeXMsg
+macro selectedId state name optArg args sm =
     case Dict.get name macroDict of
         Nothing ->
             undefinedMacro name sm
 
         Just f ->
-            f state optArg args sm
+            f selectedId state optArg args sm
 
 
 undefinedMacro : String -> SourceMap -> Html LaTeXMsg
 undefinedMacro name sm =
-    Html.span [ id sm, clicker sm, HA.style "color" "red" ] [ Html.text "Undefined macro: " ]
+    Html.span [ HA.id (id sm), clicker sm, HA.style "color" "red" ] [ Html.text "Undefined macro: " ]
 
 
-environment state name args body sm =
-    renderEnvironment state name args body
+environment selectedId state name args body sm =
+    renderEnvironment selectedId state name args body
 
 
 
@@ -92,28 +110,28 @@ environment state name args body sm =
 -- RENDER ENVIRONMENTS
 
 
-renderEnvironment : LaTeXState -> String -> List Expression -> Expression -> Html LaTeXMsg
-renderEnvironment state name args body =
+renderEnvironment : String -> LaTeXState -> String -> List Expression -> Expression -> Html LaTeXMsg
+renderEnvironment selectedId state name args body =
     case Dict.get name renderEnvironmentDict of
         Just f ->
-            f state args body
+            f selectedId state args body
 
         Nothing ->
-            renderDefaultEnvironment state name args body
+            renderDefaultEnvironment selectedId state name args body
 
 
-renderEnvironmentDict : Dict.Dict String (LaTeXState -> List Expression -> Expression -> Html LaTeXMsg)
+renderEnvironmentDict : Dict.Dict String (String -> LaTeXState -> List Expression -> Expression -> Html LaTeXMsg)
 renderEnvironmentDict =
     -- s x a y = SourceText, LaTeXState, List LatexExpression, LaTeXExpression
     -- s l e = LaTexState, List Expression, Expression
     Dict.fromList
-        [ ( "align", \s l e -> renderMathEnvironment "aligned" s l e )
-        , ( "matrix", \s l e -> renderMathEnvironment "matrix" s l e )
-        , ( "pmatrix", \s l e -> renderMathEnvironment "pmatrix" s l e )
-        , ( "bmatrix", \s l e -> renderMathEnvironment "bmatrix" s l e )
-        , ( "Bmatrix", \s l e -> renderMathEnvironment "Bmatrix" s l e )
-        , ( "vmatrix", \s l e -> renderMathEnvironment "vmatrix" s l e )
-        , ( "Vmatrix", \s l e -> renderMathEnvironment "Vmatrix" s l e )
+        [ ( "align", \si s l e -> renderMathEnvironment "aligned" si s l e )
+        , ( "matrix", \si s l e -> renderMathEnvironment "matrix" si s l e )
+        , ( "pmatrix", \si s l e -> renderMathEnvironment "pmatrix" si s l e )
+        , ( "bmatrix", \si s l e -> renderMathEnvironment "bmatrix" si s l e )
+        , ( "Bmatrix", \si s l e -> renderMathEnvironment "Bmatrix" si s l e )
+        , ( "vmatrix", \si s l e -> renderMathEnvironment "vmatrix" si s l e )
+        , ( "Vmatrix", \si s l e -> renderMathEnvironment "Vmatrix" si s l e )
 
         --, ( "colored", \s l e -> renderCodeEnvironment s l e )
         --, ( "center", \s l e -> renderCenterEnvironment s l e )
@@ -123,7 +141,8 @@ renderEnvironmentDict =
         --, ( "defitem", \s l e -> renderDefItemEnvironment s l e )
         --, ( "enumerate", \s l e -> renderEnumerate s l e )
         --, ( "eqnarray", \s l e -> renderEqnArray s l e )
-        , ( "equation", \s _ e -> renderEquationEnvironment s e )
+        , ( "equation", \si s _ e -> renderEquationEnvironment si s e )
+        , ( "equation", \si s _ e -> renderEquationEnvironment si s e )
 
         --, ( "indent", \s l e -> renderIndentEnvironment s l e )
         --, ( "itemize", \s l e -> renderItemize s l e )
@@ -153,20 +172,20 @@ theoremLikeEnvironments =
     ]
 
 
-renderDefaultEnvironment : LaTeXState -> String -> List Expression -> Expression -> Html LaTeXMsg
-renderDefaultEnvironment state name args body =
+renderDefaultEnvironment : String -> LaTeXState -> String -> List Expression -> Expression -> Html LaTeXMsg
+renderDefaultEnvironment selectedId state name args body =
     if List.member name theoremLikeEnvironments then
-        renderTheoremLikeEnvironment state name args body
+        renderTheoremLikeEnvironment selectedId state name args body
 
     else
-        renderDefaultEnvironment2 state (Utility.capitalize name) args body
+        renderDefaultEnvironment2 selectedId state (Utility.capitalize name) args body
 
 
-renderTheoremLikeEnvironment : LaTeXState -> String -> List Expression -> Expression -> Html LaTeXMsg
-renderTheoremLikeEnvironment latexState name args body =
+renderTheoremLikeEnvironment : String -> LaTeXState -> String -> List Expression -> Expression -> Html LaTeXMsg
+renderTheoremLikeEnvironment selectedId latexState name args body =
     let
         r =
-            render latexState [ body ]
+            render selectedId latexState [ body ]
 
         eqno =
             LaTeXState.getCounter "eqno" latexState
@@ -187,22 +206,22 @@ renderTheoremLikeEnvironment latexState name args body =
         sm =
             Parser.Expression.getSource body
     in
-    Html.div [ id sm, HA.class "environment" ]
+    Html.div [ HA.class "environment" ]
         [ Html.strong [] [ Html.text (Utility.capitalize name ++ tnoString) ]
         , Html.div [ HA.class "italic" ] r
         ]
 
 
-renderDefaultEnvironment2 : LaTeXState -> String -> List Expression -> Expression -> Html LaTeXMsg
-renderDefaultEnvironment2 latexState name args body =
+renderDefaultEnvironment2 : String -> LaTeXState -> String -> List Expression -> Expression -> Html LaTeXMsg
+renderDefaultEnvironment2 selectedId latexState name args body =
     let
         r =
-            render latexState [ body ]
+            render selectedId latexState [ body ]
 
         sm =
             Parser.Expression.getSource body
     in
-    Html.div [ id sm, HA.class "environment" ]
+    Html.div (active sm selectedId)
         [ Html.strong [] [ Html.text name ]
         , Html.div [] r
         ]
@@ -220,8 +239,8 @@ renderDefaultEnvironment2 latexState name args body =
 --            Html.span [ HA.class "X6" ] [ Html.text "SVG parse error" ]
 
 
-renderMathEnvironment : String -> LaTeXState -> List Expression -> Expression -> Html LaTeXMsg
-renderMathEnvironment envName latexState _ body =
+renderMathEnvironment : String -> String -> LaTeXState -> List Expression -> Expression -> Html LaTeXMsg
+renderMathEnvironment selectedId envName latexState _ body =
     let
         --r =
         --    Internal.RenderToString.render latexState body
@@ -271,11 +290,11 @@ renderMathEnvironment envName latexState _ body =
                 Just tag_ ->
                     "(" ++ tag_ ++ ")"
     in
-    displayMathTextWithLabel_ latexState sourceMap content tag
+    displayMathTextWithLabel_ selectedId latexState sourceMap content tag
 
 
-renderEquationEnvironment : LaTeXState -> Expression -> Html LaTeXMsg
-renderEquationEnvironment latexState body =
+renderEquationEnvironment : String -> LaTeXState -> Expression -> Html LaTeXMsg
+renderEquationEnvironment selectedId latexState body =
     let
         eqno =
             LaTeXState.getCounter "eqno" latexState
@@ -320,17 +339,17 @@ renderEquationEnvironment latexState body =
     -- ("\\begin{equation}" ++ contents ++ addendum ++ "\\end{equation}")
     -- REVIEW; changed for KaTeX
     -- displayMathText_ latexState  (contents ++ tag)
-    displayMathTextWithLabel_ latexState sm contents tag
+    displayMathTextWithLabel_ selectedId latexState sm contents tag
 
 
-displayMathTextWithLabel_ : LaTeXState -> SourceMap -> String -> String -> Html LaTeXMsg
-displayMathTextWithLabel_ latexState sm str label =
+displayMathTextWithLabel_ : String -> LaTeXState -> SourceMap -> String -> String -> Html LaTeXMsg
+displayMathTextWithLabel_ selectedId latexState sm str label =
     Html.div
         []
-        [ Html.div [ HA.style "float" "right", HA.style "margin-top" "3px" ]
+        [ Html.div ([ HA.style "float" "right", HA.style "margin-top" "3px" ] ++ active sm selectedId)
             [ Html.text label ]
-        , Html.div [ id sm ]
-            [ mathText DisplayMathMode (String.trim str) sm ]
+        , Html.div (active sm selectedId)
+            [ mathText DisplayMathMode selectedId (String.trim str) sm ]
         ]
 
 
@@ -490,17 +509,19 @@ displayMathTextWithLabel_ latexState sm str label =
 -- END: RENDER ENVIRONMENT
 
 
-mathText : DisplayMode -> String -> SourceMap -> Html LaTeXMsg
-mathText displayMode content sm =
+mathText : DisplayMode -> String -> String -> SourceMap -> Html LaTeXMsg
+mathText displayMode selectedId content sm =
     Html.node "math-text"
-        [ HA.property "delay" (Json.Encode.bool False)
-        , HA.property "display" (Json.Encode.bool (isDisplayMathMode displayMode))
-        , HA.property "content" (Json.Encode.string (content |> String.replace "\\ \\" "\\\\"))
-        , clicker sm
-        , id sm
+        (active sm selectedId
+            ++ [ HA.property "delay" (Json.Encode.bool False)
+               , HA.property "display" (Json.Encode.bool (isDisplayMathMode displayMode))
+               , HA.property "content" (Json.Encode.string (content |> String.replace "\\ \\" "\\\\"))
+               , clicker sm
+               , HA.id (id sm)
 
-        --, HA.property "content" (Json.Encode.string content |> String.replace "\\ \\" "\\\\"))
-        ]
+               --, HA.property "content" (Json.Encode.string content |> String.replace "\\ \\" "\\\\"))
+               ]
+        )
         []
 
 
@@ -514,14 +535,14 @@ isDisplayMathMode displayMode =
             True
 
 
-inlineMathText : String -> SourceMap -> Html LaTeXMsg
-inlineMathText str_ sm =
-    mathText InlineMathMode (String.trim str_) sm
+inlineMathText : String -> String -> SourceMap -> Html LaTeXMsg
+inlineMathText selectedId str_ sm =
+    mathText InlineMathMode selectedId (String.trim str_) sm
 
 
-displayMathText : String -> SourceMap -> Html LaTeXMsg
-displayMathText str_ sm =
-    mathText DisplayMathMode (String.trim str_) sm
+displayMathText : String -> String -> SourceMap -> Html LaTeXMsg
+displayMathText selectedId str_ sm =
+    mathText DisplayMathMode selectedId (String.trim str_) sm
 
 
 at : Int -> String -> Maybe String
@@ -540,7 +561,7 @@ highlightWithSourceMap sm str sourceMapIndex_ =
     in
     case List.head idxs of
         Nothing ->
-            Html.span [ id sm ] [ Html.text str ]
+            Html.span [ HA.id (id sm) ] [ Html.text str ]
 
         Just offset ->
             let
@@ -556,7 +577,7 @@ highlightWithSourceMap sm str sourceMapIndex_ =
                 right =
                     String.dropLeft sm.length remainder
             in
-            Html.div [ id sm ]
+            Html.div [ HA.id (id sm) ]
                 [ Html.span [] [ Html.text left ]
                 , Html.span [ HA.style "background-color" "pink" ] [ Html.text middle ]
                 , Html.span [] [ Html.text right ]
@@ -577,9 +598,8 @@ type alias MacroDict =
 
 macroDict =
     Dict.fromList
-        [ ( "strong", \state ms args sm -> render state args |> Html.span [ clicker sm, HA.style "font-weight" "bold" ] )
-        , ( "italic", \state ms args sm -> render state args |> Html.span [ clicker sm, HA.style "font-style" "italic" ] )
-        , ( "red", \state ms args sm -> render state args |> Html.span [ clicker sm, HA.style "color" state.config.redColor ] )
-        , ( "blue", \state ms args sm -> render state args |> Html.span [ clicker sm, HA.style "color" state.config.blueColor ] )
-        , ( "foo", \state ms args sm -> Html.span [ clicker sm, HA.style "font-style" "italic" ] [ Html.text "Foo" ] )
+        [ ( "strong", \si state ms args sm -> render si state args |> Html.span (HA.style "font-weight" "bold" :: active sm si) )
+        , ( "italic", \si state ms args sm -> render si state args |> Html.span (HA.style "font-style" "italic" :: active sm si) )
+        , ( "red", \si state ms args sm -> render si state args |> Html.span (HA.style "color" state.config.redColor :: active sm si) )
+        , ( "blue", \si state ms args sm -> render si state args |> Html.span (HA.style "font-style" "italic" :: active sm si) )
         ]

@@ -100,14 +100,14 @@ type alias Flags =
 
 initialText : String
 initialText =
-    """This is a test: $a^2 + b^2 = c^2
+    """This is a test: $a^2 + b^2 = c^2$
 
 \\strong{\\italic{More stuff:}} $p^2 \\equiv 1$
 one
 two
 three
 
-$$a^2b^3c^5
+$$a^2b^3c^5$$
 
 Still more stuff
 """
@@ -387,7 +387,7 @@ render1 : Int -> String -> Html Msg
 render1 generation input =
     (input
         |> Parser.Document.process generation
-        |> List.map (Render.render LaTeXState.init >> Html.div [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ])
+        |> List.map (Render.render "0-2-44" LaTeXState.init >> Html.div [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ])
         |> Html.div []
     )
         |> Html.map LaTeXMsg

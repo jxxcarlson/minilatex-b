@@ -49,22 +49,24 @@ emptyLatexState =
 
 type alias Config =
     { lineHeight : Attribute LaTeXMsg
-    , textSpanStyle : List (Attribute LaTeXMsg)
+    , textSpanStyle : Attribute LaTeXMsg
     , errorStyle : List (Attribute LaTeXMsg)
     , errorStyle2 : List (Attribute LaTeXMsg)
     , redColor : String
     , blueColor : String
+    , highlightColor : String
     }
 
 
 defaultConfig : Config
 defaultConfig =
     { lineHeight = HA.style "line-height" "1.5"
-    , textSpanStyle = [ HA.style "line-height" "1.5" ]
+    , textSpanStyle = HA.style "line-height" "1.5"
     , errorStyle = [ HA.style "color" "#0000FF", HA.style "background-color" "pink", HA.style "padding" "4px" ]
     , errorStyle2 = [ HA.style "color" "#0000FF", HA.style "background-color" "#EE82EE", HA.style "padding" "4px" ]
     , redColor = "#a00"
     , blueColor = "#00c"
+    , highlightColor = "#fAA"
     }
 
 
