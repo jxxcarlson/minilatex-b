@@ -44,9 +44,25 @@ TO ADD: COMMENTS ON THE STACK
 
 -}
 
---( parseLoop, getErrors
---, envName, environment, expression, expressionList, macroName, many, nonEmptyItemList, standardEnvironmentBody, textNP
---)
+--| Table Contents
+--| PARSELOOP
+--| Recovery Data and Handlers
+--| EXPRESSION PARSER
+--| Errors
+--| Text
+--| Math
+--| Macro
+--| OptArg
+--| Arg
+--| Environment
+--| SOURCE MAP
+--| HELPERS
+--| Loop
+--| Many
+--| Many2
+--|
+--| ( parseLoop, getErrors)
+--
 
 import Dict
 import Parser.Advanced as Parser exposing ((|.), (|=))
@@ -173,6 +189,10 @@ handleError tc_ e =
     , offset = newOffset tc_ errorColumn mRecoveryData
     , count = 0
     }
+
+
+
+-- Recovery Data and Handlers
 
 
 type alias RecoveryData =
@@ -308,7 +328,7 @@ problemWithInlineMath =
 
 
 
--- EXPRESSION
+-- EXPRESSION PARSER
 
 
 {-|
@@ -340,7 +360,7 @@ alwaysP =
 
 
 
--- ERRORS
+-- Errors
 
 
 {-| getErrors takes parsed text as input and produces a list of errors as output.
@@ -368,7 +388,7 @@ isError expr =
 
 
 
--- TEXT
+-- Text
 
 
 text : Int -> Parser Expression
@@ -418,8 +438,43 @@ rawText lineNumber stopChars =
             |. Parser.chompWhile (\c -> not (List.member c stopChars))
 
 
+{-| Use `inWord` to parse a word.
 
--- MATH
+import Parser
+
+inWord : Char -> Bool
+inWord c = not (c == ' ')
+
+LXParser.run word "this is a test"
+--> Ok "this"
+
+-}
+word_ : Problem -> (Char -> Bool) -> Parser String
+word_ problem inWord =
+    Parser.succeed String.slice
+        |. Parser.spaces
+        |= Parser.getOffset
+        |. Parser.chompIf inWord problem
+        |. Parser.chompWhile inWord
+        |. Parser.spaces
+        |= Parser.getOffset
+        |= Parser.getSource
+
+
+word : Int -> Parser ( String, SourceMap )
+word lineNumber =
+    Parser.inContext WordContext <|
+        Parser.succeed identity
+            |= getChompedString lineNumber (Parser.chompUntil (Parser.Token " " ExpectingEndOfWordSpace))
+
+
+inOptionArgWord : Char -> Bool
+inOptionArgWord c =
+    not (c == '\\' || c == '$' || c == ']' || c == ' ' || c == '\n')
+
+
+
+-- Math
 
 
 inlineMath : Int -> Parser Expression
@@ -443,7 +498,7 @@ displayMath lineNumber =
 
 
 
--- MACRO
+-- Macro
 
 
 {-|
@@ -524,6 +579,10 @@ bareMacroName lineNo =
         |. Parser.symbol (Parser.Token " " ExpectingSpace)
 
 
+
+-- OptArg
+
+
 optArg : Int -> Parser (Maybe ( String, SourceMap ))
 optArg lineNo =
     Parser.oneOf [ optArg__ lineNo |> Parser.map Just, Parser.succeed Nothing ]
@@ -536,6 +595,24 @@ optArg__ lineNo =
             |. Parser.symbol (Parser.Token "[" ExpectingLeftBracket)
             |= rawText lineNo [ ']' ]
             |. Parser.symbol (Parser.Token "]" ExpectingRightBracket)
+
+
+optionalArg : Int -> Parser Expression
+optionalArg chunkOffset =
+    Parser.succeed identity
+        |. Parser.symbol (Parser.Token "[" ExpectingLeftBracket)
+        |= itemList (Parser.oneOf [ optArg2 chunkOffset, inlineMath chunkOffset ])
+        |. Parser.symbol (Parser.Token "]" ExpectingRightBracket)
+        |> Parser.map LXList
+
+
+optArg2 : Int -> Parser Expression
+optArg2 chunkOffset =
+    optArg__ chunkOffset |> Parser.map (\( s, sm ) -> Text s sm)
+
+
+
+-- Arg
 
 
 arg : Int -> Parser Expression
@@ -561,8 +638,7 @@ fixArg k1 e k2 =
 
 
 
--- ENVIRONMENT
---environment : Int -> Parser Expression
+-- Environment
 
 
 environment : Int -> Parser Expression
@@ -744,52 +820,100 @@ runParser p str =
             [ LXError "error running Parser" GenericError Expression.dummySourceMap ]
 
 
-optionalArg : Int -> Parser Expression
-optionalArg chunkOffset =
-    Parser.succeed identity
-        |. Parser.symbol (Parser.Token "[" ExpectingLeftBracket)
-        |= itemList (Parser.oneOf [ optArg2 chunkOffset, inlineMath chunkOffset ])
-        |. Parser.symbol (Parser.Token "]" ExpectingRightBracket)
-        |> Parser.map LXList
+
+-- SOURCE MAP
 
 
-optArg2 : Int -> Parser Expression
-optArg2 chunkOffset =
-    optArg__ chunkOffset |> Parser.map (\( s, sm ) -> Text s sm)
+updateSourceMap : Expression -> Maybe Expression -> Expression
+updateSourceMap e me =
+    case me of
+        Nothing ->
+            e
+
+        Just e1 ->
+            let
+                sm1 =
+                    Expression.getSource e1
+
+                sm =
+                    Expression.getSource e
+
+                sm2 =
+                    { sm | offset = sm.offset + sm1.length }
+            in
+            Expression.setSourceMap sm2 e1
 
 
-{-| Use `inWord` to parse a word.
 
-import Parser
+-- HELPERS
+-- Loop
 
-inWord : Char -> Bool
-inWord c = not (c == ' ')
 
-LXParser.run word "this is a test"
---> Ok "this"
+type Step state a
+    = Loop state
+    | Done a
 
+
+loop : state -> (state -> Step state a) -> a
+loop s nextState =
+    case nextState s of
+        Loop s_ ->
+            loop s_ nextState
+
+        Done b ->
+            b
+
+
+
+-- Many
+
+
+{-| Apply a parser zero or more times and return a list of the results.
 -}
-word_ : Problem -> (Char -> Bool) -> Parser String
-word_ problem inWord =
-    Parser.succeed String.slice
-        |. Parser.spaces
-        |= Parser.getOffset
-        |. Parser.chompIf inWord problem
-        |. Parser.chompWhile inWord
-        |. Parser.spaces
-        |= Parser.getOffset
-        |= Parser.getSource
+many : Parser a -> Parser (List a)
+many p =
+    Parser.loop [] (manyHelp p)
 
 
-inOptionArgWord : Char -> Bool
-inOptionArgWord c =
-    not (c == '\\' || c == '$' || c == ']' || c == ' ' || c == '\n')
+manyHelp : Parser a -> List a -> Parser (Parser.Step (List a) (List a))
+manyHelp p vs =
+    Parser.oneOf
+        [ eof |> Parser.map (\_ -> Parser.Done (List.reverse vs))
+        , Parser.succeed (\v -> Parser.Loop (v :: vs))
+            |= p
+        , Parser.succeed ()
+            |> Parser.map (\_ -> Parser.Done (List.reverse vs))
+        ]
 
 
 manyNonEmpty : Parser a -> Parser (List a)
 manyNonEmpty p =
     p
         |> Parser.andThen (\x -> itemList_ [ x ] p)
+
+
+
+-- Many2
+
+
+many2 : (a -> Maybe a -> a) -> Parser a -> Parser (List a)
+many2 f p =
+    Parser.loop [] (manyHelp2 f p)
+
+
+manyHelp2 : (a -> Maybe a -> a) -> Parser a -> List a -> Parser (Parser.Step (List a) (List a))
+manyHelp2 f p vs =
+    Parser.oneOf
+        [ eof |> Parser.map (\_ -> Parser.Done (List.reverse vs))
+        , Parser.succeed (\v -> Parser.Loop (f v (List.head vs) :: vs))
+            |= p
+        , Parser.succeed ()
+            |> Parser.map (\_ -> Parser.Done (List.reverse vs))
+        ]
+
+
+
+-- ItemList
 
 
 nonEmptyItemList : Parser a -> Parser (List a)
@@ -818,97 +942,9 @@ itemListHelper itemParser revItems =
         ]
 
 
-
--- WORD
-
-
-word : Int -> Parser ( String, SourceMap )
-word lineNumber =
-    Parser.inContext WordContext <|
-        Parser.succeed identity
-            |= getChompedString lineNumber (Parser.chompUntil (Parser.Token " " ExpectingEndOfWordSpace))
-
-
-
--- LOOP
-
-
-loop : state -> (state -> Step state a) -> a
-loop s nextState =
-    case nextState s of
-        Loop s_ ->
-            loop s_ nextState
-
-        Done b ->
-            b
-
-
-type Step state a
-    = Loop state
-    | Done a
-
-
-many2 : (a -> Maybe a -> a) -> Parser a -> Parser (List a)
-many2 f p =
-    Parser.loop [] (manyHelp2 f p)
-
-
-manyHelp2 : (a -> Maybe a -> a) -> Parser a -> List a -> Parser (Parser.Step (List a) (List a))
-manyHelp2 f p vs =
-    Parser.oneOf
-        [ eof |> Parser.map (\_ -> Parser.Done (List.reverse vs))
-        , Parser.succeed (\v -> Parser.Loop (f v (List.head vs) :: vs))
-            |= p
-        , Parser.succeed ()
-            |> Parser.map (\_ -> Parser.Done (List.reverse vs))
-        ]
-
-
-updateSourceMap : Expression -> Maybe Expression -> Expression
-updateSourceMap e me =
-    case me of
-        Nothing ->
-            e
-
-        Just e1 ->
-            let
-                sm1 =
-                    Expression.getSource e1
-
-                sm =
-                    Expression.getSource e
-
-                sm2 =
-                    { sm | offset = sm.offset + sm1.length }
-            in
-            Expression.setSourceMap sm2 e1
-
-
-{-| Apply a parser zero or more times and return a list of the results.
--}
-many : Parser a -> Parser (List a)
-many p =
-    Parser.loop [] (manyHelp p)
-
-
-manyHelp : Parser a -> List a -> Parser (Parser.Step (List a) (List a))
-manyHelp p vs =
-    Parser.oneOf
-        [ eof |> Parser.map (\_ -> Parser.Done (List.reverse vs))
-        , Parser.succeed (\v -> Parser.Loop (v :: vs))
-            |= p
-        , Parser.succeed ()
-            |> Parser.map (\_ -> Parser.Done (List.reverse vs))
-        ]
-
-
 eof : Parser ()
 eof =
     Parser.end EndOfInput
-
-
-
--- HELPERS
 
 
 {-| chomp to end of the marker and return the

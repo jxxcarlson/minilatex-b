@@ -15,3 +15,8 @@ scripts:
 
   yes: git log --after=`date -v-1d +%F` --oneline
 
+  yess: git log --after=`date -v-1d +%F`
+
+  tc: sh scripts/tc-list.sh $1
+
+

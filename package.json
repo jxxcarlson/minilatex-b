@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "name": "my-app",
+  "scripts": {
+    "postinstall": "elm-tooling install"
+  }
+}
