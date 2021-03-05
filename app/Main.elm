@@ -38,7 +38,7 @@ import Html.Keyed
 import Paragraph
 import Parser.Document
 import Parser.Expression exposing (Expression)
-import Parser.Parser as Parser
+import Parser.Problem
 import Render.LaTeXState as LaTeXState exposing (LaTeXMsg(..))
 import Render.Render as Render
 
@@ -425,7 +425,7 @@ renderParseResult model =
             model.parsedText |> parsedTextToString |> renderParsedText
 
         ShowParseErrors ->
-            model.parsedText |> Parser.getErrors |> parsedTextToString_ |> renderParsedText
+            model.parsedText |> Parser.Problem.getErrors |> parsedTextToString_ |> renderParsedText
 
         ShowSourceMap ->
             model.parsedText

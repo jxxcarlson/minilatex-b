@@ -1,4 +1,4 @@
-module Parser.Problem exposing (RecoveryData, getRecoveryData)
+module Parser.Problem exposing (RecoveryData, getErrors, getRecoveryData)
 
 import Parser.Expression as Expression exposing (Expression(..), Problem(..), SourceMap)
 import Parser.TextCursor as TextCursor exposing (TextCursor)
@@ -98,3 +98,31 @@ problemWithEnvironment =
                 Expression.dummySourceMap
             ]
     }
+
+
+
+-- ERRORS
+
+
+{-| getErrors takes parsed text as input and produces a list of errors as output.
+-}
+getErrors : List (List Expression) -> List Expression
+getErrors list =
+    list
+        |> List.map getErrors_
+        |> List.concat
+
+
+getErrors_ : List Expression -> List Expression
+getErrors_ list =
+    List.filter (\e -> isError e) list
+
+
+isError : Expression -> Bool
+isError expr =
+    case expr of
+        LXError _ _ _ ->
+            True
+
+        _ ->
+            False

@@ -44,24 +44,23 @@ TO ADD: COMMENTS ON THE STACK
 
 -}
 
---| Table Contents
---| PARSELOOP
---| Recovery Data and Handlers
---| EXPRESSION PARSER
---| Errors
---| Text
---| Math
---| Macro
---| OptArg
---| Arg
---| Environment
---| SOURCE MAP
---| HELPERS
---| Loop
---| Many
---| Many2
---|
---| ( parseLoop, getErrors)
+----| Table Contents
+----| PARSELOOP
+----| EXPRESSION PARSER
+----| Text
+----| Math
+----| Macro
+----| OptArg
+----| Arg
+----| Environment
+----| SOURCE MAP
+----| HELPERS
+----| Loop
+----| Many
+----| Many2
+----| ItemList
+----|
+----| ( parseLoop, getErrors)
 --
 
 import Dict
@@ -191,10 +190,6 @@ handleError tc_ e =
     }
 
 
-
--- Recovery Data and Handlers
-
-
 newOffset tc_ errorColumn_ mRecoveryData_ =
     case mRecoveryData_ of
         Just rd ->
@@ -254,41 +249,7 @@ expression lineNumber =
         , displayMath lineNumber
         , inlineMath lineNumber
         , text lineNumber
-
-        --, alwaysP -- TODO: examine the wisdom of adding this
         ]
-
-
-alwaysP =
-    Parser.succeed (LXInstruction Expression.INoOp { chunkOffset = 0, length = 1, offset = 0, content = "" })
-
-
-
--- Errors
-
-
-{-| getErrors takes parsed text as input and produces a list of errors as output.
--}
-getErrors : List (List Expression) -> List Expression
-getErrors list =
-    list
-        |> List.map getErrors_
-        |> List.concat
-
-
-getErrors_ : List Expression -> List Expression
-getErrors_ list =
-    List.filter (\e -> isError e) list
-
-
-isError : Expression -> Bool
-isError expr =
-    case expr of
-        LXError _ _ _ ->
-            True
-
-        _ ->
-            False
 
 
 
