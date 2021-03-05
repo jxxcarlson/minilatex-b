@@ -255,7 +255,7 @@ popBlockStack blockType_ currentLine_ state =
             , blockTypeStack = []
             , blockContents = currentLine_ :: state.blockContents
             , output = tc :: state.output
-            , lineNumber = state.lineNumber + Debug.log "BN" (2 + List.length state.blockContents) -- TODO: think about this.  Is it correct?
+            , lineNumber = state.lineNumber + (2 + List.length state.blockContents) -- TODO: think about this.  Is it correct?
         }
 
     else

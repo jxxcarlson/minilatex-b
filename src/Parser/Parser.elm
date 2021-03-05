@@ -299,7 +299,7 @@ textNP generation lineNumber prefixChars stopChars =
 
 text_ : Int -> Int -> List Char -> Parser Expression
 text_ generation lineNumber stopChars =
-    Parser.map (\( t, s ) -> Text t s) (rawText lineNumber generation stopChars)
+    Parser.map (\( t, s ) -> Text t s) (rawText generation lineNumber stopChars)
 
 
 rawText : Int -> Int -> List Char -> Parser ( String, SourceMap )

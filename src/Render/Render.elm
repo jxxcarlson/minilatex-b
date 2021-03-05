@@ -26,11 +26,15 @@ clicker sm =
     onClick (SendSourceMap sm)
 
 
+id sm =
+    HA.id (String.fromInt sm.generation ++ "-" ++ String.fromInt sm.chunkOffset)
+
+
 renderExpr : LaTeXState -> Expression -> Html LaTeXMsg
 renderExpr state expr =
     case expr of
         Text s sm ->
-            Html.span (clicker sm :: state.config.textSpanStyle) [ Html.text s ]
+            Html.span (id sm :: clicker sm :: state.config.textSpanStyle) [ Html.text s ]
 
         InlineMath s sm ->
             inlineMathText s sm
@@ -49,8 +53,8 @@ renderExpr state expr =
 
         LXError s p sm ->
             Html.span [ clicker { sm | offset = sm.offset - sm.length } ]
-                [ Html.span state.config.errorStyle2 [ Html.text s ]
-                , Html.span state.config.errorStyle [ Html.text (errorString p sm) ]
+                [ Html.span (id sm :: state.config.errorStyle2) [ Html.text s ]
+                , Html.span (id sm :: state.config.errorStyle) [ Html.text (errorString p sm) ]
                 ]
 
         LXInstruction _ _ ->
@@ -75,7 +79,7 @@ macro state name optArg args sm =
 
 undefinedMacro : String -> SourceMap -> Html LaTeXMsg
 undefinedMacro name sm =
-    Html.span [ clicker sm, HA.style "color" "red" ] [ Html.text "Undefined macro: " ]
+    Html.span [ id sm, clicker sm, HA.style "color" "red" ] [ Html.text "Undefined macro: " ]
 
 
 environment state name args body sm =
@@ -90,10 +94,6 @@ environment state name args body sm =
 
 renderEnvironment : LaTeXState -> String -> List Expression -> Expression -> Html LaTeXMsg
 renderEnvironment state name args body =
-    let
-        _ =
-            Debug.log "RENDER" name
-    in
     case Dict.get name renderEnvironmentDict of
         Just f ->
             f state args body
@@ -183,8 +183,11 @@ renderTheoremLikeEnvironment latexState name args body =
 
             else
                 " " ++ String.fromInt tno
+
+        sm =
+            Parser.Expression.getSource body
     in
-    Html.div [ HA.class "environment" ]
+    Html.div [ id sm, HA.class "environment" ]
         [ Html.strong [] [ Html.text (Utility.capitalize name ++ tnoString) ]
         , Html.div [ HA.class "italic" ] r
         ]
@@ -195,8 +198,11 @@ renderDefaultEnvironment2 latexState name args body =
     let
         r =
             render latexState [ body ]
+
+        sm =
+            Parser.Expression.getSource body
     in
-    Html.div [ HA.class "environment" ]
+    Html.div [ id sm, HA.class "environment" ]
         [ Html.strong [] [ Html.text name ]
         , Html.div [] r
         ]
@@ -323,7 +329,7 @@ displayMathTextWithLabel_ latexState sm str label =
         []
         [ Html.div [ HA.style "float" "right", HA.style "margin-top" "3px" ]
             [ Html.text label ]
-        , Html.div []
+        , Html.div [ id sm ]
             [ mathText DisplayMathMode (String.trim str) sm ]
         ]
 
@@ -491,6 +497,7 @@ mathText displayMode content sm =
         , HA.property "display" (Json.Encode.bool (isDisplayMathMode displayMode))
         , HA.property "content" (Json.Encode.string (content |> String.replace "\\ \\" "\\\\"))
         , clicker sm
+        , id sm
 
         --, HA.property "content" (Json.Encode.string content |> String.replace "\\ \\" "\\\\"))
         ]
@@ -533,7 +540,7 @@ highlightWithSourceMap sm str sourceMapIndex_ =
     in
     case List.head idxs of
         Nothing ->
-            Html.span [] [ Html.text str ]
+            Html.span [ id sm ] [ Html.text str ]
 
         Just offset ->
             let
@@ -549,7 +556,7 @@ highlightWithSourceMap sm str sourceMapIndex_ =
                 right =
                     String.dropLeft sm.length remainder
             in
-            Html.div []
+            Html.div [ id sm ]
                 [ Html.span [] [ Html.text left ]
                 , Html.span [ HA.style "background-color" "pink" ] [ Html.text middle ]
                 , Html.span [] [ Html.text right ]
