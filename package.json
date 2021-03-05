@@ -3,5 +3,8 @@
   "name": "my-app",
   "scripts": {
     "postinstall": "elm-tooling install"
+  },
+  "dependencies": {
+    "elm-analyse": "^0.16.5"
   }
 }
