@@ -7,8 +7,28 @@ module Main exposing (main)
 -}
 
 import Browser
-import CommandInterpreter exposing (Command)
-import Element exposing (..)
+import CommandInterpreter
+import Element
+    exposing
+        ( Element
+        , centerX
+        , centerY
+        , clipX
+        , clipY
+        , column
+        , el
+        , focusStyle
+        , height
+        , moveUp
+        , paddingXY
+        , px
+        , rgb255
+        , row
+        , scrollbarX
+        , scrollbarY
+        , spacing
+        , width
+        )
 import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
@@ -23,6 +43,7 @@ import Render.LaTeXState as LaTeXState exposing (LaTeXMsg(..))
 import Render.Render as Render
 
 
+main : Program Flags Model Msg
 main =
     Browser.element
         { init = init
@@ -111,10 +132,7 @@ parsedTextToString_ pt =
         |> List.map Debug.toString
 
 
-
--- (formatted >> String.join "\n")
-
-
+options : { maximumWidth : number, optimalWidth : number, stringWidth : String -> Int }
 options =
     { maximumWidth = 200
     , optimalWidth = 190
@@ -149,6 +167,7 @@ numberOfLines str =
     str |> String.lines |> List.length
 
 
+subscriptions : a -> Sub msg
 subscriptions model =
     Sub.none
 
@@ -242,10 +261,12 @@ update msg model =
 --
 
 
+fontGray : Float -> Element.Attr decorative msg
 fontGray g =
     Font.color (Element.rgb g g g)
 
 
+bgGray : Float -> Element.Attr decorative msg
 bgGray g =
     Background.color (Element.rgb g g g)
 
@@ -265,12 +286,9 @@ appWidth =
     900
 
 
+panelWidth : Int
 panelWidth =
     appWidth // 2
-
-
-parsedTextPeneWith =
-    1200
 
 
 mainColumn : Model -> Element Msg
@@ -308,22 +326,7 @@ rhView model =
             renderedTextDisplay model
 
 
-messageDisplay model =
-    column [ spacing 8 ]
-        [ el
-            [ fontGray 0.9
-            , Font.size 14
-            , height (px 35)
-            , width (px 300)
-            , bgGray 0.9
-
-            --  , Font.color (bgGray 0.1)
-            ]
-            (Element.text "Messages")
-        , messageDisplay_ model
-        ]
-
-
+messageDisplay_ : { a | message : String } -> Element msg
 messageDisplay_ model =
     el [ Font.size 14, fontGray 0.9 ] (Element.text model.message)
 
@@ -352,6 +355,7 @@ annotatedText_ model =
         [ Render.highlightWithSourceMap model.sourceMap model.input model.sourceMapIndex |> Element.html ]
 
 
+renderedTextDisplay : Model -> Element Msg
 renderedTextDisplay model =
     column [ spacing 8, moveUp 0 ]
         [ row [ spacing 12 ] [ rhViewModeButton model ]
@@ -388,19 +392,6 @@ render1 input =
         |> Html.div []
     )
         |> Html.map LaTeXMsg
-
-
-render2 : String -> List (Element Msg)
-render2 input =
-    input
-        |> Parser.Document.process
-        |> List.map (Render.render LaTeXState.init >> Html.div [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ])
-        |> List.map (Element.html >> Element.map LaTeXMsg)
-
-
-title : String -> Element Msg
-title str =
-    row [ centerX, Font.bold, fontGray 0.9 ] [ Element.text str ]
 
 
 parsedTextDisplay : Model -> Element Msg
@@ -512,6 +503,7 @@ lhViewModeButton model =
         ]
 
 
+runCommandButton : Element Msg
 runCommandButton =
     Input.button buttonStyle
         { onPress = Just RunCommand
@@ -550,6 +542,7 @@ footerViewModeButton model =
 --
 
 
+mainColumnStyle : List (Element.Attribute msg)
 mainColumnStyle =
     [ centerX
     , centerY
@@ -558,6 +551,7 @@ mainColumnStyle =
     ]
 
 
+buttonStyle : List (Element.Attr () msg)
 buttonStyle =
     [ Background.color (Element.rgb 0.25 0.25 0.8)
     , Font.color (rgb255 255 255 255)
@@ -566,6 +560,7 @@ buttonStyle =
     ]
 
 
+buttonStyleInactive : List (Element.Attr () msg)
 buttonStyleInactive =
     [ Background.color (Element.rgb 0.25 0.25 0.25)
     , Font.color (rgb255 255 255 255)
