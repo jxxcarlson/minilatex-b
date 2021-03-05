@@ -33,4 +33,3 @@ jobs:
       - run: npm clean-install
       - name: elm-test
         run: npx --no-install elm-test
-        

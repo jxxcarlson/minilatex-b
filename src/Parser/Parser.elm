@@ -67,9 +67,9 @@ TO ADD: COMMENTS ON THE STACK
 import Dict
 import Parser.Advanced as Parser exposing ((|.), (|=))
 import Parser.Expression as Expression exposing (Expression(..), Problem(..), SourceMap)
+import Parser.Problem exposing (RecoveryData)
 import Parser.TextCursor as TextCursor exposing (TextCursor)
 import Set
-import Utility
 
 
 type alias Parser a =
@@ -177,7 +177,7 @@ handleError tc_ e =
 
         mRecoveryData : Maybe RecoveryData
         mRecoveryData =
-            getRecoveryData_ tc_ problem
+            Parser.Problem.getRecoveryData tc_ problem
 
         lxError =
             LXError errorText problem { content = errorText, chunkOffset = tc_.chunkNumber, length = errorColumn, offset = tc_.offset + errorColumn }
@@ -193,27 +193,6 @@ handleError tc_ e =
 
 
 -- Recovery Data and Handlers
-
-
-type alias RecoveryData =
-    { problem : Problem
-    , deltaOffset : Int
-    , textTruncation : Int
-    , parseSubstitute : Expression
-    }
-
-
-getRecoveryData_ : TextCursor -> Problem -> Maybe RecoveryData
-getRecoveryData_ tc_ problem =
-    let
-        oldSourceMap =
-            Expression.dummySourceMap
-
-        newSourceMap =
-            { oldSourceMap | chunkOffset = tc_.chunkNumber }
-    in
-    getRecoveryData problem
-        |> Maybe.map (\r -> { r | parseSubstitute = Expression.setSourceMap newSourceMap r.parseSubstitute })
 
 
 newOffset tc_ errorColumn_ mRecoveryData_ =
@@ -250,81 +229,6 @@ newStack tc_ errorText_ mRecoveryData =
 
         Nothing ->
             errorText_ :: "highlight" :: tc_.stack
-
-
-getRecoveryData : Problem -> Maybe RecoveryData
-getRecoveryData problem =
-    List.filter (\r -> Expression.equivalentProblem r.problem problem) recoveryData |> List.head
-
-
-recoveryData : List RecoveryData
-recoveryData =
-    [ problemWithInlineMath, problemWithDisplayMath, problemWithEnvironment, problemWithMacro ]
-
-
-problemWithMacro : RecoveryData
-problemWithMacro =
-    { problem = ExpectingRightBrace
-    , deltaOffset = 0
-    , textTruncation = 1
-    , parseSubstitute =
-        LXList
-            [ Macro "red"
-                Nothing
-                [ Text "!! missing right brace in \\"
-                    Expression.dummySourceMap
-                ]
-                Expression.dummySourceMap
-            ]
-    }
-
-
-problemWithEnvironment : RecoveryData
-problemWithEnvironment =
-    { problem = ExpectingEndWord "dummy"
-    , deltaOffset = 3
-    , textTruncation = 2
-    , parseSubstitute =
-        LXList
-            [ Macro "red"
-                Nothing
-                [ DisplayMath "!! unmatched \\begin .. \\end: " Expression.dummySourceMap
-                ]
-                Expression.dummySourceMap
-            ]
-    }
-
-
-problemWithDisplayMath : RecoveryData
-problemWithDisplayMath =
-    { problem = ExpectingTrailingDoubleDollarSign
-    , deltaOffset = 2
-    , textTruncation = 2 -- corresponds to "$$"
-    , parseSubstitute =
-        LXList
-            [ Macro "red"
-                Nothing
-                [ Text ("!! unmatched $$ in" ++ String.fromChar '\u{00A0}') Expression.dummySourceMap
-                ]
-                Expression.dummySourceMap
-            ]
-    }
-
-
-problemWithInlineMath : RecoveryData
-problemWithInlineMath =
-    { problem = ExpectingTrailingDollarSign
-    , deltaOffset = 1
-    , textTruncation = 1
-    , parseSubstitute =
-        LXList
-            [ Macro "red"
-                Nothing
-                [ Text ("!! unmatched $ in" ++ String.fromChar '\u{00A0}') Expression.dummySourceMap
-                ]
-                Expression.dummySourceMap
-            ]
-    }
 
 
 
