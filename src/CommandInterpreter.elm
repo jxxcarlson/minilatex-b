@@ -6,7 +6,9 @@ import Result
 
 
 type alias Command =
-    { name : String, args : List String }
+    { name : String
+    , args : List String
+    }
 
 
 get : String -> Maybe Command

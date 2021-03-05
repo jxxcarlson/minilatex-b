@@ -1,6 +1,5 @@
 module Render.Render exposing (..)
 
-import Config
 import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes as HA
@@ -46,12 +45,12 @@ renderExpr state expr =
             environment state name args body sm
 
         LXList list_ ->
-            List.map (renderExpr state) list_ |> Html.span Config.textSpanStyle
+            List.map (renderExpr state) list_ |> Html.span state.config.textSpanStyle
 
         LXError s p sm ->
             Html.span [ clicker { sm | offset = sm.offset - sm.length } ]
-                [ Html.span Config.errorStyle2 [ Html.text s ]
-                , Html.span Config.errorStyle [ Html.text (errorString p sm) ]
+                [ Html.span state.config.errorStyle2 [ Html.text s ]
+                , Html.span state.config.errorStyle [ Html.text (errorString p sm) ]
                 ]
 
         LXInstruction _ _ ->
@@ -573,7 +572,7 @@ macroDict =
     Dict.fromList
         [ ( "strong", \state ms args sm -> render state args |> Html.span [ clicker sm, HA.style "font-weight" "bold" ] )
         , ( "italic", \state ms args sm -> render state args |> Html.span [ clicker sm, HA.style "font-style" "italic" ] )
-        , ( "red", \state ms args sm -> render state args |> Html.span [ clicker sm, HA.style "color" Config.redColor ] )
-        , ( "blue", \state ms args sm -> render state args |> Html.span [ clicker sm, HA.style "color" Config.blueColor ] )
+        , ( "red", \state ms args sm -> render state args |> Html.span [ clicker sm, HA.style "color" state.config.redColor ] )
+        , ( "blue", \state ms args sm -> render state args |> Html.span [ clicker sm, HA.style "color" state.config.blueColor ] )
         , ( "foo", \state ms args sm -> Html.span [ clicker sm, HA.style "font-style" "italic" ] [ Html.text "Foo" ] )
         ]
