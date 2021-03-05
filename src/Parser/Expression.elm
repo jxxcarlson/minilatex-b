@@ -58,7 +58,11 @@ instructionToString i =
 {-| Identifies the source text corresponding to part of the AST
 -}
 type alias SourceMap =
-    { chunkOffset : Int, length : Int, offset : Int, content : String }
+    { chunkOffset : Int
+    , length : Int
+    , offset : Int
+    , content : String
+    }
 
 
 {-| Used to identify parse errors
@@ -103,7 +107,10 @@ equivalentProblem p1 p2 =
 
 
 type alias Slice =
-    { left : String, middle : String, right : String }
+    { left : String
+    , middle : String
+    , right : String
+    }
 
 
 {-| -}
@@ -149,12 +156,6 @@ getSelectionFromSourceMap sourceMap str sourceMapIndex_ =
 makeIndex : Int -> List Int -> List (List Int)
 makeIndex numberOfLines list =
     let
-        _ =
-            Debug.log "N" numberOfLines
-
-        _ =
-            Debug.log "L" list
-
         list2 =
             list
                 |> List.filter (\x -> x /= 0)
@@ -174,24 +175,10 @@ in the input.
 -}
 sourceMapIndex : Int -> List (List Expression) -> List (List Int)
 sourceMapIndex numberOfLines list =
-    let
-        _ =
-            Debug.log "NN" numberOfLines
-
-        _ =
-            Debug.log "LL" list
-    in
     list
         |> List.map getSourceOfList
-        |> Debug.log "Source List"
         |> List.map .chunkOffset
-        |> Debug.log "Chunk offsets"
         |> makeIndex numberOfLines
-        |> Debug.log "Source Index"
-
-
-
---[ [ 0, 1, 2 ], [ 4 ] ]
 
 
 indexedList : List a -> List ( Int, a )

@@ -30,21 +30,34 @@ type alias LaTeXState =
     }
 
 
-type alias Config =
-    { lineHeight : Attribute LaTeXMsg
-    , textSpanStyle : List (Attribute LaTeXMsg)
-    , errorStyle : List (Attribute LaTeXMsg)
-    , errorStyle2 : List (Attribute LaTeXMsg)
-    , redColor : Attribute LaTeXMsg
-    , blueColor : Attribute LaTeXMsg
-    }
-
-
 init : LaTeXState
 init =
     emptyLatexState
 
 
+emptyLatexState : LaTeXState
+emptyLatexState =
+    { counters = initialCounters
+    , crossReferences = Dict.empty
+    , dictionary = Dict.empty
+    , tableOfContents = []
+    , textMacroDictionary = Dict.empty
+    , mathMacroDictionary = Dict.empty
+    , config = defaultConfig
+    }
+
+
+type alias Config =
+    { lineHeight : Attribute LaTeXMsg
+    , textSpanStyle : List (Attribute LaTeXMsg)
+    , errorStyle : List (Attribute LaTeXMsg)
+    , errorStyle2 : List (Attribute LaTeXMsg)
+    , redColor : String
+    , blueColor : String
+    }
+
+
+defaultConfig : Config
 defaultConfig =
     { lineHeight = HA.style "line-height" "1.5"
     , textSpanStyle = [ HA.style "line-height" "1.5" ]
@@ -138,12 +151,6 @@ setDictionaryItem key value latexState =
     { latexState | dictionary = newDictionary }
 
 
-
---setMathMacroDictionary : String -> LatexState -> LatexState
---setMathMacroDictionary str latexState =
---   { latexState | mathMacroDictionary = Internal.MathMacro.makeMacroDict str }
-
-
 incrementCounter : String -> LaTeXState -> LaTeXState
 incrementCounter name latexState =
     let
@@ -195,15 +202,3 @@ setMacroDefinition macroName macroDefinition latexState =
 initialCounters : Dict.Dict String number
 initialCounters =
     Dict.fromList [ ( "s1", 0 ), ( "s2", 0 ), ( "s3", 0 ), ( "tno", 0 ), ( "eqno", 0 ) ]
-
-
-emptyLatexState : LaTeXState
-emptyLatexState =
-    { counters = initialCounters
-    , crossReferences = Dict.empty
-    , dictionary = Dict.empty
-    , tableOfContents = []
-    , textMacroDictionary = Dict.empty
-    , mathMacroDictionary = Dict.empty
-    , config = defaultConfig
-    }
