@@ -27,7 +27,7 @@ clicker sm =
 
 
 id sm =
-    HA.id (String.fromInt sm.generation ++ "-" ++ String.fromInt sm.chunkOffset)
+    HA.id (String.fromInt sm.generation ++ "-" ++ String.fromInt sm.chunkOffset ++ "-" ++ String.fromInt sm.offset)
 
 
 renderExpr : LaTeXState -> Expression -> Html LaTeXMsg
