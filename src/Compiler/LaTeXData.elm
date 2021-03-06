@@ -18,8 +18,8 @@ type alias LaTeXData =
     }
 
 
-initWithString : Int -> String -> LaTeXData
-initWithString generation input_ =
+initWithString : Int -> String -> String -> LaTeXData
+initWithString generation id input_ =
     let
         state =
             Document.process generation input_
@@ -34,7 +34,9 @@ initWithString generation input_ =
     , blocks = Document.toText state
     , parsedText = parsedText
     , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length lines_) parsedText
-    , renderedText = render "nada" parsedText
+
+    --, renderedText = render (String.fromInt generation ++ ":" ++ id) parsedText
+    , renderedText = render id parsedText
     }
 
 

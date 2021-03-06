@@ -27,21 +27,33 @@ clicker sm =
 
 
 id sm =
-    String.fromInt sm.generation ++ "-" ++ String.fromInt sm.chunkOffset ++ "-" ++ String.fromInt sm.offset
+    String.fromInt sm.generation ++ ":" ++ String.fromInt sm.chunkOffset ++ "-" ++ String.fromInt sm.offset
+
+
+idSuffix : String -> String
+idSuffix str =
+    String.split ":" str
+        |> List.drop 1
+        |> List.head
+        |> Maybe.withDefault "nada"
 
 
 active : SourceMap -> String -> List (Attribute LaTeXMsg)
 active sm selectedId =
     let
         id_ =
-            id sm
+            id sm |> Debug.log "SM:ID"
     in
     [ clicker sm, HA.id id_, highlight "#FAA" selectedId id_ ]
 
 
 highlight : String -> String -> String -> Attribute LaTeXMsg
 highlight color selectedId id_ =
-    if id_ == selectedId then
+    let
+        _ =
+            Debug.log "(si, i, suffix)" ( selectedId, id_, idSuffix id_ )
+    in
+    if idSuffix id_ == selectedId then
         HA.style "background-color" color
 
     else

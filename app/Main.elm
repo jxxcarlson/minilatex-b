@@ -57,6 +57,7 @@ main =
 
 type alias Model =
     { input : String
+    , selectedId : String
     , laTeXData : LaTeXData
     , sourceMap : Parser.Expression.SourceMap
     , counter : Int
@@ -66,6 +67,11 @@ type alias Model =
     , message : String
     , command : String
     }
+
+
+initialSelectedId : String
+initialSelectedId =
+    "2-44"
 
 
 type LHViewMode
@@ -149,7 +155,8 @@ formatted str =
 init : Flags -> ( Model, Cmd Msg )
 init _ =
     ( { input = initialText
-      , laTeXData = LaTeXData.initWithString 0 initialText
+      , selectedId = initialSelectedId
+      , laTeXData = LaTeXData.initWithString 0 initialSelectedId initialText
       , sourceMap = Parser.Expression.dummySourceMap
       , counter = 0
       , lhViewMode = LHSourceText
@@ -176,7 +183,7 @@ update msg model =
         InputText str ->
             let
                 laTeXData =
-                    LaTeXData.updateWithString model.counter "nada" str model.laTeXData
+                    LaTeXData.updateWithString model.counter model.selectedId str model.laTeXData
 
                 dr =
                     Compiler.Differ.diff (model.input |> String.lines)
