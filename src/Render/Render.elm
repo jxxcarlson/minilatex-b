@@ -42,17 +42,13 @@ active : SourceMap -> String -> List (Attribute LaTeXMsg)
 active sm selectedId =
     let
         id_ =
-            id sm |> Debug.log "SM:ID"
+            id sm
     in
     [ clicker sm, HA.id id_, highlight "#FAA" selectedId id_ ]
 
 
 highlight : String -> String -> String -> Attribute LaTeXMsg
 highlight color selectedId id_ =
-    let
-        _ =
-            Debug.log "(si, i, suffix)" ( selectedId, id_, idSuffix id_ )
-    in
     if idSuffix id_ == selectedId then
         HA.style "background-color" color
 
