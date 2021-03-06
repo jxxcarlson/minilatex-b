@@ -14,12 +14,12 @@ toStringFromList list =
 
 parseAndRecompose : String -> String
 parseAndRecompose str =
-    str |> LXParser.parseLoop 0 |> .parsed |> toStringFromList
+    str |> LXParser.parseLoop 0 0 |> .parsed |> toStringFromList
 
 
 roundTrip : String -> String
 roundTrip str =
-    case Parser.run (LXParser.expressionList 0) str of
+    case Parser.run (LXParser.expressionList 0 0) str of
         Ok r ->
             List.map Expression.toString r |> String.join " "
 
