@@ -9,6 +9,7 @@ module Main exposing (main)
 import Browser
 import CommandInterpreter
 import Compiler.Differ
+import Compiler.LaTeXData as LaTeXData exposing (LaTeXData)
 import Element
     exposing
         ( Element
@@ -40,7 +41,7 @@ import Paragraph
 import Parser.Document as Document exposing (State)
 import Parser.Expression exposing (Expression)
 import Parser.Problem
-import Render.LaTeXState as LaTeXState exposing (LaTeXMsg(..))
+import Render.LaTeXState exposing (LaTeXMsg(..))
 import Render.Render as Render
 
 
@@ -56,10 +57,8 @@ main =
 
 type alias Model =
     { input : String
-    , parsedText : List (List Expression)
+    , laTeXData : LaTeXData
     , sourceMap : Parser.Expression.SourceMap
-    , sourceMapIndex : List (List Int)
-    , blocks : List String
     , counter : Int
     , footerViewMode : FooterViewMode
     , lhViewMode : LHViewMode
@@ -148,19 +147,10 @@ formatted str =
 
 
 init : Flags -> ( Model, Cmd Msg )
-init flags =
-    let
-        state =
-            parse 0 initialText
-
-        parsedText =
-            state |> Document.toParsed
-    in
+init _ =
     ( { input = initialText
-      , parsedText = parsedText
+      , laTeXData = LaTeXData.initWithString 0 initialText
       , sourceMap = Parser.Expression.dummySourceMap
-      , sourceMapIndex = Parser.Expression.sourceMapIndex (numberOfLines initialText) parsedText
-      , blocks = state |> Document.toText
       , counter = 0
       , lhViewMode = LHSourceText
       , rhViewMode = RHRenderedText
@@ -172,13 +162,8 @@ init flags =
     )
 
 
-numberOfLines : String -> Int
-numberOfLines str =
-    str |> String.lines |> List.length
-
-
 subscriptions : a -> Sub msg
-subscriptions model =
+subscriptions _ =
     Sub.none
 
 
@@ -190,24 +175,19 @@ update msg model =
 
         InputText str ->
             let
+                laTeXData =
+                    LaTeXData.updateWithString model.counter "nada" model.input model.laTeXData
+
                 dr =
                     Compiler.Differ.diff (model.input |> String.lines)
                         (str |> String.lines)
 
                 message =
-                    "Chunk range: " ++ Debug.toString (Compiler.Differ.rangeOfChunks dr model.sourceMapIndex)
-
-                state =
-                    parse model.counter str
-
-                parsedText =
-                    state |> Document.toParsed
+                    "Chunk range: " ++ Debug.toString (Compiler.Differ.rangeOfChunks dr model.laTeXData.sourceMapIndex)
             in
             ( { model
                 | input = str
-                , parsedText = parsedText
-                , sourceMapIndex = Parser.Expression.sourceMapIndex (numberOfLines str) parsedText
-                , blocks = state |> Document.toText
+                , laTeXData = laTeXData
                 , counter = model.counter + 1
                 , message = message
               }
@@ -274,7 +254,7 @@ update msg model =
             ( { model
                 | sourceMap = sourceMap
                 , lhViewMode = LHAnnotatedSource
-                , message = Debug.toString sourceMap ++ " :: " ++ Parser.Expression.getSelectionFromSourceMap sourceMap model.input model.sourceMapIndex
+                , message = Debug.toString sourceMap ++ " :: " ++ Parser.Expression.getSelectionFromSourceMap sourceMap model.input model.laTeXData.sourceMapIndex
               }
             , Cmd.none
             )
@@ -377,7 +357,7 @@ annotatedText_ model =
         , width (px panelWidth)
         , height (px panelHeight)
         ]
-        [ Render.highlightWithSourceMap model.sourceMap model.input model.sourceMapIndex |> Element.html ]
+        [ Render.highlightWithSourceMap model.sourceMap model.input model.laTeXData.sourceMapIndex |> Element.html ]
 
 
 renderedTextDisplay : Model -> Element Msg
@@ -400,24 +380,14 @@ renderedTextDisplay_ model =
         , width (px panelWidth)
         , height (px panelHeight)
         ]
-        [ mathNode model.counter model.input ]
+        [ mathNode model.counter model.laTeXData.renderedText ]
 
 
-mathNode : Int -> String -> Element Msg
-mathNode counter content =
-    Html.Keyed.node "div" [] [ ( String.fromInt counter, render1 counter content ) ]
-        |> Element.html
-
-
-render1 : Int -> String -> Html Msg
-render1 generation input =
-    (input
-        |> Document.process generation
-        |> Document.toParsed
-        |> List.map (Render.render "0-2-44" LaTeXState.init >> Html.div [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ])
-        |> Html.div []
-    )
+mathNode : Int -> Html LaTeXMsg -> Element Msg
+mathNode counter html =
+    Html.Keyed.node "div" [] [ ( String.fromInt counter, html ) ]
         |> Html.map LaTeXMsg
+        |> Element.html
 
 
 parsedTextDisplay : Model -> Element Msg
@@ -448,24 +418,24 @@ renderParseResult : Model -> List (Element Msg)
 renderParseResult model =
     case model.footerViewMode of
         ShowParsedText ->
-            model.parsedText |> parsedTextToString |> renderParsedText
+            model.laTeXData.parsedText |> parsedTextToString |> renderParsedText
 
         ShowBlocks ->
-            model.blocks
+            model.laTeXData.blocks
                 |> List.indexedMap (\k b -> String.fromInt k ++ ":: " ++ b)
                 |> List.map (\x -> el [ Font.size 14 ] (Element.text x))
 
         ShowParseErrors ->
-            model.parsedText |> Parser.Problem.getErrors |> parsedTextToString_ |> renderParsedText
+            model.laTeXData.parsedText |> Parser.Problem.getErrors |> parsedTextToString_ |> renderParsedText
 
         ShowSourceMap ->
-            model.parsedText
+            model.laTeXData.parsedText
                 |> List.map Parser.Expression.getSourceOfList
                 |> List.map Parser.Expression.sourceMapToString
                 |> renderParsedText
 
         ShowSourceMapIndex ->
-            model.sourceMapIndex
+            model.laTeXData.sourceMapIndex
                 |> List.map (Debug.toString >> (\x -> el [] (Element.text x)))
 
 
