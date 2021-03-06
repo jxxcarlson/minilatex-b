@@ -1,7 +1,7 @@
 module Parser.Problem exposing (RecoveryData, getErrors, getRecoveryData)
 
 import Parser.Expression as Expression exposing (Expression(..), Problem(..), SourceMap)
-import Parser.TextCursor as TextCursor exposing (TextCursor)
+import Parser.TextCursor exposing (TextCursor)
 
 
 type alias RecoveryData =

@@ -80,7 +80,7 @@ renderExpr selectedId state expr =
 
 
 errorString : Parser.Expression.Problem -> Parser.Expression.SourceMap -> String
-errorString p sm =
+errorString p _ =
     " << "
         ++ Parser.Expression.problemAsString p
 
@@ -96,11 +96,11 @@ macro selectedId state name optArg args sm =
 
 
 undefinedMacro : String -> SourceMap -> Html LaTeXMsg
-undefinedMacro name sm =
+undefinedMacro _ sm =
     Html.span [ HA.id (id sm), clicker sm, HA.style "color" "red" ] [ Html.text "Undefined macro: " ]
 
 
-environment selectedId state name args body sm =
+environment selectedId state name args body _ =
     renderEnvironment selectedId state name args body
 
 

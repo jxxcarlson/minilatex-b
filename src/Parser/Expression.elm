@@ -121,17 +121,14 @@ dummySourceMap =
 
 
 {-| Return the string in the source text identified by the SourceMap.
-The auxiliary data structure SourdeMapIndex: List (List Int),
-typicallly computed by sourceMapIndex and stored in the model, is needed for this.
+The auxiliary data structure SourceMapIndex: List (List Int),
+typically computed by sourceMapIndex and stored in the model, is needed for this.
 -}
 getSelectionFromSourceMap : SourceMap -> String -> List (List Int) -> String
 getSelectionFromSourceMap sourceMap str sourceMapIndex_ =
     let
         lines =
             String.lines str
-
-        n =
-            List.length lines
 
         data : List Int
         data =
@@ -193,37 +190,12 @@ indexedList list =
 
 indexedFilter : (a -> Bool) -> List a -> List ( Int, a )
 indexedFilter predicate list =
-    List.filter (\( k, a ) -> predicate a) (indexedList list)
+    List.filter (\( _, a ) -> predicate a) (indexedList list)
 
 
 linesOfChunkOffset : a -> List (List a) -> List ( Int, List a )
 linesOfChunkOffset chunkOffset sourceMapIndex_ =
     indexedFilter (\chunks -> List.member chunkOffset chunks) sourceMapIndex_
-
-
-sliceWithSourceMap1 : SourceMap -> String -> Slice
-sliceWithSourceMap1 sm str =
-    slice sm.offset (sm.offset + sm.length) str
-
-
-sliceWithSourceMap : SourceMap -> String -> Slice
-sliceWithSourceMap sm str =
-    slice (sm.offset - sm.length) sm.offset str
-
-
-slice : Int -> Int -> String -> Slice
-slice cut1 cut2 str =
-    let
-        middle =
-            String.slice cut1 cut2 str
-
-        left =
-            String.left cut1 str
-
-        right =
-            String.dropLeft cut2 str
-    in
-    { left = left, middle = middle, right = right }
 
 
 {-| String representation of a SourceMap
@@ -251,10 +223,10 @@ toString expr =
         DisplayMath str _ ->
             "$$" ++ str ++ "$$"
 
-        Macro name optArg args str ->
+        Macro name optArg args _ ->
             "\\" ++ name ++ Maybe.withDefault "OptArg: Null" optArg ++ (List.map toString args |> String.join "")
 
-        Environment name optArgs body sm ->
+        Environment name _ _ _ ->
             -- TODO: incomplete
             "\\begin{" ++ name ++ "} ... \\end{" ++ name ++ "}"
 
@@ -324,7 +296,7 @@ getSource expr =
             source
 
 
-{-| incrmeent the offset field of the SourceMap component of an Expression
+{-| increment the offset field of the SourceMap component of an Expression
 -}
 incrementOffset : Int -> Expression -> Expression
 incrementOffset delta expr =

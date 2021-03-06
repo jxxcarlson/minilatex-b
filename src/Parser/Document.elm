@@ -187,13 +187,13 @@ nextState state_ =
                     Loop (addToBlockContents MathBlock currentLine state)
 
                 ---
-                ( EnvBlock et, LTStart ) ->
+                ( EnvBlock _, LTStart ) ->
                     Loop state
 
                 ( EnvBlock et, LTMathBlock ) ->
                     Loop (addToBlockContents (EnvBlock et) currentLine state)
 
-                ( EnvBlock et, BeginEnvBlock blockType ) ->
+                ( EnvBlock _, BeginEnvBlock blockType ) ->
                     Loop (pushBlockStack (EnvBlock blockType) currentLine state)
 
                 ( EnvBlock et, EndEnvBlock _ ) ->
@@ -366,4 +366,4 @@ mathBlockParser =
 textBlockParser : P.Parser LineType
 textBlockParser =
     P.succeed LTTextBlock
-        |. P.chompIf (\c -> True)
+        |. P.chompIf (\_ -> True)

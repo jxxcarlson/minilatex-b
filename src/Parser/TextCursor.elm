@@ -36,12 +36,5 @@ empty =
 {-| Return a TextCursor with given chunkNumber and text
 -}
 init : Int -> Int -> String -> TextCursor
-init generation initiaChunkNumber text =
-    { count = 0, text = text, block = "", chunkNumber = initiaChunkNumber, parsed = [], stack = [], offset = 0, generation = generation }
-
-
-{-| Append raw text to the current cursor.
--}
-addText : String -> TextCursor -> TextCursor
-addText newText cursor =
-    { cursor | text = cursor.text ++ newText }
+init generation initialChunkNumber text =
+    { count = 0, text = text, block = "", chunkNumber = initialChunkNumber, parsed = [], stack = [], offset = 0, generation = generation }
