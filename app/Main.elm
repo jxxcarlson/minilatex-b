@@ -8,6 +8,7 @@ module Main exposing (main)
 
 import Browser
 import CommandInterpreter
+import Compiler.Differ
 import Element
     exposing
         ( Element
@@ -36,7 +37,7 @@ import Html exposing (Html)
 import Html.Attributes as HA
 import Html.Keyed
 import Paragraph
-import Parser.Document
+import Parser.Document as Document exposing (State)
 import Parser.Expression exposing (Expression)
 import Parser.Problem
 import Render.LaTeXState as LaTeXState exposing (LaTeXMsg(..))
@@ -58,6 +59,7 @@ type alias Model =
     , parsedText : List (List Expression)
     , sourceMap : Parser.Expression.SourceMap
     , sourceMapIndex : List (List Int)
+    , blocks : List String
     , counter : Int
     , footerViewMode : FooterViewMode
     , lhViewMode : LHViewMode
@@ -78,6 +80,7 @@ type RHViewMode
 
 type FooterViewMode
     = ShowParsedText
+    | ShowBlocks
     | ShowParseErrors
     | ShowSourceMap
     | ShowSourceMapIndex
@@ -113,9 +116,9 @@ Still more stuff
 """
 
 
-parse : Int -> String -> List (List Expression)
+parse : Int -> String -> State
 parse generation input =
-    Parser.Document.process generation input
+    Document.process generation input
 
 
 parsedTextToString : List (List Expression) -> List String
@@ -146,10 +149,18 @@ formatted str =
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
+    let
+        state =
+            parse 0 initialText
+
+        parsedText =
+            state |> Document.toParsed
+    in
     ( { input = initialText
-      , parsedText = parse 0 initialText
+      , parsedText = parsedText
       , sourceMap = Parser.Expression.dummySourceMap
-      , sourceMapIndex = Parser.Expression.sourceMapIndex (numberOfLines initialText) (parse 0 initialText)
+      , sourceMapIndex = Parser.Expression.sourceMapIndex (numberOfLines initialText) parsedText
+      , blocks = state |> Document.toText
       , counter = 0
       , lhViewMode = LHSourceText
       , rhViewMode = RHRenderedText
@@ -179,14 +190,26 @@ update msg model =
 
         InputText str ->
             let
-                parsedText =
+                dr =
+                    Compiler.Differ.diff (model.input |> String.lines)
+                        (str |> String.lines)
+
+                message =
+                    "Chunk range: " ++ Debug.toString (Compiler.Differ.rangeOfChunks dr model.sourceMapIndex)
+
+                state =
                     parse model.counter str
+
+                parsedText =
+                    state |> Document.toParsed
             in
             ( { model
                 | input = str
                 , parsedText = parsedText
                 , sourceMapIndex = Parser.Expression.sourceMapIndex (numberOfLines str) parsedText
+                , blocks = state |> Document.toText
                 , counter = model.counter + 1
+                , message = message
               }
             , Cmd.none
             )
@@ -211,6 +234,9 @@ update msg model =
                 viewMode =
                     case model.footerViewMode of
                         ShowParsedText ->
+                            ShowBlocks
+
+                        ShowBlocks ->
                             ShowParseErrors
 
                         ShowParseErrors ->
@@ -386,7 +412,8 @@ mathNode counter content =
 render1 : Int -> String -> Html Msg
 render1 generation input =
     (input
-        |> Parser.Document.process generation
+        |> Document.process generation
+        |> Document.toParsed
         |> List.map (Render.render "0-2-44" LaTeXState.init >> Html.div [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ])
         |> Html.div []
     )
@@ -422,6 +449,11 @@ renderParseResult model =
     case model.footerViewMode of
         ShowParsedText ->
             model.parsedText |> parsedTextToString |> renderParsedText
+
+        ShowBlocks ->
+            model.blocks
+                |> List.indexedMap (\k b -> String.fromInt k ++ ":: " ++ b)
+                |> List.map (\x -> el [ Font.size 14 ] (Element.text x))
 
         ShowParseErrors ->
             model.parsedText |> Parser.Problem.getErrors |> parsedTextToString_ |> renderParsedText
@@ -517,6 +549,9 @@ footerViewModeButton model =
             case model.footerViewMode of
                 ShowParseErrors ->
                     "Parse Errors"
+
+                ShowBlocks ->
+                    "Blocks"
 
                 ShowParsedText ->
                     "Parsed Text"

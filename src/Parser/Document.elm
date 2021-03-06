@@ -1,4 +1,7 @@
-module Parser.Document exposing (process)
+module Parser.Document exposing
+    ( process
+    , State, toParsed, toText
+    )
 
 {-| The main function in this module is process, which takes as input
 a string representing a MiniLaTeX document and produces as output
@@ -56,9 +59,19 @@ and prepends them to a list of TextCursor. The function
 toParsed extracts the AST from State.
 
 -}
-process : Int -> String -> List (List Expression)
+
+
+
+--process : Int -> String -> List (List Expression)
+
+
+process : Int -> String -> State
 process generation =
-    runProcess generation >> toParsed
+    runProcess generation
+
+
+
+-- >> toParsed
 
 
 {-| Compute the final State of a string of source text.
@@ -81,12 +94,9 @@ toParsed state =
     state.output |> List.map .parsed
 
 
-toParsed2 state =
-    state.output |> List.length |> String.fromInt |> (\x -> "Lines: " ++ x)
-
-
-toInput state =
-    state.output |> List.map .text
+toText : State -> List String
+toText state =
+    state.output |> List.map .block
 
 
 init : Int -> String -> State

@@ -124,6 +124,7 @@ operated by parseLoop is updated:
 nextCursor : TextCursor -> Step TextCursor TextCursor
 nextCursor tc =
     if tc.text == "" || tc.count > 10 then
+        -- TODO: that usage of count needs to be removed after bug is fixed
         Done { tc | parsed = List.reverse tc.parsed }
 
     else
@@ -137,6 +138,7 @@ nextCursor tc =
                     { tc
                         | count = tc.count + 1
                         , text = String.dropLeft sourceMap.length tc.text
+                        , block = String.left sourceMap.length tc.text ++ tc.block |> Debug.log "BLOCK"
                         , parsed = newExpr tc expr :: tc.parsed
                         , offset = tc.offset + sourceMap.length
                     }
@@ -182,6 +184,7 @@ handleError tc_ e =
             LXError errorText problem { content = errorText, chunkOffset = tc_.chunkNumber, length = errorColumn, offset = tc_.offset + errorColumn, generation = tc_.generation }
     in
     { text = makeNewText tc_ errorColumn mRecoveryData
+    , block = "?? TO DO"
     , chunkNumber = tc_.chunkNumber
     , parsed = newParsed tc_ lxError mRecoveryData
     , stack = newStack tc_ errorText mRecoveryData
