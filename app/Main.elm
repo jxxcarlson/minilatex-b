@@ -176,7 +176,7 @@ update msg model =
         InputText str ->
             let
                 laTeXData =
-                    LaTeXData.updateWithString model.counter "nada" model.input model.laTeXData
+                    LaTeXData.updateWithString model.counter "nada" str model.laTeXData
 
                 dr =
                     Compiler.Differ.diff (model.input |> String.lines)
