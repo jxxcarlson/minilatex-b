@@ -1,4 +1,20 @@
-module Compiler.LaTeXData exposing (..)
+module Compiler.LaTeXData exposing (LaTeXData, initWithString, updateWithString)
+
+{-| LaTeXData is a data structure which holds all the information needed to
+interactively edit, rendering in real time, a MiniLaTeX document:
+
+    type alias LaTeXData =
+        { lines : List String
+        , blocks : List String
+        , generations : List Int
+        , parsedText : List (List Expression)
+        , sourceMapIndex : List (List Int)
+        , renderedText : List (Html LaTeXMsg)
+        }
+
+@docs LaTeXData, initWithString, updateWithString
+
+-}
 
 import Compiler.Differ as Differ
 import Compiler.GenericDiffer as GenericDiffer
@@ -80,38 +96,20 @@ updateWithString generation selectedId input_ data =
 
         Just changedBlock ->
             let
-                --dr =
-                --    Differ.diff data.lines (input_ |> String.lines)
-                --lineNumber =
-                --    (Differ.range dr).firstChange
-                --        |> Debug.log "LNE NUMBER"
-                --bi =
-                --    Differ.getBlockIndex (Debug.log "LINE NO" lineNumber) (Debug.log "SM IIND" data.sourceMapIndex)
-                --        -- TODO: Dangerous?
-                --        |> Maybe.withDefault 0
-                --        |> Debug.log "BI"
                 parsedBefore =
                     Differ.blocksBefore_ prefixLength data.parsedText
 
                 parsedBetween =
                     Differ.slice prefixLength (prefixLength + 1) data.parsedText
 
+                parsedAfter =
+                    Differ.blockAfter_ (prefixLength + 1) data.parsedText
+
                 mSourceMap =
                     Maybe.map Parser.Expression.getSource (List.head parsedBetween |> Maybe.andThen List.head)
 
                 blockOffset_ =
                     Maybe.map .blockOffset mSourceMap
-
-                parsedAfter =
-                    Differ.blockAfter_ (prefixLength + 1) data.parsedText
-
-                renderedTextBefore : List (Html LaTeXMsg)
-                renderedTextBefore =
-                    List.take prefixLength data.renderedText
-
-                renderedTextAfter : List (Html LaTeXMsg)
-                renderedTextAfter =
-                    List.drop (prefixLength + 1) data.renderedText
 
                 incrementTextCursor =
                     Parser.TextCursor.incrementBlockOffset (blockOffset_ |> Maybe.withDefault 0)
@@ -122,22 +120,27 @@ updateWithString generation selectedId input_ data =
                         |> (\state_ -> { state_ | output = List.map incrementTextCursor state_.output })
                         |> Document.toParsed
 
+                parsedText =
+                    parsedBefore ++ deltaParsed ++ parsedAfter
+
+                renderedTextBefore : List (Html LaTeXMsg)
+                renderedTextBefore =
+                    List.take prefixLength data.renderedText
+
                 deltaRenderedText : List (Html LaTeXMsg)
                 deltaRenderedText =
                     render selectedId deltaParsed
 
-                parsedText =
-                    parsedBefore ++ deltaParsed ++ parsedAfter
-
-                renderedText =
-                    renderedTextBefore ++ deltaRenderedText ++ renderedTextAfter
+                renderedTextAfter : List (Html LaTeXMsg)
+                renderedTextAfter =
+                    List.drop (prefixLength + 1) data.renderedText
             in
             { lines = input
             , blocks = newBlocks
             , generations = getGenerations parsedText
             , parsedText = parsedText
             , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length input) parsedText
-            , renderedText = renderedText
+            , renderedText = renderedTextBefore ++ deltaRenderedText ++ renderedTextAfter
             }
 
 
