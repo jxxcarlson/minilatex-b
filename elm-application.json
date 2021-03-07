@@ -1,0 +1,8 @@
+{
+  "name": "jxxcarlson/minilatex-b",
+  "summary": "Experimental MiniLaTeX Compiler",
+  "version": "0.1.0",
+  "exposed-modules": [
+      "Compiler.LaTeXData"
+    ]
+}
