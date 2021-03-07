@@ -1,7 +1,4 @@
-module Parser.Document exposing
-    ( process
-    , Block, BlockType(..), LineType(..), State, toParsed, toText
-    )
+module Parser.Block exposing (compile)
 
 {-| The main function in this module is process, which takes as input
 a string representing a MiniLaTeX document and produces as output
@@ -12,60 +9,30 @@ a value of type AST = List (List Expression).
 -}
 
 import Parser as P exposing ((|.), (|=))
-import Parser.Expression exposing (Expression)
-import Parser.Parser as Parser
-import Parser.TextCursor exposing (TextCursor)
+import Parser.Document exposing (Block, BlockType(..), LineType(..))
 
 
-type alias State =
+type alias BlockState =
     { input : List String
     , lineNumber : Int
     , generation : Int
     , blockType : BlockType
     , blockContents : List String
     , blockTypeStack : List BlockType
-    , output : List TextCursor
+    , output : List (List String)
     }
-
-
-type alias Block =
-    { blockType : BlockType, content : List String }
-
-
-type BlockType
-    = Start
-    | TextBlock
-    | MathBlock
-    | EnvBlock String
-    | ErrorBlock
-
-
-type LineType
-    = LTStart
-    | LTTextBlock
-    | LTMathBlock
-    | BeginEnvBlock String
-    | EndEnvBlock String
-
-
-{-| Compute the AST of a string of source text.
-
-    process =
-        runProcess >> toParsed
-
-Function runProcess operates a state machine which identifies logical
-chunks of text, parses these using Parser.Parser.parseLoop,
-and prepends them to a list of TextCursor. The function
-toParsed extracts the AST from State.
-
--}
 
 
 
 --process : Int -> String -> List (List Expression)
 
 
-process : Int -> String -> State
+compile : Int -> String -> List (List String)
+compile generation input =
+    (process generation input).output
+
+
+process : Int -> String -> BlockState
 process generation =
     runProcess generation
 
@@ -74,32 +41,20 @@ process generation =
 -- >> toParsed
 
 
-{-| Compute the final State of a string of source text.
-The output field of State holds the AST of the source text.
+{-| Compute the final BlockState of a string of source text.
+The output field of BlockState holds the AST of the source text.
 
 Function process operates a state machine which identifies logical
 chunks of text, parses these using Parser.Parser.parseLoop,
 and prepends them to a list of TextCursor.
 
 -}
-runProcess : Int -> String -> State
+runProcess : Int -> String -> BlockState
 runProcess generation str =
     loop (init generation str) nextState
 
 
-{-| Return the AST from the State.
--}
-toParsed : State -> List (List Expression)
-toParsed state =
-    state.output |> List.map .parsed
-
-
-toText : State -> List String
-toText state =
-    state.output |> List.map .block
-
-
-init : Int -> String -> State
+init : Int -> String -> BlockState
 init generation str =
     { input = String.lines str
     , lineNumber = 0
@@ -111,7 +66,7 @@ init generation str =
     }
 
 
-nextState : State -> Step State State
+nextState : BlockState -> Step BlockState BlockState
 nextState state_ =
     case List.head state_.input of
         Nothing ->
@@ -156,7 +111,7 @@ nextState state_ =
 
                 --
                 ( TextBlock, LTStart ) ->
-                    Loop { state | blockType = Start, blockContents = [], output = pushTC state, lineNumber = state.lineNumber + countLines state.blockContents }
+                    Loop { state | blockType = Start, blockContents = [], output = List.reverse state.blockContents :: state.output }
 
                 ( TextBlock, LTMathBlock ) ->
                     Loop (initWithBlockType MathBlock currentLine state)
@@ -172,7 +127,7 @@ nextState state_ =
 
                 --
                 ( MathBlock, LTStart ) ->
-                    Loop { state | blockType = Start, blockContents = [], output = pushTC state, lineNumber = state.lineNumber + countLines state.blockContents }
+                    Loop { state | blockType = Start, blockContents = [], output = List.reverse state.blockContents :: state.output }
 
                 ( MathBlock, LTMathBlock ) ->
                     Loop (initWithBlockType Start currentLine state)
@@ -207,34 +162,34 @@ nextState state_ =
 -- OPERATIONS ON STATE
 
 
-{-| Put State in the Start state
+{-| Put BlockState in the Start state
 -}
-start : State -> State
+start : BlockState -> BlockState
 start state =
     { state | blockType = Start, blockTypeStack = [], blockContents = [] }
 
 
-initBlock : BlockType -> String -> State -> State
+initBlock : BlockType -> String -> BlockState -> BlockState
 initBlock blockType_ currentLine_ state =
     { state | blockType = blockType_, blockContents = [ currentLine_ ] }
 
 
-initWithBlockType : BlockType -> String -> State -> State
+initWithBlockType : BlockType -> String -> BlockState -> BlockState
 initWithBlockType blockType_ currentLine_ state =
     { state
         | blockType = blockType_
         , blockContents = [ currentLine_ ]
         , lineNumber = state.lineNumber + countLines state.blockContents
-        , output = pushTC2 currentLine_ state
+        , output = state.blockContents :: state.output
     }
 
 
-addToBlockContents : BlockType -> String -> State -> State
+addToBlockContents : BlockType -> String -> BlockState -> BlockState
 addToBlockContents blockType_ currentLine_ state =
     { state | blockType = blockType_, blockContents = currentLine_ :: state.blockContents }
 
 
-pushBlockStack : BlockType -> String -> State -> State
+pushBlockStack : BlockType -> String -> BlockState -> BlockState
 pushBlockStack blockType_ currentLine_ state =
     { state
         | blockType = blockType_
@@ -243,7 +198,7 @@ pushBlockStack blockType_ currentLine_ state =
     }
 
 
-popBlockStack : BlockType -> String -> State -> State
+popBlockStack : BlockType -> String -> BlockState -> BlockState
 popBlockStack blockType_ currentLine_ state =
     let
         newBlockTypeStack =
@@ -251,20 +206,14 @@ popBlockStack blockType_ currentLine_ state =
     in
     if newBlockTypeStack == [] then
         let
-            input_ =
-                String.join "\n" (List.reverse (currentLine_ :: state.blockContents))
-
-            tc_ =
-                Parser.parseLoop state.generation state.lineNumber input_
-
-            tc =
-                { tc_ | text = input_ }
+            block =
+                List.reverse (currentLine_ :: state.blockContents)
         in
         { state
             | blockType = Start
             , blockTypeStack = []
             , blockContents = currentLine_ :: state.blockContents
-            , output = tc :: state.output
+            , output = List.reverse block :: state.output
             , lineNumber = state.lineNumber + (2 + List.length state.blockContents) -- TODO: think about this.  Is it correct?
         }
 
@@ -276,29 +225,13 @@ popBlockStack blockType_ currentLine_ state =
         }
 
 
-pushTC : State -> List TextCursor
-pushTC state =
-    Parser.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse state.blockContents)) :: state.output
-
-
-pushTC2 : String -> State -> List TextCursor
-pushTC2 str state =
-    Parser.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse (str :: state.blockContents))) :: state.output
-
-
-flush : State -> State
+flush : BlockState -> BlockState
 flush state =
     let
-        input =
-            String.join "\n" (List.reverse state.blockContents)
-
-        tc_ =
-            Parser.parseLoop state.generation state.lineNumber input
-
-        tc =
-            { tc_ | text = input }
+        block =
+            List.reverse state.blockContents
     in
-    { state | output = List.reverse (tc :: state.output) }
+    { state | output = List.reverse (block :: state.output) }
 
 
 countLines : List String -> Int
@@ -310,7 +243,7 @@ countLines list =
 -- HELPER (LOOP)
 
 
-loop : State -> (State -> Step State State) -> State
+loop : BlockState -> (BlockState -> Step BlockState BlockState) -> BlockState
 loop s nextState_ =
     case nextState_ s of
         Loop s_ ->
