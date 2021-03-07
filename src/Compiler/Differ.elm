@@ -63,17 +63,17 @@ rangeOfBlocks dr sourceMapIndex =
             Nothing
 
 
-blocksBetween_ : Int -> Int -> List (List String) -> List (List String)
+blocksBetween_ : Int -> Int -> List (List a) -> List (List a)
 blocksBetween_ i j blocks =
     slice i (j + 1) blocks
 
 
-blocksBefore_ : Int -> List (List String) -> List (List String)
+blocksBefore_ : Int -> List (List a) -> List (List a)
 blocksBefore_ i blocks =
     slice 0 i blocks
 
 
-blockAfter_ : Int -> List (List String) -> List (List String)
+blockAfter_ : Int -> List (List a) -> List (List a)
 blockAfter_ i blocks =
     slice i (1 + List.length blocks) blocks
 

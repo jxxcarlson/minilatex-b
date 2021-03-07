@@ -138,7 +138,7 @@ nextCursor tc =
                     { tc
                         | count = tc.count + 1
                         , text = String.dropLeft sourceMap.length tc.text
-                        , block = String.left sourceMap.length tc.text ++ tc.block
+                        , block = tc.block ++ String.left sourceMap.length tc.text
                         , parsed = newExpr tc expr :: tc.parsed
                         , offset = tc.offset + sourceMap.length
                     }

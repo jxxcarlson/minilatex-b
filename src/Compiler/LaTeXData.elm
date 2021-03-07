@@ -50,6 +50,7 @@ getGenerations expressions =
 updateWithString : Int -> String -> String -> LaTeXData -> LaTeXData
 updateWithString generation selectedId input_ data =
     let
+        state : Document.State
         state =
             Document.process generation input_
 
@@ -77,9 +78,13 @@ updateWithString generation selectedId input_ data =
         _ =
             Debug.log "BLOCKS AFTER" <| Differ.blockAfter_ (bi + 1) (List.map String.lines data.blocks)
 
+        _ =
+            Debug.log "BLOCKS (NEW)" <| Document.toText state
+
         incrementTextCursor =
             Parser.TextCursor.incrementBlockOffset lineNumber >> Parser.TextCursor.incrementBlockIndex bi
 
+        deltaOutput : List (List Expression)
         deltaOutput =
             Document.process generation (String.join "\n" dr.deltaInTarget)
                 |> (\state_ -> { state_ | output = List.map incrementTextCursor state_.output })
