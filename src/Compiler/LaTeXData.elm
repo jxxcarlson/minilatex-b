@@ -62,6 +62,7 @@ updateWithString generation selectedId input_ data =
 
         lineNumber =
             (Differ.range dr).firstChange
+                |> Debug.log "LNE NUMBER"
 
         bi =
             Differ.getBlockIndex (Debug.log "LINE NO" lineNumber) (Debug.log "SM IIND" data.sourceMapIndex)
@@ -75,11 +76,22 @@ updateWithString generation selectedId input_ data =
         _ =
             Debug.log "DELTA T" dr.deltaInTarget
 
+        --_ =
+        --    Debug.log "!! lines before" <| Differ.numberOfinesBeforeBlockWithIndex_ bi data.blocks
         _ =
             Debug.log "BLOCKS AFTER" <| Differ.blockAfter_ (bi + 1) (List.map String.lines data.blocks)
 
         parsedBefore =
             Debug.log "AST BLOCKS BEFORE" <| Differ.blocksBefore_ bi data.parsedText
+
+        parsedBetween =
+            Debug.log "AST BLOCKS BETWEEN" <| Differ.slice bi (bi + 1) data.parsedText
+
+        mSourceMap =
+            Debug.log "SM!!!" (Maybe.map Parser.Expression.getSource (List.head parsedBetween |> Maybe.andThen List.head))
+
+        blockOffset_ =
+            Debug.log "BO" <| Maybe.map .blockOffset mSourceMap
 
         parsedAfter =
             Debug.log "AST BLOCKS AFTER" <| Differ.blockAfter_ (bi + 1) data.parsedText
@@ -92,15 +104,22 @@ updateWithString generation selectedId input_ data =
         renderedTextAfter =
             List.drop (bi + 1) data.renderedText
 
-        _ =
-            Debug.log "BLOCKS (NEW)" <| Document.toText state
+        changedBlock : String
+        changedBlock =
+            Document.toText state
+                |> List.drop bi
+                |> List.head
+                |> Maybe.withDefault ""
+                |> Debug.log "CHANGED BLOCK"
 
         incrementTextCursor =
-            Parser.TextCursor.incrementBlockOffset lineNumber >> Parser.TextCursor.incrementBlockIndex bi
+            -- Parser.TextCursor.incrementBlockOffset lineNumber >> Parser.TextCursor.incrementBlockIndex bi
+            -- Parser.TextCursor.incrementBlockOffset lineNumber
+            Parser.TextCursor.incrementBlockOffset (blockOffset_ |> Maybe.withDefault 0)
 
         deltaParsed : List (List Expression)
         deltaParsed =
-            Document.process generation (String.join "\n" dr.deltaInTarget)
+            Document.process generation changedBlock
                 |> (\state_ -> { state_ | output = List.map incrementTextCursor state_.output })
                 |> Document.toParsed
                 |> Debug.log "DELTA AST"

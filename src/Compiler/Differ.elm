@@ -1,6 +1,6 @@
 module Compiler.Differ exposing
     ( diff
-    , DiffRecord, blockAfter_, blocksBefore_, getBlockIndex, range, rangeOfBlocks, slice
+    , DiffRecord, blockAfter_, blocksBefore_, getBlockIndex, numberOfinesBeforeBlockWithIndex_, range, rangeOfBlocks, slice
     )
 
 {-| This module is used to speed up parsing-rendering by
@@ -71,6 +71,11 @@ blocksBetween_ i j blocks =
 blocksBefore_ : Int -> List (List a) -> List (List a)
 blocksBefore_ i blocks =
     slice 0 i blocks
+
+
+numberOfinesBeforeBlockWithIndex_ : Int -> List (List a) -> Int
+numberOfinesBeforeBlockWithIndex_ i blocks =
+    blocksBefore_ i blocks |> List.concat |> List.length
 
 
 blockAfter_ : Int -> List (List a) -> List (List a)
