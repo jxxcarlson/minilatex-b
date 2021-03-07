@@ -1,4 +1,4 @@
-module Compiler.GenericDiffer exposing (..)
+module Compiler.GenericDiffer exposing (DiffRecord, diff)
 
 
 type alias DiffRecord a =
@@ -9,11 +9,11 @@ type alias DiffRecord a =
     }
 
 
-{-| Let u and v be two lists of strings. Write them as
+{-| Let u and v be two lists of things of type o. Write them as
 u = axb, v = ayb, where a is the greatest common prefix
 and b is the greatest common suffix. Return DiffRecord a b x y
 -}
-diff : List x -> List x -> DiffRecord x
+diff : List a -> List a -> DiffRecord a
 diff u v =
     let
         a =
@@ -44,7 +44,7 @@ diff u v =
     DiffRecord a b x y
 
 
-commonInitialSegment : List aa -> List aa -> List aa
+commonInitialSegment : List a -> List a -> List a
 commonInitialSegment x y =
     if x == [] then
         []
@@ -67,7 +67,7 @@ commonInitialSegment x y =
             []
 
 
-commonTerminalSegmentAux : List aa -> List aa -> List aa -> List aa
+commonTerminalSegmentAux : List a -> List a -> List a -> List a
 commonTerminalSegmentAux cis x y =
     let
         n =

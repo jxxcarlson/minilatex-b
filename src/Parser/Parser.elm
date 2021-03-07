@@ -1,4 +1,7 @@
-module Parser.Parser exposing (..)
+module Parser.Parser exposing
+    ( parseLoop
+    , Context(..), expression, expressionList
+    )
 
 {-| Function parserLoop takes as input an integer representing a "chunkNumber"
 and as string representing a chunk of text. It produces as output a TextCursor:

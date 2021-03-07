@@ -1,6 +1,6 @@
 module Compiler.Differ exposing
     ( diff
-    , DiffRecord, blockAfter_, blocksBefore_, getBlockIndex, numberOfinesBeforeBlockWithIndex_, range, rangeOfBlocks, slice
+    , blockAfter_, blocksBefore_, rangeOfBlocks, slice
     )
 
 {-| This module is used to speed up parsing-rendering by
