@@ -2,7 +2,7 @@ module Parser.Expression exposing
     ( Expression(..), Problem(..), SourceMap
     , dummySourceMap, getSelectionFromSourceMap, getSource, getSourceOfList, sourceMapIndex, sourceMapToString
     , incrementOffset, problemAsString
-    , Instr(..), equivalentProblem, setSourceMap, toString
+    , Instr(..), equivalentProblem, incrementBlockOffset, setSourceMap, toString
     )
 
 {-|
@@ -324,6 +324,36 @@ incrementOffset delta expr =
 
         LXInstruction instr source ->
             LXInstruction instr { source | offset = source.offset + delta }
+
+
+{-| increment the blockOffset field of the SourceMap component of an Expression
+-}
+incrementBlockOffset : Int -> Expression -> Expression
+incrementBlockOffset delta expr =
+    case expr of
+        Text e source ->
+            Text e { source | blockOffset = source.blockOffset + delta }
+
+        InlineMath e source ->
+            InlineMath e { source | blockOffset = source.blockOffset + delta }
+
+        DisplayMath e source ->
+            DisplayMath e { source | blockOffset = source.blockOffset + delta }
+
+        Macro n o a source ->
+            Macro n o a { source | blockOffset = source.blockOffset + delta }
+
+        Environment n a e source ->
+            Environment n a e { source | blockOffset = source.blockOffset + delta }
+
+        LXError e p source ->
+            LXError e p { source | blockOffset = source.blockOffset + delta }
+
+        LXList e ->
+            LXList (List.map (incrementOffset delta) e)
+
+        LXInstruction instr source ->
+            LXInstruction instr { source | blockOffset = source.blockOffset + delta }
 
 
 setSourceMap : SourceMap -> Expression -> Expression

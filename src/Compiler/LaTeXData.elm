@@ -5,6 +5,7 @@ import Html exposing (Html)
 import Html.Attributes as HA
 import Parser.Document as Document
 import Parser.Expression exposing (Expression)
+import Parser.TextCursor
 import Render.LaTeXState as LaTeXState exposing (LaTeXMsg)
 import Render.Render as Render
 
@@ -52,6 +53,15 @@ updateWithString generation elementId input_ data =
         dr =
             Differ.diff data.lines (input_ |> String.lines)
 
+        lineNumber =
+            (Differ.range dr).firstChange
+
+        bi =
+            Differ.getBlockIndex (Debug.log "LINE NO" lineNumber) (Debug.log "SM IIND" data.sourceMapIndex)
+                -- TODO: Dangerous?
+                |> Maybe.withDefault 0
+                |> Debug.log "BI"
+
         _ =
             Debug.log "DELTA S" dr.deltaInSource
 
@@ -60,6 +70,7 @@ updateWithString generation elementId input_ data =
 
         deltaState =
             Document.process generation (String.join "\n" dr.deltaInTarget)
+                |> (\state_ -> { state_ | output = List.map (Parser.TextCursor.incrementBlockOffset lineNumber) state_.output })
                 |> Debug.log "DELTA STATE"
 
         parsedText =
