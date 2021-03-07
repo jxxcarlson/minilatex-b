@@ -17,12 +17,12 @@ suite =
                 \_ ->
                     "a b c"
                         |> run (expression 0 0)
-                        |> Expect.equal (Ok (Text "a b c" { generation = 0, chunkOffset = 0, content = "a b c", length = 5, offset = 0 }))
+                        |> Expect.equal (Ok (Text "a b c" { generation = 0, blockOffset = 0, content = "a b c", length = 5, offset = 0 }))
             , test "parse inline math" <|
                 \_ ->
                     "$x^2$"
                         |> run (expression 0 0)
-                        |> Expect.equal (Ok (InlineMath "x^2" { generation = 0, chunkOffset = 0, content = "x^2", length = 5, offset = 0 }))
+                        |> Expect.equal (Ok (InlineMath "x^2" { generation = 0, blockOffset = 0, content = "x^2", length = 5, offset = 0 }))
             , test "parse inline math with error" <|
                 \_ ->
                     "$x^2"
@@ -32,13 +32,13 @@ suite =
                 \_ ->
                     "a quadratic: $x^2$"
                         |> run (expressionList 0 0)
-                        |> Expect.equal (Ok [ Text "a quadratic: " { generation = 0, chunkOffset = 0, content = "a quadratic: ", length = 13, offset = 0 }, InlineMath "x^2" { generation = 0, chunkOffset = 0, content = "x^2", length = 18, offset = 0 } ])
+                        |> Expect.equal (Ok [ Text "a quadratic: " { generation = 0, blockOffset = 0, content = "a quadratic: ", length = 13, offset = 0 }, InlineMath "x^2" { generation = 0, blockOffset = 0, content = "x^2", length = 18, offset = 0 } ])
             , test "parse macro" <|
                 \_ ->
                     "\\strong{stuff}"
                         -- The value 13 should be 5, but "interior" source maps are irrelevant
                         |> run (expression 0 0)
-                        |> Expect.equal (Ok (Macro "strong" Nothing [ Text "stuff" { generation = 0, chunkOffset = 0, content = "stuff", length = 13, offset = 0 } ] { generation = 0, chunkOffset = 0, content = "\\strong{stuff}", length = 14, offset = 0 }))
+                        |> Expect.equal (Ok (Macro "strong" Nothing [ Text "stuff" { generation = 0, blockOffset = 0, content = "stuff", length = 13, offset = 0 } ] { generation = 0, blockOffset = 0, content = "\\strong{stuff}", length = 14, offset = 0 }))
             , test "parse macro with error" <|
                 \_ ->
                     "\\strong{stuff"
@@ -49,12 +49,12 @@ suite =
                     "{123}"
                         -- The value 4 should be 5 (count the braces}, but "interior" source maps are irrelevant
                         |> run (arg 0 0)
-                        |> Expect.equal (Ok (Text "123" { generation = 0, chunkOffset = 0, content = "123", length = 4, offset = 0 }))
+                        |> Expect.equal (Ok (Text "123" { generation = 0, blockOffset = 0, content = "123", length = 4, offset = 0 }))
             , test "parse macro name" <|
                 \_ ->
                     "\\strong"
                         |> run (macroName 0 0)
-                        |> Expect.equal (Ok ( "strong", { generation = 0, chunkOffset = 0, content = "strong", length = 7, offset = 0 } ))
+                        |> Expect.equal (Ok ( "strong", { generation = 0, blockOffset = 0, content = "strong", length = 7, offset = 0 } ))
             , test "parse invalid macro name" <|
                 \_ ->
                     "\\begin"

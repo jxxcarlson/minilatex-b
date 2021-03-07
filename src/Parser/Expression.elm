@@ -58,7 +58,7 @@ instructionToString i =
 {-| Identifies the source text corresponding to part of the AST
 -}
 type alias SourceMap =
-    { chunkOffset : Int
+    { blockOffset : Int
     , length : Int
     , offset : Int
     , content : String
@@ -117,7 +117,7 @@ type alias Slice =
 {-| -}
 dummySourceMap : SourceMap
 dummySourceMap =
-    { chunkOffset = 0, length = 0, offset = 0, content = "", generation = 0 }
+    { blockOffset = 0, length = 0, offset = 0, content = "", generation = 0 }
 
 
 {-| Return the string in the source text identified by the SourceMap.
@@ -132,7 +132,7 @@ getSelectionFromSourceMap sourceMap str sourceMapIndex_ =
 
         data : List Int
         data =
-            linesOfChunkOffset sourceMap.chunkOffset sourceMapIndex_
+            linesOfChunkOffset sourceMap.blockOffset sourceMapIndex_
                 |> List.map Tuple.second
                 |> List.head
                 |> Maybe.withDefault []
@@ -175,7 +175,7 @@ sourceMapIndex : Int -> List (List Expression) -> List (List Int)
 sourceMapIndex numberOfLines list =
     list
         |> List.map getSourceOfList
-        |> List.map .chunkOffset
+        |> List.map .blockOffset
         |> makeIndex numberOfLines
 
 
@@ -203,7 +203,7 @@ linesOfChunkOffset chunkOffset sourceMapIndex_ =
 sourceMapToString : SourceMap -> String
 sourceMapToString sm =
     "{ chunkOffset = "
-        ++ String.fromInt sm.chunkOffset
+        ++ String.fromInt sm.blockOffset
         ++ ", offset = "
         ++ String.fromInt sm.offset
         ++ ", length = "
@@ -255,7 +255,7 @@ getSourceOfList list =
             List.minimum (List.map .offset sourceMaps) |> Maybe.withDefault 0
 
         lineNumber =
-            List.head sourceMaps |> Maybe.map .chunkOffset |> Maybe.withDefault 0
+            List.head sourceMaps |> Maybe.map .blockOffset |> Maybe.withDefault 0
 
         content =
             List.head sourceMaps |> Maybe.map .content |> Maybe.withDefault ""
@@ -263,7 +263,7 @@ getSourceOfList list =
         generation =
             List.head sourceMaps |> Maybe.map .generation |> Maybe.withDefault 0
     in
-    { length = length, offset = offset, chunkOffset = lineNumber, content = content, generation = generation }
+    { length = length, offset = offset, blockOffset = lineNumber, content = content, generation = generation }
 
 
 {-| Return the SourceMap component of an Expression

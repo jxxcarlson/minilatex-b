@@ -19,7 +19,7 @@ getRecoveryData tc_ problem =
             Expression.dummySourceMap
 
         newSourceMap =
-            { oldSourceMap | chunkOffset = tc_.blockIndex }
+            { oldSourceMap | blockOffset = tc_.blockIndex }
     in
     getRecoveryData_ problem
         |> Maybe.map (\r -> { r | parseSubstitute = Expression.setSourceMap newSourceMap r.parseSubstitute })

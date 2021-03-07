@@ -181,7 +181,7 @@ handleError tc_ e =
             Parser.Problem.getRecoveryData tc_ problem
 
         lxError =
-            LXError errorText problem { content = errorText, chunkOffset = tc_.blockIndex, length = errorColumn, offset = tc_.offset + errorColumn, generation = tc_.generation }
+            LXError errorText problem { content = errorText, blockOffset = tc_.blockIndex, length = errorColumn, offset = tc_.offset + errorColumn, generation = tc_.generation }
     in
     { text = makeNewText tc_ errorColumn mRecoveryData
     , block = "?? TO DO"
@@ -285,7 +285,7 @@ textNP generation lineNumber prefixChars stopChars =
                 sm_ =
                     { content = content
                     , length = end - start
-                    , chunkOffset = lineNumber
+                    , blockOffset = lineNumber
                     , offset = start
                     , generation = generation
                     }
@@ -388,7 +388,7 @@ getChompedString generation lineNumber parser =
                 src =
                     String.slice first_ last_ source_
             in
-            ( src, { content = src, chunkOffset = lineNumber, length = last_, offset = 0, generation = generation } )
+            ( src, { content = src, blockOffset = lineNumber, length = last_, offset = 0, generation = generation } )
     in
     Parser.succeed sm
         |= Parser.getOffset
@@ -410,7 +410,7 @@ macro generation lineNo =
 
 macroName : Int -> Int -> Parser ( String, SourceMap )
 macroName generation chunkOffset =
-    Parser.succeed (\start str end -> ( str, { content = str, chunkOffset = chunkOffset, length = end - start, offset = start, generation = generation } ))
+    Parser.succeed (\start str end -> ( str, { content = str, blockOffset = chunkOffset, length = end - start, offset = start, generation = generation } ))
         |= Parser.getOffset
         |= macroName2
         |= Parser.getOffset
@@ -420,10 +420,10 @@ fixMacro : Int -> Int -> Int -> ( String, SourceMap ) -> Maybe ( String, SourceM
 fixMacro generation start lineNo ( name, sm1 ) optArg_ args_ end src_ =
     let
         lineNumber =
-            sm1.chunkOffset
+            sm1.blockOffset
 
         sm =
-            { content = src_, chunkOffset = lineNumber, offset = start, length = end - start, generation = generation }
+            { content = src_, blockOffset = lineNumber, offset = start, length = end - start, generation = generation }
     in
     Macro name (Maybe.map Tuple.first optArg_) args_ sm
 
@@ -519,7 +519,7 @@ environment : Int -> Int -> Parser Expression
 environment generation chunkOffset =
     Parser.succeed
         (\start expr end src ->
-            Expression.setSourceMap { chunkOffset = chunkOffset, length = end - start, offset = start, content = src, generation = generation } expr
+            Expression.setSourceMap { blockOffset = chunkOffset, length = end - start, offset = start, content = src, generation = generation } expr
         )
         |= Parser.getOffset
         |= (envName generation chunkOffset |> Parser.andThen (environmentOfType generation chunkOffset))
@@ -537,7 +537,7 @@ envName generation chunkOffset =
         Parser.succeed
             (\start str end ->
                 ( str
-                , { content = "\\begin{" ++ str ++ "}", chunkOffset = chunkOffset, offset = start, length = end - start, generation = generation }
+                , { content = "\\begin{" ++ str ++ "}", blockOffset = chunkOffset, offset = start, length = end - start, generation = generation }
                 )
             )
             |= Parser.getOffset
@@ -595,7 +595,7 @@ environmentDict =
 standardEnvironmentBody : Int -> Int -> String -> String -> Parser Expression
 standardEnvironmentBody generation chunkOffset endWoord envType =
     -- Parser.succeed (fixExpr chunkOffset envType)
-    Parser.succeed (\start oa body end src -> Environment envType oa body { content = src, chunkOffset = chunkOffset, offset = start, length = end - start, generation = generation })
+    Parser.succeed (\start oa body end src -> Environment envType oa body { content = src, blockOffset = chunkOffset, offset = start, length = end - start, generation = generation })
         |= Parser.getOffset
         |= many (optionalArg generation chunkOffset)
         |. Parser.spaces
@@ -645,7 +645,7 @@ passThroughEnv generation chunkOffset envType source =
             passThroughData generation envType source lines
 
         sm =
-            { chunkOffset = chunkOffset, offset = data.offset, length = data.length, content = data.body, generation = generation }
+            { blockOffset = chunkOffset, offset = data.offset, length = data.length, content = data.body, generation = generation }
     in
     Environment envType data.optArgs (Text data.body sm) sm
 

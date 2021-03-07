@@ -27,7 +27,7 @@ clicker sm =
 
 
 id sm =
-    String.fromInt sm.generation ++ ":" ++ String.fromInt sm.chunkOffset ++ "-" ++ String.fromInt sm.offset
+    String.fromInt sm.generation ++ ":" ++ String.fromInt sm.blockOffset ++ "-" ++ String.fromInt sm.offset
 
 
 idSuffix : String -> String
