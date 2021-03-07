@@ -78,28 +78,49 @@ updateWithString generation selectedId input_ data =
         _ =
             Debug.log "BLOCKS AFTER" <| Differ.blockAfter_ (bi + 1) (List.map String.lines data.blocks)
 
+        parsedBefore =
+            Debug.log "AST BLOCKS BEFORE" <| Differ.blocksBefore_ bi data.parsedText
+
+        parsedAfter =
+            Debug.log "AST BLOCKS AFTER" <| Differ.blockAfter_ (bi + 1) data.parsedText
+
+        renderedTextBefore : List (Html LaTeXMsg)
+        renderedTextBefore =
+            List.take bi data.renderedText
+
+        renderedTextAfter : List (Html LaTeXMsg)
+        renderedTextAfter =
+            List.drop (bi + 1) data.renderedText
+
         _ =
             Debug.log "BLOCKS (NEW)" <| Document.toText state
 
         incrementTextCursor =
             Parser.TextCursor.incrementBlockOffset lineNumber >> Parser.TextCursor.incrementBlockIndex bi
 
-        deltaOutput : List (List Expression)
-        deltaOutput =
+        deltaParsed : List (List Expression)
+        deltaParsed =
             Document.process generation (String.join "\n" dr.deltaInTarget)
                 |> (\state_ -> { state_ | output = List.map incrementTextCursor state_.output })
                 |> Document.toParsed
-                |> Debug.log "DELTA STATE"
+                |> Debug.log "DELTA AST"
+
+        deltaRenderedText : List (Html LaTeXMsg)
+        deltaRenderedText =
+            render selectedId deltaParsed
 
         parsedText =
-            Document.toParsed state
+            parsedBefore ++ deltaParsed ++ parsedAfter
+
+        renderedText =
+            renderedTextBefore ++ deltaRenderedText ++ renderedTextAfter
     in
     { lines = input
     , blocks = Document.toText state
     , generations = getGenerations parsedText
     , parsedText = parsedText
     , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length input) parsedText
-    , renderedText = render selectedId parsedText
+    , renderedText = renderedText
     }
 
 
