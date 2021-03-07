@@ -1,6 +1,6 @@
 module Compiler.Differ exposing
     ( diff
-    , DiffRecord, range, rangeOfBlocks
+    , DiffRecord, range, rangeOfBlocks, slice
     )
 
 {-| This module is used to speed up parsing-rendering by
@@ -20,17 +20,22 @@ then parsing and rendering the changed paragraphs.
 type alias DiffRecord =
     { commonInitialSegment : List String
     , commonTerminalSegment : List String
-    , middleSegmentInSource : List String
-    , middleSegmentInTarget : List String
+    , deltaInSource : List String
+    , deltaInTarget : List String
     }
 
 
 range : DiffRecord -> { firstChange : Int, lengthInSource : Int, lengthInTarget : Int }
 range dr =
     { firstChange = List.length dr.commonInitialSegment
-    , lengthInSource = List.length dr.middleSegmentInSource
-    , lengthInTarget = List.length dr.middleSegmentInTarget
+    , lengthInSource = List.length dr.deltaInSource
+    , lengthInTarget = List.length dr.deltaInTarget
     }
+
+
+textInRange : Int -> Int -> List String -> List String
+textInRange start end strings =
+    slice start (end + 1) strings
 
 
 {-| Attempt to return the offsets for the first and last chunks (blocks) in
@@ -50,7 +55,7 @@ rangeOfBlocks dr sourceMapIndex =
         last =
             first + range_.lengthInSource
     in
-    case ( getChunkOffset first sourceMapIndex, getChunkOffset last sourceMapIndex ) of
+    case ( getBlockIndex first sourceMapIndex, getBlockIndex last sourceMapIndex ) of
         ( Just j, Just k ) ->
             Just ( j, k )
 
@@ -60,26 +65,17 @@ rangeOfBlocks dr sourceMapIndex =
 
 blocksBetween_ : Int -> Int -> List (List String) -> List (List String)
 blocksBetween_ i j blocks =
-    blocks
-        |> List.indexedMap (\k block -> ( k, block ))
-        |> List.filter (\( k, _ ) -> k >= i && k <= j)
-        |> List.map (\( _, b ) -> b)
+    slice i (j + 1) blocks
 
 
 blocksBefore_ : Int -> List (List String) -> List (List String)
 blocksBefore_ i blocks =
-    blocks
-        |> List.indexedMap (\k block -> ( k, block ))
-        |> List.filter (\( k, _ ) -> k < i)
-        |> List.map (\( _, b ) -> b)
+    slice 0 i blocks
 
 
 blockAfter_ : Int -> List (List String) -> List (List String)
 blockAfter_ i blocks =
-    blocks
-        |> List.indexedMap (\k block -> ( k, block ))
-        |> List.filter (\( k, _ ) -> k > i)
-        |> List.map (\( _, b ) -> b)
+    slice i (1 + List.length blocks) blocks
 
 
 
@@ -102,8 +98,20 @@ blockAfter_ i blocks =
 --            blocks
 
 
-getChunkOffset : Int -> List (List Int) -> Maybe Int
-getChunkOffset lineNumber sourceMapIndex =
+{-| The primary data is a list of strings. These strings are
+grouped in consecutive groups of strings called blocks
+by a function
+
+     List String -> List Block
+
+where Block: List String.
+
+The function `getBlockIndex` returns the index in List Block of the
+Block containing the string with index lineNumber.
+
+-}
+getBlockIndex : Int -> List (List Int) -> Maybe Int
+getBlockIndex lineNumber sourceMapIndex =
     let
         indexed =
             List.indexedMap (\k x -> ( k, x )) sourceMapIndex
@@ -184,6 +192,17 @@ commonTerminalSegmentAux cis x y =
             List.drop n y |> List.reverse
     in
     commonInitialSegment xx yy |> List.reverse
+
+
+
+-- HELPER
+
+
+slice : Int -> Int -> List a -> List a
+slice from to items =
+    items
+        |> List.drop from
+        |> List.take (to - from)
 
 
 dropLast : Int -> List a -> List a

@@ -128,7 +128,7 @@ nextCursor tc =
         Done { tc | parsed = List.reverse tc.parsed }
 
     else
-        case Parser.run (expression tc.generation tc.chunkNumber) tc.text of
+        case Parser.run (expression tc.generation tc.blockIndex) tc.text of
             Ok expr ->
                 let
                     sourceMap =
@@ -181,11 +181,11 @@ handleError tc_ e =
             Parser.Problem.getRecoveryData tc_ problem
 
         lxError =
-            LXError errorText problem { content = errorText, chunkOffset = tc_.chunkNumber, length = errorColumn, offset = tc_.offset + errorColumn, generation = tc_.generation }
+            LXError errorText problem { content = errorText, chunkOffset = tc_.blockIndex, length = errorColumn, offset = tc_.offset + errorColumn, generation = tc_.generation }
     in
     { text = makeNewText tc_ errorColumn mRecoveryData
     , block = "?? TO DO"
-    , chunkNumber = tc_.chunkNumber
+    , blockIndex = tc_.blockIndex
     , parsed = newParsed tc_ lxError mRecoveryData
     , stack = newStack tc_ errorText mRecoveryData
     , offset = newOffset tc_ errorColumn mRecoveryData

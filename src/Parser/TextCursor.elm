@@ -19,7 +19,7 @@ text. .
 type alias TextCursor =
     { text : String
     , block : String
-    , chunkNumber : Int
+    , blockIndex : Int
     , parsed : List Expression
     , stack : List String
     , offset : Int
@@ -30,11 +30,11 @@ type alias TextCursor =
 
 empty : TextCursor
 empty =
-    { count = 0, text = "", block = "", chunkNumber = 0, parsed = [], stack = [], offset = 0, generation = 0 }
+    { count = 0, text = "", block = "", blockIndex = 0, parsed = [], stack = [], offset = 0, generation = 0 }
 
 
 {-| Return a TextCursor with given chunkNumber and text
 -}
 init : Int -> Int -> String -> TextCursor
-init generation initialChunkNumber text =
-    { count = 0, text = text, block = "", chunkNumber = initialChunkNumber, parsed = [], stack = [], offset = 0, generation = generation }
+init generation blockIndex text =
+    { count = 0, text = text, block = "", blockIndex = blockIndex, parsed = [], stack = [], offset = 0, generation = generation }

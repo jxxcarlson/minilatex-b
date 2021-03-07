@@ -50,8 +50,17 @@ updateWithString generation elementId input_ data =
             String.lines input_
 
         dr =
-            Differ.diff (input_ |> String.lines)
-                data.lines
+            Differ.diff data.lines (input_ |> String.lines)
+
+        _ =
+            Debug.log "DELTA S" dr.deltaInSource
+
+        _ =
+            Debug.log "DELTA T" dr.deltaInTarget
+
+        deltaState =
+            Document.process generation (String.join "\n" dr.deltaInTarget)
+                |> Debug.log "DELTA STATE"
 
         parsedText =
             Document.toParsed state
