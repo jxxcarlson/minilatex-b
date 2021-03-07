@@ -190,7 +190,7 @@ update msg model =
                         (str |> String.lines)
 
                 message =
-                    "Chunk range: " ++ Debug.toString (Compiler.Differ.rangeOfChunks dr model.laTeXData.sourceMapIndex)
+                    "Chunk range: " ++ Debug.toString (Compiler.Differ.rangeOfBlocks dr model.laTeXData.sourceMapIndex)
             in
             ( { model
                 | input = str

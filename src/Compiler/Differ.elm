@@ -1,6 +1,6 @@
 module Compiler.Differ exposing
     ( diff
-    , DiffRecord, range, rangeOfChunks
+    , DiffRecord, range, rangeOfBlocks
     )
 
 {-| This module is used to speed up parsing-rendering by
@@ -33,8 +33,13 @@ range dr =
     }
 
 
-rangeOfChunks : DiffRecord -> List (List Int) -> Maybe ( Int, Int )
-rangeOfChunks dr sourceMapIndex =
+{-| Attempt to return the offsets for the first and last chunks (blocks) in
+the source text whose extent contains all the source text changes. The
+extent is the set of lines that begins with the first line of the first block
+and ends with the last line of the last block.
+-}
+rangeOfBlocks : DiffRecord -> List (List Int) -> Maybe ( Int, Int )
+rangeOfBlocks dr sourceMapIndex =
     let
         range_ =
             range dr
@@ -51,6 +56,50 @@ rangeOfChunks dr sourceMapIndex =
 
         _ ->
             Nothing
+
+
+blocksBetween_ : Int -> Int -> List (List String) -> List (List String)
+blocksBetween_ i j blocks =
+    blocks
+        |> List.indexedMap (\k block -> ( k, block ))
+        |> List.filter (\( k, _ ) -> k >= i && k <= j)
+        |> List.map (\( _, b ) -> b)
+
+
+blocksBefore_ : Int -> List (List String) -> List (List String)
+blocksBefore_ i blocks =
+    blocks
+        |> List.indexedMap (\k block -> ( k, block ))
+        |> List.filter (\( k, _ ) -> k < i)
+        |> List.map (\( _, b ) -> b)
+
+
+blockAfter_ : Int -> List (List String) -> List (List String)
+blockAfter_ i blocks =
+    blocks
+        |> List.indexedMap (\k block -> ( k, block ))
+        |> List.filter (\( k, _ ) -> k > i)
+        |> List.map (\( _, b ) -> b)
+
+
+
+--changedBlocks : DiffRecord -> List (List Int) -> List (List String) -> List (List String)
+--changedBlocks dr sourceMapIndex blocks =
+--    case rangeOfChunks dr sourceMapIndex of
+--        Just ( i, j ) ->
+--            changedBlocks_ i j blocks
+--
+--        _ ->
+--            blocks
+--
+--unchangedBlocks : DiffRecord -> List (List Int) -> List (List String) -> (List (List String), ist (List String))
+--unchangedBlocks dr sourceMapIndex blocks =
+--    case rangeOfChunks dr sourceMapIndex of
+--        Just ( i, j ) ->
+--            changedBlocks_ i j blocks
+--
+--        _ ->
+--            blocks
 
 
 getChunkOffset : Int -> List (List Int) -> Maybe Int
