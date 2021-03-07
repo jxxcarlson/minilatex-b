@@ -183,7 +183,7 @@ update msg model =
         InputText str ->
             let
                 laTeXData =
-                    LaTeXData.updateWithString model.counter model.selectedId str model.laTeXData
+                    LaTeXData.updateWithString (model.counter + 1) model.selectedId str model.laTeXData
 
                 dr =
                     Compiler.Differ.diff (model.input |> String.lines)
@@ -387,12 +387,12 @@ renderedTextDisplay_ model =
         , width (px panelWidth)
         , height (px panelHeight)
         ]
-        [ mathNode model.counter model.laTeXData.renderedText ]
+        (List.map2 mathNode model.laTeXData.generations model.laTeXData.renderedText)
 
 
 mathNode : Int -> Html LaTeXMsg -> Element Msg
-mathNode counter html =
-    Html.Keyed.node "div" [] [ ( String.fromInt counter, html ) ]
+mathNode generation html =
+    Html.Keyed.node "div" [] [ ( String.fromInt generation, html ) ]
         |> Html.map LaTeXMsg
         |> Element.html
 

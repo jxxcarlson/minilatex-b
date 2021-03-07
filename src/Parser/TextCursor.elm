@@ -1,6 +1,6 @@
 module Parser.TextCursor exposing
     ( TextCursor, init
-    , incrementBlockOffset
+    , incrementBlockIndex, incrementBlockOffset
     )
 
 {-| TextCursor is the data structure used by Parser.parseLoop:
@@ -46,3 +46,8 @@ init generation blockIndex text =
 incrementBlockOffset : Int -> TextCursor -> TextCursor
 incrementBlockOffset deltaBlockOffset tc =
     { tc | parsed = List.map (Parser.Expression.incrementBlockOffset deltaBlockOffset) tc.parsed }
+
+
+incrementBlockIndex : Int -> TextCursor -> TextCursor
+incrementBlockIndex deltaBlockIndex tc =
+    { tc | blockIndex = tc.blockIndex + deltaBlockIndex }

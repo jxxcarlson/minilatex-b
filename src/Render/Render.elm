@@ -26,7 +26,7 @@ clicker sm =
     onClick (SendSourceMap sm)
 
 
-id sm =
+makeId sm =
     String.fromInt sm.generation ++ ":" ++ String.fromInt sm.blockOffset ++ "-" ++ String.fromInt sm.offset
 
 
@@ -42,7 +42,7 @@ active : SourceMap -> String -> List (Attribute LaTeXMsg)
 active sm selectedId =
     let
         id_ =
-            id sm
+            makeId sm
     in
     [ clicker sm, HA.id id_, highlight "#FAA" selectedId id_ ]
 
@@ -105,7 +105,7 @@ macro selectedId state name optArg args sm =
 
 undefinedMacro : String -> SourceMap -> Html LaTeXMsg
 undefinedMacro _ sm =
-    Html.span [ HA.id (id sm), clicker sm, HA.style "color" "red" ] [ Html.text "Undefined macro: " ]
+    Html.span [ HA.id (makeId sm), clicker sm, HA.style "color" "red" ] [ Html.text "Undefined macro: " ]
 
 
 environment selectedId state name args body _ =
@@ -525,7 +525,7 @@ mathText displayMode selectedId content sm =
                , HA.property "display" (Json.Encode.bool (isDisplayMathMode displayMode))
                , HA.property "content" (Json.Encode.string (content |> String.replace "\\ \\" "\\\\"))
                , clicker sm
-               , HA.id (id sm)
+               , HA.id (makeId sm)
 
                --, HA.property "content" (Json.Encode.string content |> String.replace "\\ \\" "\\\\"))
                ]
@@ -569,7 +569,7 @@ highlightWithSourceMap sm str sourceMapIndex_ =
     in
     case List.head idxs of
         Nothing ->
-            Html.span [ HA.id (id sm) ] [ Html.text str ]
+            Html.span [ HA.id (makeId sm) ] [ Html.text str ]
 
         Just offset ->
             let
@@ -585,7 +585,7 @@ highlightWithSourceMap sm str sourceMapIndex_ =
                 right =
                     String.dropLeft sm.length remainder
             in
-            Html.div [ HA.id (id sm) ]
+            Html.div [ HA.id (makeId sm) ]
                 [ Html.span [] [ Html.text left ]
                 , Html.span [ HA.style "background-color" "pink" ] [ Html.text middle ]
                 , Html.span [] [ Html.text right ]

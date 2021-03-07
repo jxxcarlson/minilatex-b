@@ -13,9 +13,10 @@ import Render.Render as Render
 type alias LaTeXData =
     { lines : List String
     , blocks : List String
+    , generations : List Int
     , parsedText : List (List Expression)
     , sourceMapIndex : List (List Int)
-    , renderedText : Html LaTeXMsg
+    , renderedText : List (Html LaTeXMsg)
     }
 
 
@@ -28,21 +29,26 @@ initWithString generation id input_ =
         lines_ =
             String.lines input_
 
+        parsedText : List (List Expression)
         parsedText =
             Document.toParsed state
     in
     { lines = lines_
     , blocks = Document.toText state
+    , generations = getGenerations parsedText
     , parsedText = parsedText
     , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length lines_) parsedText
-
-    --, renderedText = render (String.fromInt generation ++ ":" ++ id) parsedText
     , renderedText = render id parsedText
     }
 
 
+getGenerations : List (List Expression) -> List Int
+getGenerations expressions =
+    List.map (\e -> e |> List.head |> Maybe.map (Parser.Expression.getSource >> .generation) |> Maybe.withDefault 0) expressions
+
+
 updateWithString : Int -> String -> String -> LaTeXData -> LaTeXData
-updateWithString generation elementId input_ data =
+updateWithString generation selectedId input_ data =
     let
         state =
             Document.process generation input_
@@ -68,9 +74,16 @@ updateWithString generation elementId input_ data =
         _ =
             Debug.log "DELTA T" dr.deltaInTarget
 
-        deltaState =
+        _ =
+            Debug.log "BLOCKS AFTER" <| Differ.blockAfter_ (bi + 1) (List.map String.lines data.blocks)
+
+        incrementTextCursor =
+            Parser.TextCursor.incrementBlockOffset lineNumber >> Parser.TextCursor.incrementBlockIndex bi
+
+        deltaOutput =
             Document.process generation (String.join "\n" dr.deltaInTarget)
-                |> (\state_ -> { state_ | output = List.map (Parser.TextCursor.incrementBlockOffset lineNumber) state_.output })
+                |> (\state_ -> { state_ | output = List.map incrementTextCursor state_.output })
+                |> Document.toParsed
                 |> Debug.log "DELTA STATE"
 
         parsedText =
@@ -78,17 +91,17 @@ updateWithString generation elementId input_ data =
     in
     { lines = input
     , blocks = Document.toText state
+    , generations = getGenerations parsedText
     , parsedText = parsedText
     , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length input) parsedText
-    , renderedText = render elementId parsedText
+    , renderedText = render selectedId parsedText
     }
 
 
-render : String -> List (List Expression) -> Html LaTeXMsg
-render id parsed =
+render : String -> List (List Expression) -> List (Html LaTeXMsg)
+render selectedId parsed =
     parsed
-        |> List.map (Render.render id LaTeXState.init >> Html.div docStyle)
-        |> Html.div []
+        |> List.map (Render.render selectedId LaTeXState.init >> Html.div docStyle)
 
 
 docStyle =
