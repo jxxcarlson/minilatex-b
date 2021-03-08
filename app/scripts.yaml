@@ -1,0 +1,21 @@
+
+scripts:
+
+  make: elm make  Main.elm --output=public/Main.js
+
+  look: open -a /Applications/Firefox.app public/index.html
+
+  # live: elm-live app/Main.elm
+
+  # go: open -a /Applications/Firefox.app http://localhost:8000
+
+  # make: elm make src/Parser/Expression.elm
+
+  cloc: cloc --by-file app/
+
+  yes: git log --after=`date -v-1d +%F` --oneline
+
+  yess: git log --after=`date -v-1d +%F`
+
+
+

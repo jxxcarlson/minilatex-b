@@ -1,18 +1,9 @@
 module Compiler.LaTeXData exposing (LaTeXData, initWithString, updateWithString)
 
-{-| LaTeXData is a data structure which holds all the information needed to
-interactively edit, rendering in real time, a MiniLaTeX document:
+{-| LaTeXData holds all the information needed to
+interactively edit, rendering in real time, a MiniLaTeX document.
 
-    type alias LaTeXData =
-        { lines : List String
-        , blocks : List String
-        , generations : List Int
-        , parsedText : List (List Expression)
-        , sourceMapIndex : List (List Int)
-        , renderedText : List (Html LaTeXMsg)
-        }
-
-@docs LaTeXData, initWithString, updateWithString
+@docs renderDocument, LaTeXData, initWithString, updateWithString
 
 -}
 
@@ -28,6 +19,11 @@ import Render.LaTeXState as LaTeXState exposing (LaTeXMsg)
 import Render.Render as Render
 
 
+{-| LaTeXData is the type that carries all the information needed for
+efficient interactive editing. The `updateWithString` function is
+optimized so as to do expensive computations (parsing) only on the
+changed part of the text.
+-}
 type alias LaTeXData =
     { lines : List String
     , blocks : List String
@@ -38,14 +34,28 @@ type alias LaTeXData =
     }
 
 
+{-| Initialize LaTeXData using
+
+    initWithString generation selectedId input
+
+    - generation: an integer that changes on each edit;
+      needed for optimization and proper rendering by
+      virtual DOM
+
+    - selectedId: a string which identifies an element
+      in the rendered text that the user wants highlighted
+
+    - input: the source text
+
+-}
 initWithString : Int -> String -> String -> LaTeXData
-initWithString generation id input_ =
+initWithString generation selectedId input =
     let
         state =
-            Document.process generation input_
+            Document.process generation input
 
         lines_ =
-            String.lines input_
+            String.lines input
 
         parsedText : List (List Expression)
         parsedText =
@@ -56,17 +66,35 @@ initWithString generation id input_ =
     , generations = getGenerations parsedText
     , parsedText = parsedText
     , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length lines_) parsedText
-    , renderedText = render id parsedText
+    , renderedText = render selectedId parsedText
     }
 
 
-getGenerations : List (List Expression) -> List Int
-getGenerations expressions =
-    List.map (\e -> e |> List.head |> Maybe.map (Parser.Expression.getSource >> .generation) |> Maybe.withDefault 0) expressions
+{-| For short documents or documents in a non-interactive editing context, use
+
+    renderDocument generation selectedId input
+
+otherwise, use initWithString, updateWithString, and LaTeXData
+
+-}
+renderDocument : Int -> String -> String -> List (Html LaTeXMsg)
+renderDocument generation selectedId document =
+    (initWithString generation selectedId document).renderedText
 
 
+{-| `updateWithString` efficiently modifies the LaTeXState by identifying
+the block of text that has changes, parsing and rendering that text,
+and inserting the resulting parse data and rendered text in their
+respective lists which are in turn fields of LaTeXState.
+
+    updateWithString generation selectedId input data
+
+The arguments are as with initWithString with one addition,
+`data`, which is the current value of LaTeXData.
+
+-}
 updateWithString : Int -> String -> String -> LaTeXData -> LaTeXData
-updateWithString generation selectedId input_ data =
+updateWithString generation selectedId input data =
     let
         oldBlocks : List String
         oldBlocks =
@@ -74,7 +102,7 @@ updateWithString generation selectedId input_ data =
 
         newBlocks : List String
         newBlocks =
-            Block.compile generation input_
+            Block.compile generation input
                 |> List.map (String.join "\n")
 
         blockDiffRecord =
@@ -87,8 +115,8 @@ updateWithString generation selectedId input_ data =
         deltNewBlocks =
             blockDiffRecord.deltaInTarget
 
-        input =
-            String.lines input_
+        input_ =
+            String.lines input
     in
     case deltNewBlocks |> List.head of
         Nothing ->
@@ -135,11 +163,11 @@ updateWithString generation selectedId input_ data =
                 renderedTextAfter =
                     List.drop (prefixLength + 1) data.renderedText
             in
-            { lines = input
+            { lines = input_
             , blocks = newBlocks
             , generations = getGenerations parsedText
             , parsedText = parsedText
-            , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length input) parsedText
+            , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length input_) parsedText
             , renderedText = renderedTextBefore ++ deltaRenderedText ++ renderedTextAfter
             }
 
@@ -148,6 +176,11 @@ render : String -> List (List Expression) -> List (Html LaTeXMsg)
 render selectedId parsed =
     parsed
         |> List.map (Render.render selectedId LaTeXState.init >> Html.div docStyle)
+
+
+getGenerations : List (List Expression) -> List Int
+getGenerations expressions =
+    List.map (\e -> e |> List.head |> Maybe.map (Parser.Expression.getSource >> .generation) |> Maybe.withDefault 0) expressions
 
 
 docStyle =
