@@ -65,6 +65,7 @@ blocksBetween_ i j blocks =
     slice i (j + 1) blocks
 
 
+{-| -}
 blocksBefore_ : Int -> List (List a) -> List (List a)
 blocksBefore_ i blocks =
     slice 0 i blocks
@@ -75,6 +76,7 @@ numberOfinesBeforeBlockWithIndex_ i blocks =
     blocksBefore_ i blocks |> List.concat |> List.length
 
 
+{-| -}
 blockAfter_ : Int -> List (List a) -> List (List a)
 blockAfter_ i blocks =
     slice i (1 + List.length blocks) blocks
@@ -107,6 +109,7 @@ getBlockIndex lineNumber sourceMapIndex =
 -- HELPER
 
 
+{-| -}
 slice : Int -> Int -> List a -> List a
 slice from to items =
     items
