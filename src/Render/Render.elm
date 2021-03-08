@@ -1,4 +1,4 @@
-module Render.Render exposing (..)
+module Render.Render exposing (at, highlightWithSourceMap, render)
 
 import Dict exposing (Dict)
 import Html exposing (Attribute, Html)
@@ -104,8 +104,8 @@ macro selectedId state name optArg args sm =
 
 
 undefinedMacro : String -> SourceMap -> Html LaTeXMsg
-undefinedMacro _ sm =
-    Html.span [ HA.id (makeId sm), clicker sm, HA.style "color" "red" ] [ Html.text "Undefined macro: " ]
+undefinedMacro name sm =
+    Html.span [ HA.id (makeId sm), clicker sm, HA.style "color" "red" ] [ Html.text <| "Undefined macro: " ++ name ]
 
 
 environment selectedId state name args body _ =
@@ -611,6 +611,7 @@ macroDict =
         , ( "red", \si state ms args sm -> rmas si ms state args sm [ HA.style "color" state.config.redColor ] )
         , ( "blue", \si state ms args sm -> rmas si ms state args sm [ HA.style "color" state.config.blueColor ] )
         , ( "code", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-family" "Monospace", HA.style "color" state.config.redColor ] )
+        , ( "section", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-size" "150%" ] )
         ]
 
 
