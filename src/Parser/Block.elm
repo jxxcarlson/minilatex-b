@@ -1,10 +1,12 @@
 module Parser.Block exposing (compile)
 
-{-| The main function in this module is process, which takes as input
-a string representing a MiniLaTeX document and produces as output
-a value of type AST = List (List Expression).
+{-| Parser.Block.compile takes an integer representing a "generation number"
+and a string representing MiniLaTeX text and groups it into blocks of lines,
+each block representing a "logical paragraph": either a true paragraph, that is,
+non-blank lines surrounded by at least one blank line, or outer begin-end
+pairs for a LaTeX environement.
 
-@docs process
+@docs compile
 
 -}
 
@@ -27,6 +29,7 @@ type alias BlockState =
 --process : Int -> String -> List (List Expression)
 
 
+{-| -}
 compile : Int -> String -> List (List String)
 compile generation input =
     (process generation input).output
