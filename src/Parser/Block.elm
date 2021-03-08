@@ -27,9 +27,20 @@ type alias BlockState =
 
 
 --process : Int -> String -> List (List Expression)
+-- TODO: should not blank lines be preserved when processing a begin-end block?
+-- TODO: tests for compile!!
 
 
-{-| -}
+{-|
+
+    > compile 0 "Pythagoras said that\n\n$$a^2 + b^2 = c^2$$\n\n\none\ntwo\nthree"
+    [["Pythagoras said that"],["$$a^2 + b^2 = c^2$$"],["one","two","three"]]
+        : List (List String)
+
+    > compile 0 "\\begin{foo}\na\n\nb\nc\n\n\\end{foo}\n\n\none\ntwo\nthree"
+    [["\\begin{foo}","a","b","c","\\end{foo}"],["one","two","three"]]
+
+-}
 compile : Int -> String -> List (List String)
 compile generation input =
     (process generation input).output
@@ -210,7 +221,7 @@ popBlockStack blockType_ currentLine_ state =
     if newBlockTypeStack == [] then
         let
             block =
-                List.reverse (currentLine_ :: state.blockContents)
+                currentLine_ :: state.blockContents
         in
         { state
             | blockType = Start
