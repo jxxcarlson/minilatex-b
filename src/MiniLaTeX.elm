@@ -1,16 +1,21 @@
-module MiniLaTeX exposing (renderDocument, LaTeXData, initWithString, updateWithString)
+module MiniLaTeX exposing (compile, LaTeXData, initWithString, updateWithString)
 
-{-| LaTeXData is the type that carries all the information needed for
-efficient interactive editing. The `updateWithString` function is
-optimized so as to do expensive computations (parsing) only on the
-changed part of the text.
+{-| For simple applications, use
 
-Use `initWithString` to set up LaTeXData. Once this is done,
-the field `renderedText` holds the rendered document. Successive
-edits to it are made using `updateWithString`. To render a document
-directly, use `renderDocument`.
+    MiniLaTeX.compile document
 
-@docs renderDocument, LaTeXData, initWithString, updateWithString
+This function takes a string representing your MiniLaTeX
+document as input and produces Html for your web app.
+
+For applications that use interactive editing, use _LaTeXData_
+and the functions _initWithString_ and _updateWithString_
+The function initWithString will set up a LaTeXData value.
+It carries all the information needed for
+efficient interactive editing. Once this is done,
+the field _renderedText_ holds the rendered document. Successive
+edits to it are made using updateWithString.
+
+@docs compile, LaTeXData, initWithString, updateWithString
 
 -}
 
@@ -73,16 +78,16 @@ initWithString generation selectedId input =
     }
 
 
-{-| Use `renderDocument` for short documents or documents in a non-interactive editing context.
+{-| Use `compile` for short documents or documents in a non-interactive editing context.
 
-    renderDocument generation selectedId input
+    compile document
 
 Otherwise, use initWithString, updateWithString, and LaTeXData
 
 -}
-renderDocument : Int -> String -> String -> List (Html LaTeXMsg)
-renderDocument generation selectedId document =
-    (initWithString generation selectedId document).renderedText
+compile : String -> List (Html LaTeXMsg)
+compile document =
+    (initWithString 0 "nada" document).renderedText
 
 
 {-| `updateWithString` efficiently modifies the LaTeXState by identifying

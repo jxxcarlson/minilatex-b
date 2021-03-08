@@ -39,6 +39,7 @@ type alias BlockState =
 
     > compile 0 "\\begin{foo}\na\n\nb\nc\n\n\\end{foo}\n\n\none\ntwo\nthree"
     [["\\begin{foo}","a","b","c","\\end{foo}"],["one","two","three"]]
+       : List (List String)
 
 -}
 compile : Int -> String -> List (List String)

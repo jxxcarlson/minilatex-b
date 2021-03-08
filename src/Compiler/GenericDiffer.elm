@@ -14,9 +14,12 @@ over: a largest "middle" segment in each list such that
     List2 =
         commonPrefix ++ middle2 ++ commonSuffix
 
+@docs DiffRecord, diff
+
 -}
 
 
+{-| -}
 type alias DiffRecord a =
     { commonInitialSegment : List a
     , commonTerminalSegment : List a

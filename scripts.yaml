@@ -19,4 +19,7 @@ scripts:
 
   tc: sh scripts/tc-list.sh $1
 
+  edp-debug: edp -o docs.json
+
+  edp-docs: elm make --docs=docs.json
 

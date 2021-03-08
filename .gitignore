@@ -2,3 +2,6 @@
 elm-stuff/
 app/public/Main.js
 node_modules/
+app/index.html
+docs.json
+simple-demo/public/Main.js
