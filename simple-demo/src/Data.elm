@@ -8,6 +8,8 @@ document =
  \\italic{Thus, while you can see the source text
  (left panel), the source text cannot be edited.}
 
+ \\section{Introduction}
+
 \\strong{MiniLatex} is a subset of LaTeX that can be
 rendered live in the browser using a custom just-in-time compiler.
 It can also be used for static text, as in this simple demo app
