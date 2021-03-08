@@ -3,35 +3,37 @@ module Data exposing (document)
 
 document =
     """
-MiniLatex is a subset of LaTeX that can be
+\\strong{\\italic{Note.}} \\italic{This app is a demo of the simplest rendering
+ features of the} \\red{MiniLaTeX library.}
+ \\italic{Thus, while you can see the source text
+ (left panel), the source text cannot be edited.}
+
+\\strong{MiniLatex} is a subset of LaTeX that can be
 rendered live in the browser using a custom just-in-time compiler.
-It can also be used for static text, as in this simple demo app.
+It can also be used for static text, as in this simple demo app
+using the function \\code{MiniLaTeX.compile document}.
 
 
-Here are some integrals:
+First off, one can write in-line formulas enclosed by
+single dollar signs: $a^2 + b^2 = c^2$.  For displayed
+formulas, double dollar signs work:
+
+$$
+\\int_{-\\infty}^\\infty e^{-x^2} dx = \\pi
+$$
+
+And one can also use the equation environment, in which
+the label macro is implemented for making cross-references:
 
 \\begin{equation}
 \\label{integral:xn}
 \\int_0^1 x^n dx = \\frac{1}{n+1}
 \\end{equation}
 
-An improper integral:
+Note that you can use colors, e.g., for \\blue{blue text}
+and \\red{red text}.
 
-\\begin{equation}
-\\label{integral:exp}
-\\int_0^\\infty e^{-x} dx = 1
-\\end{equation}
-
-An \\red{even more interesting integral}:
-
-$$
-\\int_{-\\infty}^\\infty e^{-x^2} dx = \\pi
-$$
-
-MiniLatex is a subset of LaTeX that can be
-rendered live in the browser using a custom just-in-time compiler.
-It can also be used for static text, as in this simple demo app.
-
+XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
 
 Here are some integrals:
 

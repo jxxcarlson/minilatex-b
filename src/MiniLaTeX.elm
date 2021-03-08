@@ -6,6 +6,7 @@ module MiniLaTeX exposing (compile, LaTeXData, initWithString, updateWithString)
 
 This function takes a string representing your MiniLaTeX
 document as input and produces Html for your web app.
+For more details, see the app `./simple-demo`.\`
 
 For applications that use interactive editing, use _LaTeXData_
 and the functions _initWithString_ and _updateWithString_

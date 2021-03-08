@@ -601,13 +601,97 @@ type alias MacroDict =
 
 
 
---macroDict : MacroDict
+-- MACRODICT
 
 
 macroDict =
     Dict.fromList
-        [ ( "strong", \si state ms args sm -> render si state args |> Html.span (HA.style "font-weight" "bold" :: active sm si) )
-        , ( "italic", \si state ms args sm -> render si state args |> Html.span (HA.style "font-style" "italic" :: active sm si) )
-        , ( "red", \si state ms args sm -> render si state args |> Html.span (HA.style "color" state.config.redColor :: active sm si) )
-        , ( "blue", \si state ms args sm -> render si state args |> Html.span (HA.style "font-style" "italic" :: active sm si) )
+        [ ( "strong", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-weight" "bold" ] )
+        , ( "italic", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-style" "italic" ] )
+        , ( "red", \si state ms args sm -> rmas si ms state args sm [ HA.style "color" state.config.redColor ] )
+        , ( "blue", \si state ms args sm -> rmas si ms state args sm [ HA.style "color" state.config.blueColor ] )
+        , ( "code", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-family" "Monospace", HA.style "color" state.config.redColor ] )
         ]
+
+
+{-| rmas = render macro as span
+-}
+rmas si ms state args sm st =
+    render si state args |> Html.span (st ++ active sm si)
+
+
+{-| rmas = render macro as code
+-}
+rmac si ms state args sm st =
+    render si state args |> Html.code (st ++ active sm si)
+
+
+
+--[ ( "bigskip", \s x y z -> renderBigSkip s x z )
+--       , ( "medskip", \s x y z -> renderMedSkip s x z )
+--       , ( "smallskip", \s x y z -> renderSmallSkip s x z )
+--       , ( "cite", \s x y z -> renderCite s x z )
+--       , ( "colored", \s x y z -> renderColored s x z )
+--       , ( "dollar", \s x y z -> renderDollar s x z )
+--       , ( "texbegin", \s x y z -> renderBegin s x z )
+--       , ( "texend", \s x y z -> renderEnd s x z )
+--       , ( "percent", \s x y z -> renderPercent s x z )
+--       , ( "code", \s x y z -> renderCode s x z )
+--       , ( "ellie", \s x y z -> renderEllie s x z )
+--       , ( "emph", \s x y z -> renderItalic s x z )
+--       , ( "eqref", \s x y z -> renderEqRef s x z )
+--       , ( "href", \s x y z -> renderHRef s x z )
+--       , ( "iframe", \s x y z -> renderIFrame s x z )
+--       , ( "image", \s x y z -> renderImage s x z )
+--       , ( "imageref", \s x y z -> renderImageRef s x z )
+--       , ( "index", \s x y z -> renderIndex s x z )
+--       , ( "italic", \s x y z -> renderItalic s x z )
+--       , ( "label", \s x y z -> renderLabel s x z )
+--       , ( "maintableofcontents", \s x y z -> renderMainTableOfContents s x z )
+--       , ( "maketitle", \s x y z -> renderMakeTitle s x z )
+--       , ( "mdash", \s x y z -> renderMdash s x z )
+--       , ( "ndash", \s x y z -> renderNdash s x z )
+--       , ( "underscore", \s x y z -> renderUnderscore s x z )
+--       , ( "bs", \s x y z -> renderBackslash s x z )
+--       , ( "texarg", \s x y z -> renderTexArg s x z )
+--       , ( "ref", \s x y z -> renderRef s x z )
+--       , ( "medskip", \s x y z -> renderMedSkip s x z )
+--       , ( "par", \s x y z -> renderMedSkip s x z)
+--       , ( "smallskip", \s x y z -> renderSmallSkip s x z )
+--       , ( "section", \s x y z -> renderSection s x z )
+--       , ( "section*", \s x y z -> renderSectionStar s x z )
+--       , ( "subsection", \s x y z -> renderSubsection s x z )
+--       , ( "subsection*", \s x y z -> renderSubsectionStar s x z )
+--       , ( "subsubsection", \s x y z -> renderSubSubsection s x z )
+--       , ( "subsubsection*", \s x y z -> renderSubSubsectionStar s x z )
+--       , ( "setcounter", \s x y z -> renderSetCounter s x z )
+--       , ( "subheading", \s x y z -> renderSubheading s x z )
+--       , ( "tableofcontents", \s x y z -> renderTableOfContents s x z )
+--       , ( "innertableofcontents", \s x y z -> renderInnerTableOfContents s x z )
+--       , ( "red", \s x y z -> renderRed s x z )
+--       , ( "blue", \s x y z -> renderBlue s x z )
+--       , ( "remote", \s x y z -> renderRemote s x z )
+--       , ( "local", \s x y z -> renderLocal s x z )
+--       , ( "note", \s x y z -> renderAttachNote s x z )
+--       , ( "highlight", \s x y z -> renderHighlighted s x z )
+--       , ( "strike", \s x y z -> renderStrikeThrough s x z )
+--       , ( "term", \s x y z -> renderTerm s x z )
+--       , ( "xlink", \s x y z -> renderXLink s x z )
+--       , ( "ilink1", \s x y z -> renderILink s x z )
+--       , ( "ilink2", \s x y z -> renderILink s x z )
+--       , ( "ilink3", \s x y z -> renderILink s x z )
+--       , ( "include", \s x y z -> renderInclude s x z )
+--       , ( "publiclink", \s x y z -> renderPublicLink s x z )
+--       , ( "homepagelink", \s x y z -> renderHomePageLink s x z )
+--       , ( "documentTitle", \s x y z -> renderDocumentTitle s x z )
+--       , ( "title", \s x y z -> renderTitle x z )
+--       , ( "author", \s x y z -> renderAuthor s x z )
+--       , ( "date", \s x y z -> renderDate s x z )
+--       , ( "revision", \s x y z -> renderRevision s x z )
+--       , ( "email", \s x y z -> renderEmail s x z )
+--       , ( "setdocid", \s x y z -> renderSetDocId s x z )
+--       , ( "setclient", \s x y z -> renderSetClient s x z )
+--       , ( "strong", \s x y z -> renderStrong s x z )
+--       , ( "textbf", \s x y z -> renderStrong s x z )
+--       , ( "uuid", \s x y z -> renderUuid s x z )
+--       ]

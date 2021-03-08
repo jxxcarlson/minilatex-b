@@ -81,20 +81,33 @@ view model =
 mainColumn : Element Msg
 mainColumn =
     column mainColumnStyle
-        [ column [ spacing 36, width (px 500), height fill ]
-            [ title "MiniLaTeX: Simple Demo"
-            , display
+        [ column [ spacing 36, width (px 1010), height fill ]
+            [ title "MiniLaTeX: Simple Demo (work in progress, new compiler)"
+            , row [ spacing 10 ] [ viewSourceText, viewRenderedText ]
             ]
         ]
 
 
 title : String -> Element msg
 title str =
-    row [ centerX ] [ text str ]
+    row
+        [ centerX
+        , width (px 1010)
+        , paddingXY 15 5
+        , height (px 40)
+        , Background.color (Element.rgb255 200 200 210)
+        ]
+        [ text str ]
 
 
-display : Element Msg
-display =
+viewSourceText : Element Msg
+viewSourceText =
+    column [ width (px 500), height (px 600), scrollbarY, Font.size 14, Background.color (Element.rgb255 240 240 240) ]
+        [ el [ paddingXY 20 20 ] (Element.text Data.document) ]
+
+
+viewRenderedText : Element Msg
+viewRenderedText =
     column [ width (px 500), height (px 600), scrollbarY, Font.size 14 ]
         (MiniLaTeX.compile Data.document
             |> List.map (Html.map LaTeXMsg)
