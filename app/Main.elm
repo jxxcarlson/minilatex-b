@@ -9,7 +9,7 @@ module Main exposing (main)
 import Browser
 import CommandInterpreter
 import Compiler.Differ
-import Compiler.LaTeXData as LaTeXData exposing (LaTeXData)
+import Compiler.GenericDiffer
 import Element
     exposing
         ( Element
@@ -37,6 +37,7 @@ import Element.Input as Input
 import Html exposing (Html)
 import Html.Attributes as HA
 import Html.Keyed
+import MiniLaTeX exposing (LaTeXData)
 import Paragraph
 import Parser.Document as Document exposing (State)
 import Parser.Expression exposing (Expression)
@@ -156,7 +157,7 @@ init : Flags -> ( Model, Cmd Msg )
 init _ =
     ( { input = initialText
       , selectedId = initialSelectedId
-      , laTeXData = LaTeXData.initWithString 0 initialSelectedId initialText
+      , laTeXData = MiniLaTeX.initWithString 0 initialSelectedId initialText
       , sourceMap = Parser.Expression.dummySourceMap
       , counter = 0
       , lhViewMode = LHSourceText
@@ -183,10 +184,10 @@ update msg model =
         InputText str ->
             let
                 laTeXData =
-                    LaTeXData.updateWithString (model.counter + 1) model.selectedId str model.laTeXData
+                    MiniLaTeX.updateWithString (model.counter + 1) model.selectedId str model.laTeXData
 
                 dr =
-                    Compiler.Differ.diff (model.input |> String.lines)
+                    Compiler.GenericDiffer.diff (model.input |> String.lines)
                         (str |> String.lines)
 
                 message =

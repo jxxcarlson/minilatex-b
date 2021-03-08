@@ -1,7 +1,4 @@
-module Compiler.Differ exposing
-    ( diff
-    , blockAfter_, blocksBefore_, rangeOfBlocks, slice
-    )
+module Compiler.Differ exposing (blockAfter_, blocksBefore_, rangeOfBlocks, slice)
 
 {-| This module is used to speed up parsing-rendering by
 comparing the old and new lists of paragraphs, noting the changes,
@@ -10,7 +7,7 @@ then parsing and rendering the changed paragraphs.
 
 # API
 
-@docs EditRecord, emptyStringRecord, emptyHtmlMsgRecord, isEmpty, init, diff, update, simpleDifferentialRender
+@docs blockAfter_, blocksBefore_, rangeOfBlocks, slice
 
 -}
 
@@ -83,26 +80,6 @@ blockAfter_ i blocks =
     slice i (1 + List.length blocks) blocks
 
 
-
---changedBlocks : DiffRecord -> List (List Int) -> List (List String) -> List (List String)
---changedBlocks dr sourceMapIndex blocks =
---    case rangeOfChunks dr sourceMapIndex of
---        Just ( i, j ) ->
---            changedBlocks_ i j blocks
---
---        _ ->
---            blocks
---
---unchangedBlocks : DiffRecord -> List (List Int) -> List (List String) -> (List (List String), ist (List String))
---unchangedBlocks dr sourceMapIndex blocks =
---    case rangeOfChunks dr sourceMapIndex of
---        Just ( i, j ) ->
---            changedBlocks_ i j blocks
---
---        _ ->
---            blocks
-
-
 {-| The primary data is a list of strings. These strings are
 grouped in consecutive groups of strings called blocks
 by a function
@@ -126,79 +103,6 @@ getBlockIndex lineNumber sourceMapIndex =
         |> Maybe.map Tuple.first
 
 
-{-| Let u and v be two lists of strings. Write them as
-u = axb, v = ayb, where a is the greatest common prefix
-and b is the greatest common suffix. Return DiffRecord a b x y
--}
-diff : List String -> List String -> DiffRecord
-diff u v =
-    let
-        a =
-            commonInitialSegment u v
-
-        b_ =
-            commonTerminalSegmentAux a u v
-
-        la =
-            List.length a
-
-        lb =
-            List.length b_
-
-        x =
-            u |> List.drop la |> dropLast lb
-
-        y =
-            v |> List.drop la |> dropLast lb
-
-        b =
-            if la == List.length u then
-                []
-
-            else
-                b_
-    in
-    DiffRecord a b x y
-
-
-commonInitialSegment : List String -> List String -> List String
-commonInitialSegment x y =
-    if x == [] then
-        []
-
-    else if y == [] then
-        []
-
-    else
-        let
-            a =
-                List.take 1 x
-
-            b =
-                List.take 1 y
-        in
-        if a == b then
-            a ++ commonInitialSegment (List.drop 1 x) (List.drop 1 y)
-
-        else
-            []
-
-
-commonTerminalSegmentAux : List String -> List String -> List String -> List String
-commonTerminalSegmentAux cis x y =
-    let
-        n =
-            List.length cis
-
-        xx =
-            List.drop n x |> List.reverse
-
-        yy =
-            List.drop n y |> List.reverse
-    in
-    commonInitialSegment xx yy |> List.reverse
-
-
 
 -- HELPER
 
@@ -208,8 +112,3 @@ slice from to items =
     items
         |> List.drop from
         |> List.take (to - from)
-
-
-dropLast : Int -> List a -> List a
-dropLast k x =
-    x |> List.reverse |> List.drop k |> List.reverse

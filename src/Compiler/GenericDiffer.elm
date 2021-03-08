@@ -1,5 +1,21 @@
 module Compiler.GenericDiffer exposing (DiffRecord, diff)
 
+{-| The function diff: List t -> List t -> DiffRecord t
+takes two lists as input and produces a "DiffRecord" which
+shows where the two lists agree and where they disagree.
+
+The DiffRecord identifies the longest common initial segment
+and the longest common terminal segment as well as what is left
+over: a largest "middle" segment in each list such that
+
+    List1 =
+        commonPrefix ++ middle1 ++ commonSuffix
+
+    List2 =
+        commonPrefix ++ middle2 ++ commonSuffix
+
+-}
+
 
 type alias DiffRecord a =
     { commonInitialSegment : List a
@@ -9,11 +25,11 @@ type alias DiffRecord a =
     }
 
 
-{-| Let u and v be two lists of things of type o. Write them as
+{-| Let u and v be two lists of things of type t. Write them as
 u = axb, v = ayb, where a is the greatest common prefix
 and b is the greatest common suffix. Return DiffRecord a b x y
 -}
-diff : List a -> List a -> DiffRecord a
+diff : List t -> List t -> DiffRecord t
 diff u v =
     let
         a =

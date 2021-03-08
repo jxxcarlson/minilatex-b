@@ -1,14 +1,14 @@
-module Compiler.LaTeXData exposing (LaTeXData, initWithString, updateWithString)
+module MiniLaTeX exposing (renderDocument, LaTeXData, initWithString, updateWithString)
 
 {-| LaTeXData is the type that carries all the information needed for
 efficient interactive editing. The `updateWithString` function is
 optimized so as to do expensive computations (parsing) only on the
 changed part of the text.
 
-    Use `initWithString` to set up LaTeXData.  Once this is done,
-    the field `renderedText` holds the rendered document.  Successive
-    edits to it are made using `updateWithString`.  To render a document
-    directly, use `renderDocument`.
+Use `initWithString` to set up LaTeXData. Once this is done,
+the field `renderedText` holds the rendered document. Successive
+edits to it are made using `updateWithString`. To render a document
+directly, use `renderDocument`.
 
 @docs renderDocument, LaTeXData, initWithString, updateWithString
 
@@ -39,16 +39,16 @@ type alias LaTeXData =
 
 {-| Initialize LaTeXData using
 
-    initWithString generation selectedId input
+initWithString generation selectedId input
 
-    - generation: an integer that changes on each edit;
-      needed for optimization and proper rendering by
-      virtual DOM
+  - _generation_: an integer that changes on each edit;
+    needed for optimization and proper rendering by
+    virtual DOM
 
-    - selectedId: a string which identifies an element
-      in the rendered text that the user wants highlighted
+  - _selectedId_: a string which identifies an element
+    in the rendered text that the user wants highlighted
 
-    - input: the source text
+  - _input_ the source text
 
 -}
 initWithString : Int -> String -> String -> LaTeXData
@@ -73,11 +73,11 @@ initWithString generation selectedId input =
     }
 
 
-{-| For short documents or documents in a non-interactive editing context, use
+{-| Use `renderDocument` for short documents or documents in a non-interactive editing context.
 
     renderDocument generation selectedId input
 
-otherwise, use initWithString, updateWithString, and LaTeXData
+Otherwise, use initWithString, updateWithString, and LaTeXData
 
 -}
 renderDocument : Int -> String -> String -> List (Html LaTeXMsg)
