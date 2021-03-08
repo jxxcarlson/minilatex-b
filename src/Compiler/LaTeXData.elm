@@ -1,7 +1,14 @@
 module Compiler.LaTeXData exposing (LaTeXData, initWithString, updateWithString)
 
-{-| LaTeXData holds all the information needed to
-interactively edit, rendering in real time, a MiniLaTeX document.
+{-| LaTeXData is the type that carries all the information needed for
+efficient interactive editing. The `updateWithString` function is
+optimized so as to do expensive computations (parsing) only on the
+changed part of the text.
+
+    Use `initWithString` to set up LaTeXData.  Once this is done,
+    the field `renderedText` holds the rendered document.  Successive
+    edits to it are made using `updateWithString`.  To render a document
+    directly, use `renderDocument`.
 
 @docs renderDocument, LaTeXData, initWithString, updateWithString
 
@@ -19,11 +26,7 @@ import Render.LaTeXState as LaTeXState exposing (LaTeXMsg)
 import Render.Render as Render
 
 
-{-| LaTeXData is the type that carries all the information needed for
-efficient interactive editing. The `updateWithString` function is
-optimized so as to do expensive computations (parsing) only on the
-changed part of the text.
--}
+{-| -}
 type alias LaTeXData =
     { lines : List String
     , blocks : List String
