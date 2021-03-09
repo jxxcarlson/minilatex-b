@@ -3,11 +3,13 @@
 MiniLaTeX is a subset/variant of LaTeX that can
 be turned into Html using the compiler provided by 
 this package.  For simple applications, it is enough to 
-do this, as illustrated in the app of `./simple-demo`:
+use 
 
 ```elm
 MiniLaTeX.compile document
 ```
+
+as illustrated in the app `./simple-demo` and the example below.
 
 
 ## Example
@@ -44,9 +46,7 @@ the update function.
 ## Interactive Editing
 
 The MiniLaTeX compiler offers a more sophisticated interface for
-apps that feature interactive editing with real-time rendering
+apps with interactive editing with real-time rendering
 to Html.  See the documentation of the **MiniLaTeX** module for more
-on this.
+on this.  Also the code in `./demo`.
 
-For routine uses, the **MiniLaTeX** module in this package 
-should suffice.

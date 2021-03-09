@@ -3,9 +3,9 @@
     "name": "jxxcarlson/minilatex-b",
     "summary": "Compile MiniLaTeX to Html",
     "license": "MIT",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "exposed-modules": [
-        "MiniLaTeX", "Render.LaTeXMsg","Compiler.GenericDiffer", "Compiler.Differ", "Parser.Block"
+        "MiniLaTeX", "LaTeXMsg" ,"Compiler.GenericDiffer", "Compiler.Differ", "Parser.Block"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {

@@ -11,6 +11,7 @@ import Data
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
+import Element.Input as Input
 import Html exposing (Html)
 import LaTeXMsg exposing (LaTeXMsg(..))
 import MiniLaTeX
@@ -28,6 +29,8 @@ main =
 type alias Model =
     { input : String
     , output : String
+    , viewMode : ViewMode
+    , fontSize : Int
     }
 
 
@@ -38,6 +41,45 @@ windowHeight =
 
 type Msg
     = LaTeXMsg LaTeXMsg
+    | SetViewMode ViewMode
+    | ChangeFontSize Direction
+
+
+type Direction
+    = Up
+    | Down
+
+
+type ViewMode
+    = Paper
+    | Light
+    | Dark
+
+
+bgColor : ViewMode -> Attr decorative msg
+bgColor viewMode =
+    case viewMode of
+        Paper ->
+            Background.color (Element.rgb255 255 255 255)
+
+        Light ->
+            Background.color (Element.rgb255 255 255 245)
+
+        Dark ->
+            Background.color (Element.rgb255 71 70 70)
+
+
+fgColor : ViewMode -> Attr decorative msg
+fgColor viewMode =
+    case viewMode of
+        Paper ->
+            Font.color (Element.rgb255 40 40 40)
+
+        Light ->
+            Font.color (Element.rgb255 40 40 40)
+
+        Dark ->
+            Font.color (Element.rgb255 240 240 240)
 
 
 type alias Flags =
@@ -48,6 +90,8 @@ init : Flags -> ( Model, Cmd Msg )
 init flags =
     ( { input = "App started"
       , output = "App started"
+      , viewMode = Light
+      , fontSize = 14
       }
     , Cmd.none
     )
@@ -63,6 +107,17 @@ update msg model =
         LaTeXMsg _ ->
             ( model, Cmd.none )
 
+        SetViewMode viewMode ->
+            ( { model | viewMode = viewMode }, Cmd.none )
+
+        ChangeFontSize direction ->
+            case direction of
+                Up ->
+                    ( { model | fontSize = model.fontSize + 1 }, Cmd.none )
+
+                Down ->
+                    ( { model | fontSize = model.fontSize - 1 }, Cmd.none )
+
 
 
 --
@@ -76,7 +131,15 @@ bgGray g =
 
 view : Model -> Html Msg
 view model =
-    Element.layout [ bgGray 0.2, width fill, height fill ] (mainColumn model)
+    Element.layoutWith { options = [ focusStyle noFocus ] } [ bgGray 0.2, width fill, height fill ] (mainColumn model)
+
+
+noFocus : Element.FocusStyle
+noFocus =
+    { borderColor = Nothing
+    , backgroundColor = Nothing
+    , shadow = Nothing
+    }
 
 
 mainColumn : Model -> Element Msg
@@ -84,7 +147,7 @@ mainColumn model =
     column mainColumnStyle
         [ column [ spacing 18, width (px 1010), height fill ]
             [ titleBar "MiniLaTeX: Simple Demo (work in progress, new compiler)"
-            , row [ spacing 10 ] [ viewSourceText, viewRenderedText ]
+            , row [ spacing 10 ] [ viewSourceText model, viewRenderedText model ]
             , footer model
             ]
         ]
@@ -100,20 +163,13 @@ footer model =
         , Font.color barFontColor
         , barFontSize
         , Background.color barBG
+        , spacing 24
         ]
-        [ text "FOOTER" ]
-
-
-barBG =
-    Element.rgb255 100 100 110
-
-
-barFontSize =
-    Font.size 16
-
-
-barFontColor =
-    Element.rgb255 240 240 250
+        [ paperModeButtom model.viewMode
+        , lightModeButtom model.viewMode
+        , darkModeButtom model.viewMode
+        , row [ spacing 8 ] [ el [] (text "Font Size"), increaseFontSizeButton, el [] (text <| String.fromInt model.fontSize), decreaseFontSizeButton ]
+        ]
 
 
 titleBar : String -> Element msg
@@ -130,19 +186,88 @@ titleBar str =
         [ text str ]
 
 
-viewSourceText : Element Msg
-viewSourceText =
-    column [ width (px 500), height (px windowHeight), scrollbarY, Font.size 14, Background.color (Element.rgb255 240 240 240) ]
+viewSourceText : Model -> Element Msg
+viewSourceText model =
+    column [ width (px 500), height (px windowHeight), scrollbarY, Font.size model.fontSize, Background.color (Element.rgb255 240 240 240) ]
         [ el [ paddingXY 20 20 ] (Element.text Data.document) ]
 
 
-viewRenderedText : Element Msg
-viewRenderedText =
-    column [ width (px 500), height (px windowHeight), scrollbarY, Font.size 14 ]
+viewRenderedText : Model -> Element Msg
+viewRenderedText model =
+    column
+        [ width (px 500)
+        , height (px windowHeight)
+        , scrollbarY
+        , Font.size model.fontSize
+        , fgColor model.viewMode
+        , bgColor model.viewMode
+        , padding 20
+        ]
         (MiniLaTeX.compile Data.document
             |> List.map (Html.map LaTeXMsg)
             |> List.map Element.html
         )
+
+
+
+-- BUTTONS
+
+
+mouseDown =
+    Element.mouseDown [ Background.color (Element.rgb 140 0 0), Font.color (Element.rgb255 20 20 20) ]
+
+
+buttonStyle flag =
+    if flag then
+        [ mouseDown
+        , padding 12
+        , Font.color (Element.rgb255 220 220 255)
+        , Font.size 14
+        , Background.color (Element.rgb255 20 20 160)
+        ]
+
+    else
+        [ mouseDown
+        , padding 12
+        , Font.color (Element.rgb255 220 220 255)
+        , Font.size 14
+        , Background.color (Element.rgb255 60 60 60)
+        ]
+
+
+paperModeButtom viewMode =
+    Input.button (buttonStyle (viewMode == Paper))
+        { onPress = Just (SetViewMode Paper)
+        , label = el [] (text "Paper mode")
+        }
+
+
+lightModeButtom viewMode =
+    Input.button (buttonStyle (viewMode == Light))
+        { onPress = Just (SetViewMode Light)
+        , label = el [] (text "Light mode")
+        }
+
+
+increaseFontSizeButton =
+    Input.button (buttonStyle True)
+        { onPress = Just (ChangeFontSize Up)
+        , label = el [] (text "+")
+        }
+
+
+decreaseFontSizeButton =
+    Input.button (buttonStyle True)
+        { onPress = Just (ChangeFontSize Down)
+        , label = el [] (text "-")
+        }
+
+
+darkModeButtom viewMode =
+    Input.button (buttonStyle (viewMode == Dark))
+        { onPress = Just (SetViewMode Dark)
+        , label = el [] (text "Dark mode")
+        }
 
 
 
@@ -160,3 +285,15 @@ mainColumnStyle =
     --, Font.color (Element.rgb255 205 200 200)
     , paddingXY 20 20
     ]
+
+
+barBG =
+    Element.rgb255 100 100 110
+
+
+barFontSize =
+    Font.size 16
+
+
+barFontColor =
+    Element.rgb255 240 240 250
