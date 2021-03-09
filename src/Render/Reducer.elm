@@ -1,4 +1,4 @@
-module Render.Reducer exposing (..)
+module Render.Reducer exposing (latexStateReducer)
 
 import Parser.Expression exposing (Expression(..))
 import Render.LaTeXState exposing (LaTeXState)
@@ -58,10 +58,8 @@ envReducer name optonalArgs body state =
             --    case body of
             --        LXString str ->
             --            ReducerHelper.setDictionary str state
-
-                    _ ->
-                        state
-
+            --_ ->
+            --    state
             _ ->
                 state
 

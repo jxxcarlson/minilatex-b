@@ -1,6 +1,6 @@
 module Parser.Parser exposing
     ( parseLoop, macro
-    , Context(..), expression, expressionList
+    , Context(..), expression, expressionList, parseExpression
     )
 
 {-| Function parserLoop takes as input an integer representing a "chunkNumber"
@@ -248,7 +248,17 @@ expressionList generation lineNumber =
     many (expression generation lineNumber)
 
 
-expression : Int -> Int -> Parser.Parser Context Problem Expression
+parseExpression : Int -> Int -> String -> Maybe Expression
+parseExpression generation lineNumber str =
+    case Parser.run (expression generation lineNumber) str of
+        Ok e ->
+            Just e
+
+        Err _ ->
+            Nothing
+
+
+expression : Int -> Int -> Parser Expression
 expression generation lineNumber =
     Parser.oneOf
         [ macro generation lineNumber

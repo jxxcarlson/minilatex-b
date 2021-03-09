@@ -1,6 +1,7 @@
 module Render.ReducerHelper exposing (..)
 
 import List.Extra
+import Maybe.Extra
 import Parser.Advanced
 import Parser.Expression exposing (Expression(..))
 import Parser.Parser as Parser
@@ -190,7 +191,7 @@ setBibItemXRef optionalArgs args latexState =
 
 setMacroDefinition : String -> Expression -> LaTeXState -> LaTeXState
 setMacroDefinition name body latexState =
-    Internal.LaTeXState.setMacroDefinition name (NewCommand name 0 body) latexState
+    setMacroDefinition name body latexState
 
 
 
@@ -245,7 +246,10 @@ getFirstMacroArg macroName latexExpression =
 
 getSimpleMacroArgs : String -> Expression -> List String
 getSimpleMacroArgs macroName latexExpression =
-    latexExpression |> getMacroArgs macroName |> List.map (List.head >> Maybe.withDefault []) |> List.map Parser.Expression.toString)
+    latexExpression
+        |> getMacroArgs macroName
+        |> List.map (List.head >> Maybe.map Parser.Expression.toString)
+        |> Maybe.Extra.values
 
 
 getMacroArgs : String -> Expression -> List (List Expression)
@@ -272,7 +276,13 @@ and add them to latexState.macrodictionary
 -}
 setDictionary : String -> LaTeXState -> LaTeXState
 setDictionary str latexState =
-    setDictionaryAux (LXParser.parse str) latexState
+    case Parser.parseExpression 0 0 str of
+        Just e ->
+            -- TODO: I am pretty sure the below is wrong, even if it compiles.
+            setDictionaryAux [ e ] latexState
+
+        Nothing ->
+            latexState
 
 
 setDictionaryAux : List Expression -> LaTeXState -> LaTeXState
@@ -283,7 +293,7 @@ setDictionaryAux list latexState =
 macroDictReducer : Expression -> LaTeXState -> LaTeXState
 macroDictReducer lexpr state =
     case lexpr of
-        NewCommand name nArgs body ->
+        NewCommand name nArgs body _ ->
             setMacroDefinition name body state
 
         _ ->
@@ -315,7 +325,7 @@ valueOfLatexList latexList =
             value
 
         _ ->
-            [ f "Error getting value of LatexList" ]
+            [ Text "Error getting value of LatexList" Parser.Expression.dummySourceMap ]
 
 
 valueOfLXString : Expression -> String
