@@ -38,6 +38,7 @@ import Html exposing (Html)
 import Html.Attributes as HA
 import Html.Keyed
 import LaTeXMsg exposing (LaTeXMsg(..))
+import List.Extra
 import MiniLaTeX exposing (LaTeXData)
 import Paragraph
 import Parser.Document as Document exposing (State)
@@ -250,7 +251,7 @@ update msg model =
                                 k =
                                     CommandInterpreter.getIntArg 0 command.args
                             in
-                            ( { model | message = Render.at k model.input |> Debug.toString }, Cmd.none )
+                            ( { model | message = at k model.input |> Debug.toString }, Cmd.none )
 
                         _ ->
                             ( { model | message = Debug.toString command }, Cmd.none )
@@ -587,6 +588,11 @@ noFocus =
     , backgroundColor = Nothing
     , shadow = Nothing
     }
+
+
+at : Int -> String -> Maybe String
+at k str =
+    String.lines str |> List.Extra.getAt k
 
 
 

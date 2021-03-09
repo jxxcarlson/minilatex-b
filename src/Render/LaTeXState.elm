@@ -1,8 +1,11 @@
-module Render.LaTeXState exposing
-    ( LaTeXState
-    , getCounter
-    , init
-    )
+module Render.LaTeXState exposing (LaTeXState, getCounter, init)
+
+{-| This module defines and manages LaTeXState, shich is used to
+compute and render data such as section numbers and cross-references.
+
+@docs LaTeXState, getCounter, init
+
+-}
 
 import Dict
 import Html exposing (Attribute)
@@ -15,6 +18,12 @@ import Parser.Expression exposing (Expression(..), SourceMap)
 {- TYPES AND DEFAULT VALUES -}
 
 
+{-| LaTeXState holds the information needed to render
+section numbers, cross-references, and the table of contents.
+It also holds whatever run-time macro definitions the user
+has made. Finally, it holds a configuration object so
+that style can be changed at run-time.
+-}
 type alias LaTeXState =
     { counters : Counters
     , crossReferences : CrossReferences
@@ -26,6 +35,8 @@ type alias LaTeXState =
     }
 
 
+{-| Return an empty LaTeXState
+-}
 init : LaTeXState
 init =
     emptyLatexState
@@ -107,6 +118,8 @@ addSection sectionName label level latexState =
     { latexState | tableOfContents = toc }
 
 
+{-| Return the value of a named counter from the LaTeXSTate
+-}
 getCounter : String -> LaTeXState -> Int
 getCounter name latexState =
     case Dict.get name latexState.counters of

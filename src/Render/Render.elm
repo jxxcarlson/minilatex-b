@@ -1,4 +1,11 @@
-module Render.Render exposing (at, highlightWithSourceMap, render)
+module Render.Render exposing (render, highlightWithSourceMap)
+
+{-| The render function transforma an Expression to Html,
+given a LaTeXState, which we _assume to have already been ocomputed._
+
+@docs render, highlightWithSourceMap
+
+-}
 
 import Dict exposing (Dict)
 import Html exposing (Attribute, Html)
@@ -6,7 +13,6 @@ import Html.Attributes as HA
 import Html.Events exposing (onClick)
 import Json.Encode
 import LaTeXMsg exposing (LaTeXMsg(..))
-import List.Extra
 import Parser.Expression exposing (Expression(..), SourceMap)
 import Parser.Helpers
 import Render.LaTeXState as LaTeXState exposing (LaTeXState)
@@ -18,6 +24,11 @@ type DisplayMode
     | DisplayMathMode
 
 
+{-| render a list of Expression using a given selectedId and LaTeXState.
+The selectedId determines wich element in the renderedText (if any) is
+highlighted. The LaTeXState carries information on cross-references,
+section numbers, etc.
+-}
 render : String -> LaTeXState -> List Expression -> List (Html LaTeXMsg)
 render selectedId state exprs =
     List.map (renderExpr selectedId state) exprs
@@ -554,39 +565,41 @@ displayMathText selectedId str_ sm =
     mathText DisplayMathMode selectedId (String.trim str_) sm
 
 
-at : Int -> String -> Maybe String
-at k str =
-    String.lines str |> List.Extra.getAt k
-
-
+{-| Highlight the segment of a text defined by the sourceMap. The information
+in the source map is used to split the full text into left, middle and right
+parts, where the middle part is the given text. The three parts are then
+reassembled as html list values, with the middle part highlighted.
+-}
 highlightWithSourceMap : Parser.Expression.SourceMap -> String -> List (List Int) -> Html msg
-highlightWithSourceMap sm str sourceMapIndex_ =
+highlightWithSourceMap sourceMap text sourceMapIndex_ =
     let
+        selection : String
         selection =
-            Parser.Expression.getSelectionFromSourceMap sm str sourceMapIndex_
+            Parser.Expression.getSelectionFromSourceMap sourceMap text sourceMapIndex_
 
+        idxs : List Int
         idxs =
-            String.indices selection str
+            String.indices selection text
     in
     case List.head idxs of
         Nothing ->
-            Html.span [ HA.id (makeId sm) ] [ Html.text str ]
+            Html.span [ HA.id (makeId sourceMap) ] [ Html.text text ]
 
         Just offset ->
             let
                 left =
-                    String.left offset str
+                    String.left offset text
 
                 remainder =
-                    String.dropLeft offset str
+                    String.dropLeft offset text
 
                 middle =
-                    String.left sm.length remainder
+                    String.left sourceMap.length remainder
 
                 right =
-                    String.dropLeft sm.length remainder
+                    String.dropLeft sourceMap.length remainder
             in
-            Html.div [ HA.id (makeId sm) ]
+            Html.div [ HA.id (makeId sourceMap) ]
                 [ Html.span [] [ Html.text left ]
                 , Html.span [ HA.style "background-color" "pink" ] [ Html.text middle ]
                 , Html.span [] [ Html.text right ]

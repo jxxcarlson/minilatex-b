@@ -168,7 +168,7 @@ footer model =
         [ paperModeButtom model.viewMode
         , lightModeButtom model.viewMode
         , darkModeButtom model.viewMode
-        , row [ spacing 8 ] [ el [] (text "Font Size"), increaseFontSizeButton, el [] (text <| String.fromInt model.fontSize), decreaseFontSizeButton ]
+        , row [ spacing 8 ] [ el [] (text "Font Size"), el [] (text <| String.fromInt model.fontSize), increaseFontSizeButton, decreaseFontSizeButton ]
         ]
 
 
@@ -220,7 +220,7 @@ mouseDown =
 buttonStyle flag =
     if flag then
         [ mouseDown
-        , padding 12
+        , padding 6
         , Font.color (Element.rgb255 220 220 255)
         , Font.size 14
         , Background.color (Element.rgb255 20 20 160)
@@ -228,7 +228,7 @@ buttonStyle flag =
 
     else
         [ mouseDown
-        , padding 12
+        , padding 6
         , Font.color (Element.rgb255 220 220 255)
         , Font.size 14
         , Background.color (Element.rgb255 60 60 60)
@@ -250,16 +250,16 @@ lightModeButtom viewMode =
 
 
 increaseFontSizeButton =
-    Input.button (buttonStyle True)
+    Input.button (buttonStyle False)
         { onPress = Just (ChangeFontSize Up)
-        , label = el [] (text "+")
+        , label = el [] (text (String.fromChar '↑'))
         }
 
 
 decreaseFontSizeButton =
-    Input.button (buttonStyle True)
+    Input.button (buttonStyle False)
         { onPress = Just (ChangeFontSize Down)
-        , label = el [] (text "-")
+        , label = el [] (text (String.fromChar '↓'))
         }
 
 
