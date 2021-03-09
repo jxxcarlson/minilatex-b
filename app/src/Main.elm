@@ -37,12 +37,12 @@ import Element.Input as Input
 import Html exposing (Html)
 import Html.Attributes as HA
 import Html.Keyed
+import LaTeXMsg exposing (LaTeXMsg(..))
 import MiniLaTeX exposing (LaTeXData)
 import Paragraph
 import Parser.Document as Document exposing (State)
 import Parser.Expression exposing (Expression)
 import Parser.Problem
-import Render.LaTeXState exposing (LaTeXMsg(..))
 import Render.Render as Render
 
 

@@ -12,8 +12,8 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
 import Html exposing (Html)
+import LaTeXMsg exposing (LaTeXMsg(..))
 import MiniLaTeX
-import Render.LaTeXState as LaTeXState
 
 
 main =
@@ -37,7 +37,7 @@ windowHeight =
 
 
 type Msg
-    = LaTeXMsg LaTeXState.LaTeXMsg
+    = LaTeXMsg LaTeXMsg
 
 
 type alias Flags =

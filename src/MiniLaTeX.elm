@@ -24,11 +24,12 @@ import Compiler.Differ as Differ
 import Compiler.GenericDiffer as GenericDiffer
 import Html exposing (Html)
 import Html.Attributes as HA
+import LaTeXMsg exposing (LaTeXMsg(..))
 import Parser.Block as Block
 import Parser.Document as Document
 import Parser.Expression exposing (Expression)
 import Parser.TextCursor
-import Render.LaTeXState as LaTeXState exposing (LaTeXMsg)
+import Render.LaTeXState as LaTeXState
 import Render.Render as Render
 
 

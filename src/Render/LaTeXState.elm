@@ -1,6 +1,5 @@
 module Render.LaTeXState exposing
-    ( LaTeXMsg(..)
-    , LaTeXState
+    ( LaTeXState
     , getCounter
     , init
     )
@@ -8,15 +7,12 @@ module Render.LaTeXState exposing
 import Dict
 import Html exposing (Attribute)
 import Html.Attributes as HA
+import LaTeXMsg exposing (LaTeXMsg)
 import Parser.Expression exposing (Expression(..), SourceMap)
 
 
 
 {- TYPES AND DEFAULT VALUES -}
-
-
-type LaTeXMsg
-    = SendSourceMap SourceMap
 
 
 type alias LaTeXState =

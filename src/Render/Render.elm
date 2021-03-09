@@ -5,10 +5,11 @@ import Html exposing (Attribute, Html)
 import Html.Attributes as HA
 import Html.Events exposing (onClick)
 import Json.Encode
+import LaTeXMsg exposing (LaTeXMsg(..))
 import List.Extra
 import Parser.Expression exposing (Expression(..), SourceMap)
 import Parser.Helpers
-import Render.LaTeXState as LaTeXState exposing (LaTeXMsg(..), LaTeXState)
+import Render.LaTeXState as LaTeXState exposing (LaTeXState)
 import Utility
 
 
