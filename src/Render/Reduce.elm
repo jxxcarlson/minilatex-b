@@ -1,12 +1,12 @@
-module Render.Reducer exposing (latexStateReducer)
+module Render.Reduce exposing (laTeXState)
 
 import Parser.Expression exposing (Expression(..))
 import Render.LaTeXState exposing (LaTeXState)
 import Render.ReducerHelper as ReducerHelper
 
 
-latexStateReducer : List Expression -> LaTeXState -> LaTeXState
-latexStateReducer list state =
+laTeXState : List Expression -> LaTeXState -> LaTeXState
+laTeXState list state =
     List.foldr latexStateReducerAux state list
 
 

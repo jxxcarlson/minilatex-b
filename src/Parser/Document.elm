@@ -16,6 +16,7 @@ import Parser.Expression exposing (Expression)
 import Parser.Parser as Parser
 import Parser.TextCursor exposing (TextCursor)
 import Render.LaTeXState as LaTeXState exposing (LaTeXState)
+import Render.Reduce as Reduce
 
 
 type alias State =
@@ -163,7 +164,17 @@ nextState state_ =
 
                 --
                 ( TextBlock, LTStart ) ->
-                    Loop { state | blockType = Start, blockContents = [], output = pushTC state, lineNumber = state.lineNumber + countLines state.blockContents }
+                    let
+                        newTC =
+                            Parser.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse state.blockContents))
+
+                        output =
+                            newTC :: state.output
+
+                        laTeXState =
+                            Reduce.laTeXState newTC.parsed state.laTeXState
+                    in
+                    Loop { state | blockType = Start, blockContents = [], laTeXState = laTeXState, output = output, lineNumber = state.lineNumber + countLines state.blockContents }
 
                 ( TextBlock, LTMathBlock ) ->
                     Loop (initWithBlockType MathBlock currentLine state)
@@ -179,7 +190,17 @@ nextState state_ =
 
                 --
                 ( MathBlock, LTStart ) ->
-                    Loop { state | blockType = Start, blockContents = [], output = pushTC state, lineNumber = state.lineNumber + countLines state.blockContents }
+                    let
+                        newTC =
+                            Parser.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse state.blockContents))
+
+                        output =
+                            newTC :: state.output
+
+                        laTeXState =
+                            Reduce.laTeXState newTC.parsed state.laTeXState
+                    in
+                    Loop { state | blockType = Start, blockContents = [], laTeXState = laTeXState, output = output, lineNumber = state.lineNumber + countLines state.blockContents }
 
                 ( MathBlock, LTMathBlock ) ->
                     Loop (initWithBlockType Start currentLine state)
@@ -228,11 +249,19 @@ initBlock blockType_ currentLine_ state =
 
 initWithBlockType : BlockType -> String -> State -> State
 initWithBlockType blockType_ currentLine_ state =
+    let
+        newTC =
+            Parser.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse (currentLine_ :: state.blockContents)))
+
+        laTeXState =
+            Reduce.laTeXState newTC.parsed state.laTeXState
+    in
     { state
         | blockType = blockType_
         , blockContents = [ currentLine_ ]
         , lineNumber = state.lineNumber + countLines state.blockContents
-        , output = pushTC2 currentLine_ state
+        , laTeXState = laTeXState
+        , output = newTC :: state.output
     }
 
 
@@ -266,12 +295,16 @@ popBlockStack blockType_ currentLine_ state =
 
             tc =
                 { tc_ | text = input_ }
+
+            laTeXState =
+                Reduce.laTeXState tc.parsed state.laTeXState
         in
         { state
             | blockType = Start
             , blockTypeStack = []
             , blockContents = currentLine_ :: state.blockContents
             , output = tc :: state.output
+            , laTeXState = laTeXState
             , lineNumber = state.lineNumber + (2 + List.length state.blockContents) -- TODO: think about this.  Is it correct?
         }
 
@@ -304,8 +337,11 @@ flush state =
 
         tc =
             { tc_ | text = input }
+
+        laTeXState =
+            Reduce.laTeXState tc.parsed state.laTeXState |> Debug.log "LATEX STATE"
     in
-    { state | output = List.reverse (tc :: state.output) }
+    { state | laTeXState = laTeXState, output = List.reverse (tc :: state.output) }
 
 
 countLines : List String -> Int
