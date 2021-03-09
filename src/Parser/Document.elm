@@ -15,6 +15,7 @@ import Parser as P exposing ((|.), (|=))
 import Parser.Expression exposing (Expression)
 import Parser.Parser as Parser
 import Parser.TextCursor exposing (TextCursor)
+import Render.LaTeXState as LaTeXState exposing (LaTeXState)
 
 
 type alias State =
@@ -25,6 +26,7 @@ type alias State =
     , blockContents : List String
     , blockTypeStack : List BlockType
     , output : List TextCursor
+    , laTeXState : LaTeXState
     }
 
 
@@ -108,11 +110,16 @@ init generation str =
     , blockContents = []
     , blockTypeStack = []
     , output = []
+    , laTeXState = LaTeXState.init
     }
 
 
 nextState : State -> Step State State
 nextState state_ =
+    let
+        _ =
+            Debug.log "Line" state_.lineNumber
+    in
     case List.head state_.input of
         Nothing ->
             Done (flush state_)

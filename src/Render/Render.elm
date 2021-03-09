@@ -86,6 +86,9 @@ renderExpr selectedId state expr =
         Environment name args body sm ->
             environment selectedId state name args body sm
 
+        NewCommand _ _ _ _ ->
+            Html.span [] []
+
         LXList list_ ->
             List.map (renderExpr selectedId state) list_ |> Html.span [ state.config.textSpanStyle ]
 
@@ -105,7 +108,7 @@ errorString p _ =
         ++ Parser.Expression.problemAsString p
 
 
-macro : String -> LaTeXState -> String -> Maybe String -> List Expression -> SourceMap -> Html LaTeXMsg
+macro : String -> LaTeXState -> String -> Maybe Expression -> List Expression -> SourceMap -> Html LaTeXMsg
 macro selectedId state name optArg args sm =
     case Dict.get name macroDict of
         Nothing ->

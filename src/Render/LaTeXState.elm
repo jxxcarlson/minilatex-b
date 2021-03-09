@@ -1,4 +1,7 @@
-module Render.LaTeXState exposing (LaTeXState, getCounter, init)
+module Render.LaTeXState exposing
+    ( LaTeXState, getCounter, init
+    , Counters, CrossReferences, addSection, incrementCounter, setCrossReference, setDictionaryItem, updateCounter
+    )
 
 {-| This module defines and manages LaTeXState, shich is used to
 compute and render data such as section numbers and cross-references.

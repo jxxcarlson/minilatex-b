@@ -3,7 +3,8 @@
   "name": "my-app",
   "scripts": {},
   "dependencies": {
-    "elm-analyse": "^0.16.5"
+    "elm-analyse": "^0.16.5",
+    "elm-doc-preview": "^5.0.5"
   },
   "devDependencies": {
     "elm": "^0.19.1-5",

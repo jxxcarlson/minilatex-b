@@ -33,8 +33,9 @@ type Expression
     = Text String SourceMap
     | InlineMath String SourceMap
     | DisplayMath String SourceMap
-    | Macro String (Maybe String) (List Expression) SourceMap
+    | Macro String (Maybe Expression) (List Expression) SourceMap
     | Environment String (List Expression) Expression SourceMap -- Environment name optArgs body
+    | NewCommand String Int Expression SourceMap
     | LXList (List Expression)
     | LXError String Problem SourceMap
     | LXInstruction Instr SourceMap
@@ -224,11 +225,19 @@ toString expr =
             "$$" ++ str ++ "$$"
 
         Macro name optArg args _ ->
-            "\\" ++ name ++ Maybe.withDefault "OptArg: Null" optArg ++ (List.map toString args |> String.join "")
+            let
+                optArgAsString =
+                    Maybe.map toString optArg |> Maybe.withDefault "nada"
+            in
+            "\\" ++ name ++ "[" ++ optArgAsString ++ "]" ++ (List.map toString args |> String.join "")
 
         Environment name _ _ _ ->
             -- TODO: incomplete
             "\\begin{" ++ name ++ "} ... \\end{" ++ name ++ "}"
+
+        NewCommand name _ _ _ ->
+            -- TODO: incomplete
+            "\\newcommand: " ++ name
 
         LXError str p sm ->
             "((( Error at " ++ String.fromInt sm.offset ++ ": " ++ problemAsString p ++ " [" ++ str ++ "]  )))"
@@ -289,6 +298,9 @@ getSource expr =
         Environment _ _ _ source ->
             source
 
+        NewCommand _ _ _ source ->
+            source
+
         LXList e ->
             List.map getSource e |> List.head |> Maybe.withDefault dummySourceMap
 
@@ -315,6 +327,9 @@ incrementOffset delta expr =
 
         Environment n a e source ->
             Environment n a e { source | offset = source.offset + delta }
+
+        NewCommand n k e source ->
+            NewCommand n k e { source | offset = source.offset + delta }
 
         LXError e p source ->
             LXError e p { source | offset = source.offset + delta }
@@ -346,6 +361,9 @@ incrementBlockOffset delta expr =
         Environment n a e source ->
             Environment n a e { source | blockOffset = source.blockOffset + delta }
 
+        NewCommand n k e source ->
+            NewCommand n k e { source | blockOffset = source.blockOffset + delta }
+
         LXError e p source ->
             LXError e p { source | blockOffset = source.blockOffset + delta }
 
@@ -373,6 +391,9 @@ setSourceMap sm expr =
 
         Environment n a e _ ->
             Environment n a e sm
+
+        NewCommand n k e _ ->
+            NewCommand n k e sm
 
         LXError e p _ ->
             LXError e p sm

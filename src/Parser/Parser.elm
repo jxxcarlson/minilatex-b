@@ -1,5 +1,5 @@
 module Parser.Parser exposing
-    ( parseLoop
+    ( parseLoop, macro
     , Context(..), expression, expressionList
     )
 
@@ -37,7 +37,7 @@ next round the truncated text is parsed.
 
 TO ADD: COMMENTS ON THE STACK
 
-@docs parseLoop, getErrors
+@docs parseLoop, getErrors, macro
 
 
 ## Uses of Parser.Parser
@@ -400,6 +400,23 @@ getChompedString generation lineNumber parser =
         |= Parser.getSource
 
 
+chompExpression : Int -> Int -> Parser a -> Parser ( a, SourceMap )
+chompExpression generation lineNumber parser =
+    let
+        sm first_ expr last_ source_ =
+            let
+                src =
+                    String.slice first_ last_ source_
+            in
+            ( expr, { content = src, blockOffset = lineNumber, length = last_, offset = 0, generation = generation } )
+    in
+    Parser.succeed sm
+        |= Parser.getOffset
+        |= parser
+        |= Parser.getOffset
+        |= Parser.getSource
+
+
 macro : Int -> Int -> Parser Expression
 macro generation lineNo =
     Parser.succeed (\start n o a end src_ -> fixMacro generation start lineNo n o a end src_)
@@ -419,7 +436,7 @@ macroName generation chunkOffset =
         |= Parser.getOffset
 
 
-fixMacro : Int -> Int -> Int -> ( String, SourceMap ) -> Maybe ( String, SourceMap ) -> List Expression -> Int -> String -> Expression
+fixMacro : Int -> Int -> Int -> ( String, SourceMap ) -> Maybe ( Expression, SourceMap ) -> List Expression -> Int -> String -> Expression
 fixMacro generation start lineNo ( name, sm1 ) optArg_ args_ end src_ =
     let
         lineNumber =
@@ -460,17 +477,17 @@ bareMacroName generation lineNo =
 -- OptArg
 
 
-optArg : Int -> Int -> Parser (Maybe ( String, SourceMap ))
+optArg : Int -> Int -> Parser (Maybe ( Expression, SourceMap ))
 optArg generation lineNo =
     Parser.oneOf [ optArg__ generation lineNo |> Parser.map Just, Parser.succeed Nothing ]
 
 
-optArg__ : Int -> Int -> Parser ( String, SourceMap )
+optArg__ : Int -> Int -> Parser ( Expression, SourceMap )
 optArg__ generation lineNo =
     Parser.inContext OptArgContext <|
         Parser.succeed identity
             |. Parser.symbol (Parser.Token "[" ExpectingLeftBracket)
-            |= rawText generation lineNo [ ']' ]
+            |= Parser.lazy (\_ -> chompExpression generation lineNo (expression generation lineNo))
             |. Parser.symbol (Parser.Token "]" ExpectingRightBracket)
 
 
@@ -485,11 +502,7 @@ optionalArg generation chunkOffset =
 
 optArg2 : Int -> Int -> Parser Expression
 optArg2 generation chunkOffset =
-    optArg__ generation chunkOffset |> Parser.map (\( s, sm ) -> Text s sm)
-
-
-
--- Arg
+    optArg__ generation chunkOffset |> Parser.map Tuple.first
 
 
 arg : Int -> Int -> Parser Expression
