@@ -38,4 +38,4 @@ env EnvName -> begin(EnvName) args expr end(EnvName)
 ```
 
 Because terminal symbols appear on the left-hand
-side of productions, the grammar is contxt-sensitive.
+side of productions, the grammar is context-sensitive.
