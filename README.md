@@ -50,3 +50,8 @@ apps with interactive editing with real-time rendering
 to Html.  See the documentation of the **MiniLaTeX** module for more
 on this.  Also the code in `./demo`.
 
+## Notes
+
+For more information on how this package operstes,
+see the included `./src/Architecture.md`
+
