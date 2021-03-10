@@ -1,7 +1,8 @@
 # Architecture of the MiniLaTeX Compiler
 
+_This document is a work-in-progress._
 
-The MiniLaTeX provides two modules, `MiniLaTeX` and 
+The MiniLaTeX packaged provides two modules, `MiniLaTeX` and 
 `LaTeXMsg`.  The function
 
 ```elm
@@ -45,7 +46,44 @@ type alias LaTeXData =
 The parser is best understood from the definition
 of its abstract syntax tree:
 
+```elm
+type Expression
+    = Text String SourceMap
+    | InlineMath String SourceMap
+    | DisplayMath String SourceMap
+    | Macro String (Maybe Expression) (List Expression) SourceMap
+    | Environment String (List Expression) Expression SourceMap 
+    | NewCommand String Int Expression SourceMap
+    | LXList (List Expression)
+    | LXError String Problem SourceMap
+    | LXInstruction Instr SourceMap
+```
 
+### Modules
+
+```
+    Block.elm
+    Document.elm
+    Expression.elm
+    Grammar.md
+    Helpers.elm
+    Parser.elm
+    Problem.elm
+    TestData.elm
+    TestHelper.elm
+    TextCursor.elm
+```
 ## Renderer
+
+
+### Modules
+
+```
+    Accumulator.elm
+    LaTeXState.elm
+    Reduce.elm
+    ReducerHelper.elm
+    Render.elm
+```
 
 
