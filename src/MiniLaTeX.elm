@@ -29,6 +29,7 @@ import Parser.Block as Block
 import Parser.Document as Document
 import Parser.Expression exposing (Expression)
 import Parser.TextCursor
+import Render.Accumulator as Accumulator
 import Render.LaTeXState as LaTeXState exposing (LaTeXState)
 import Render.Render as Render
 
@@ -72,14 +73,17 @@ initWithString generation selectedId input =
         parsedText : List (List Expression)
         parsedText =
             Document.toParsed state
+
+        accumulatorState =
+            Accumulator.render selectedId state.laTeXState parsedText
     in
     { lines = lines_
     , blocks = Document.toText state
     , generations = getGenerations parsedText
     , parsedText = parsedText
     , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length lines_) parsedText
-    , renderedText = render selectedId state.laTeXState parsedText
-    , laTeXState = state.laTeXState
+    , renderedText = accumulatorState.html
+    , laTeXState = accumulatorState.state
     }
 
 

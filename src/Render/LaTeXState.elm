@@ -1,5 +1,5 @@
 module Render.LaTeXState exposing
-    ( LaTeXState, init
+    ( LaTeXState, init, reset
     , Counters, getCounter, incrementCounter, updateCounter
     , CrossReferences, setCrossReference
     , setDictionaryItem, addSection
@@ -8,7 +8,7 @@ module Render.LaTeXState exposing
 {-| This module defines and manages LaTeXState, shich is used to
 compute and render data such as section numbers and cross-references.
 
-@docs LaTeXState, init
+@docs LaTeXState, init, reset
 
 
 ## Counters
@@ -24,8 +24,6 @@ compute and render data such as section numbers and cross-references.
 ## Other
 
 @docs setDictionaryItem, addSection
-
-
 
 -}
 
@@ -62,6 +60,13 @@ type alias LaTeXState =
 init : LaTeXState
 init =
     emptyLatexState
+
+
+{-| initializae the counters of the app
+-}
+reset : LaTeXState -> LaTeXState
+reset state =
+    { state | counters = initialCounters }
 
 
 emptyLatexState : LaTeXState
