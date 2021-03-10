@@ -35,6 +35,7 @@ macro       -> MacroName optArgs args
 optarg      -> Maybe expr
 args        -> expr*
 env EnvName -> begin(EnvName) args expr end(EnvName)
+lxList      -> expr*
 ```
 
 Because terminal symbols appear on the left-hand
