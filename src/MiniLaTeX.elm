@@ -77,7 +77,6 @@ initWithString generation selectedId input =
         accumulatorState =
             Accumulator.render selectedId state.laTeXState parsedText
 
-        -- rt : List (List (Html LaTeXMsg))
         rt : List (Html LaTeXMsg)
         rt =
             accumulatorState.html |> List.reverse |> List.map (\x -> Html.span docStyle x)
@@ -89,30 +88,6 @@ initWithString generation selectedId input =
     , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length lines_) parsedText
     , renderedText = rt
     , laTeXState = accumulatorState.state
-    }
-
-
-initWithString1 : Int -> String -> String -> LaTeXData
-initWithString1 generation selectedId input =
-    let
-        state : Document.State
-        state =
-            Document.process generation input
-
-        lines_ =
-            String.lines input
-
-        parsedText : List (List Expression)
-        parsedText =
-            Document.toParsed state
-    in
-    { lines = lines_
-    , blocks = Document.toText state
-    , generations = getGenerations parsedText
-    , parsedText = parsedText
-    , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length lines_) parsedText
-    , renderedText = render selectedId state.laTeXState parsedText
-    , laTeXState = state.laTeXState
     }
 
 
@@ -201,9 +176,12 @@ updateWithString generation selectedId input data =
                 renderedTextBefore =
                     List.take prefixLength data.renderedText
 
+                accumulatorState =
+                    Accumulator.render selectedId data.laTeXState deltaParsed
+
                 deltaRenderedText : List (Html LaTeXMsg)
                 deltaRenderedText =
-                    render selectedId data.laTeXState deltaParsed
+                    accumulatorState.html |> List.reverse |> List.map (\x -> Html.span docStyle x)
 
                 renderedTextAfter : List (Html LaTeXMsg)
                 renderedTextAfter =
