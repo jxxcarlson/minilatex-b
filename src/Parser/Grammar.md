@@ -35,7 +35,7 @@ macro       -> MacroName optArgs args
 optarg      -> Maybe expr
 args        -> expr*
 env EnvName -> begin(EnvName) args expr end(EnvName)
-
-       
-
 ```
+
+Because terminal symbols appear on the left-hand
+side of productions, the grammar is contxt-sensitive.
