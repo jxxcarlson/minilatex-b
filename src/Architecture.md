@@ -1,7 +1,7 @@
 # Architecture of the MiniLaTeX Compiler
 
 
-The MiniLaTeX provides two mddules, `MiniLaTeX` and 
+The MiniLaTeX provides two modules, `MiniLaTeX` and 
 `LaTeXMsg`.  The function
 
 ```elm
@@ -9,10 +9,10 @@ The MiniLaTeX provides two mddules, `MiniLaTeX` and
 ```
 
 is sufficient to render static MiniLaTeX documents.
-For interatictive editing and rendering applications,
-on usually uses a more sophisticated API in which
+For interactive editing and rendering applications,
+one usually uses a more sophisticated API in which
 only that text which was changed in the last edit
-is re-parsed and re-rendered.  For this one uses
+is re-parsed and re-rendered.  For this, use
 
 ```elm
    initWithString : Int -> String -> String -> LaTeXData
