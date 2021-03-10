@@ -108,8 +108,23 @@ type alias Flags =
     {}
 
 
-initialText : String
 initialText =
+    """\\strong{\\italic{Note.}} \\italic{This app is a demo of the simplest rendering
+features of the} \\red{MiniLaTeX library.}
+\\italic{Thus, while you can see the source text
+(left panel), the source text cannot be edited.}
+
+\\section{Introduction}
+
+\\strong{MiniLatex} is a subset of LaTeX that can be
+rendered live in the browser using a custom just-in-time compiler.
+It can also be used for static text, as in this simple demo app
+using the function \\code{MiniLaTeX.compile document}.
+"""
+
+
+initialText2 : String
+initialText2 =
     """This is a test: $a^2 + b^2 = c^2$
 
 \\strong{\\italic{More stuff:}} $p^2 \\equiv 1$

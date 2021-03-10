@@ -140,6 +140,7 @@ getSelectionFromSourceMap sourceMap str sourceMapIndex_ =
                 |> List.map Tuple.second
                 |> List.head
                 |> Maybe.withDefault []
+                |> Debug.log "DATA (get sel from src)"
 
         sel_ : List String
         sel_ =
