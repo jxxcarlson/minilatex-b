@@ -60,8 +60,8 @@ initWithString generation selectedId input
   - _input_ the source text
 
 -}
-initWithString : Int -> String -> String -> LaTeXData
-initWithString generation selectedId input =
+initWithString2 : Int -> String -> String -> LaTeXData
+initWithString2 generation selectedId input =
     let
         state : Document.State
         state =
@@ -84,6 +84,30 @@ initWithString generation selectedId input =
     , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length lines_) parsedText
     , renderedText = accumulatorState.html
     , laTeXState = accumulatorState.state
+    }
+
+
+initWithString : Int -> String -> String -> LaTeXData
+initWithString generation selectedId input =
+    let
+        state : Document.State
+        state =
+            Document.process generation input
+
+        lines_ =
+            String.lines input
+
+        parsedText : List (List Expression)
+        parsedText =
+            Document.toParsed state
+    in
+    { lines = lines_
+    , blocks = Document.toText state
+    , generations = getGenerations parsedText
+    , parsedText = parsedText
+    , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length lines_) parsedText
+    , renderedText = render selectedId state.laTeXState parsedText
+    , laTeXState = state.laTeXState
     }
 
 
