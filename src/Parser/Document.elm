@@ -316,16 +316,6 @@ popBlockStack blockType_ currentLine_ state =
         }
 
 
-pushTC : State -> List TextCursor
-pushTC state =
-    Parser.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse state.blockContents)) :: state.output
-
-
-pushTC2 : String -> State -> List TextCursor
-pushTC2 str state =
-    Parser.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse (str :: state.blockContents))) :: state.output
-
-
 flush : State -> State
 flush state =
     let

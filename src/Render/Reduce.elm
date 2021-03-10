@@ -23,14 +23,14 @@ laTeXState list state =
 latexStateReducerAux : Expression -> LaTeXState -> LaTeXState
 latexStateReducerAux lexpr state =
     case lexpr of
-        Macro name optionalArgs args sm ->
+        Macro name optionalArgs args _ ->
             macroReducer name optionalArgs args state
 
         --SMacro name optionalArgs args latexExpression ->
         --    smacroReducer name optionalArgs args latexExpression state
         --NewCommand name nArgs body ->
         --    ReducerHelper.setMacroDefinition name body state
-        Environment name optonalArgs body sm ->
+        Environment name optonalArgs body _ ->
             envReducer name optonalArgs body state
 
         LXList list ->

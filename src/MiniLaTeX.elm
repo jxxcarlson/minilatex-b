@@ -30,7 +30,7 @@ import Parser.Document as Document
 import Parser.Expression exposing (Expression)
 import Parser.TextCursor
 import Render.Accumulator as Accumulator
-import Render.LaTeXState as LaTeXState exposing (LaTeXState)
+import Render.LaTeXState exposing (LaTeXState)
 import Render.Render as Render
 
 

@@ -213,7 +213,7 @@ updateCounter : String -> Int -> LaTeXState -> LaTeXState
 updateCounter name value latexState =
     let
         maybeSet =
-            Maybe.map (\x -> value)
+            Maybe.map (\_ -> value)
 
         newCounters =
             Dict.update name maybeSet latexState.counters

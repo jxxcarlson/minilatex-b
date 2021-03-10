@@ -13,7 +13,6 @@ block. Used in module MiniLaTeX.
 -}
 
 import Html exposing (Html)
-import Html.Attributes as HA
 import LaTeXMsg exposing (LaTeXMsg(..))
 import Parser.Expression exposing (Expression)
 import Render.LaTeXState as LaTeXState exposing (LaTeXState)
