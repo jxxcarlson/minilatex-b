@@ -26,12 +26,6 @@ type alias ReducerData =
     { state : LaTeXState, html : List (List (Html LaTeXMsg)) }
 
 
-basicRender : String -> LaTeXState -> List (List Expression) -> List (Html LaTeXMsg)
-basicRender selectedId laTeXSTate parsed =
-    parsed
-        |> List.map (Render.render selectedId laTeXSTate >> Html.div docStyle)
-
-
 {-| -}
 render : String -> LaTeXState -> List (List Expression) -> ReducerData
 render selectedId laTeXSTate expressionList =
@@ -53,7 +47,3 @@ reducer selectedId expressionList reducerData =
             Render.render selectedId newLaTeXState expressionList
     in
     { state = newLaTeXState, html = newHtml :: reducerData.html }
-
-
-docStyle =
-    [ HA.style "margin-bottom" "10px", HA.style "white-space" "normal", HA.style "line-height" "1.5" ]
