@@ -110,13 +110,6 @@ type alias Flags =
 
 initialText : String
 initialText =
-    """
-\\strong{\\italic{Note.}} This app is a demo. \\italic{Nice!}
-"""
-
-
-initialText1 : String
-initialText1 =
     """This is a test: $a^2 + b^2 = c^2$
 
 \\strong{\\italic{More stuff:}} $p^2 \\equiv 1$

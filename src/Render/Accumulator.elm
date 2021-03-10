@@ -23,7 +23,7 @@ import Render.Render as Render
 
 {-| -}
 type alias ReducerData =
-    { state : LaTeXState, html : List (Html LaTeXMsg) }
+    { state : LaTeXState, html : List (List (Html LaTeXMsg)) }
 
 
 basicRender : String -> LaTeXState -> List (List Expression) -> List (Html LaTeXMsg)
@@ -52,7 +52,7 @@ reducer selectedId expressionList reducerData =
         newHtml =
             Render.render selectedId newLaTeXState expressionList
     in
-    { state = newLaTeXState, html = reducerData.html ++ newHtml }
+    { state = newLaTeXState, html = newHtml :: reducerData.html }
 
 
 docStyle =

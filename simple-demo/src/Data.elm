@@ -1,13 +1,13 @@
 module Data exposing (document)
 
 
-document =
+document1 =
     """
 \\strong{\\italic{Note.}} This app is a demo. \\italic{Nice!}
 """
 
 
-document1 =
+document =
     """
 \\strong{\\italic{Note.}} \\italic{This app is a demo of the simplest rendering
  features of the} \\red{MiniLaTeX library.}

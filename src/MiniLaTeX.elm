@@ -76,13 +76,18 @@ initWithString generation selectedId input =
 
         accumulatorState =
             Accumulator.render selectedId state.laTeXState parsedText
+
+        -- rt : List (List (Html LaTeXMsg))
+        rt : List (Html LaTeXMsg)
+        rt =
+            accumulatorState.html |> List.reverse |> List.map (\x -> Html.span docStyle x)
     in
     { lines = lines_
     , blocks = Document.toText state
     , generations = getGenerations parsedText
     , parsedText = parsedText
     , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length lines_) parsedText
-    , renderedText = accumulatorState.html
+    , renderedText = rt
     , laTeXState = accumulatorState.state
     }
 
