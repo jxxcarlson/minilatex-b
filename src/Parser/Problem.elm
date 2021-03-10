@@ -1,9 +1,16 @@
 module Parser.Problem exposing (RecoveryData, getErrors, getRecoveryData)
 
+{-|
+
+@docs RecoveryData, getErrors, getRecoveryData
+
+-}
+
 import Parser.Expression as Expression exposing (Expression(..), Problem(..), SourceMap)
 import Parser.TextCursor exposing (TextCursor)
 
 
+{-| -}
 type alias RecoveryData =
     { problem : Problem
     , deltaOffset : Int
@@ -12,6 +19,7 @@ type alias RecoveryData =
     }
 
 
+{-| -}
 getRecoveryData : TextCursor -> Problem -> Maybe RecoveryData
 getRecoveryData tc_ problem =
     let

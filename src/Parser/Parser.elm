@@ -1,6 +1,6 @@
 module Parser.Parser exposing
-    ( parseLoop, macro
-    , Context(..), expression, expressionList, parseExpression
+    ( Parser, Context(..)
+    , parseLoop, expression, expressionList, parseExpression, macro
     )
 
 {-| Function parserLoop takes as input an integer representing a "chunkNumber"
@@ -37,7 +37,15 @@ next round the truncated text is parsed.
 
 TO ADD: COMMENTS ON THE STACK
 
-@docs parseLoop, getErrors, macro
+
+## Types
+
+@docs Parser, Context
+
+
+## Functions
+
+@docs parseLoop, expression, expressionList, parseExpression, macro
 
 
 ## Uses of Parser.Parser
@@ -74,10 +82,12 @@ import Parser.TextCursor as TextCursor exposing (TextCursor)
 import Set
 
 
+{-| -}
 type alias Parser a =
     Parser.Parser Context Problem a
 
 
+{-| -}
 type Context
     = InlineMathContext
     | DisplayMathContext
@@ -248,6 +258,7 @@ expressionList generation lineNumber =
     many (expression generation lineNumber)
 
 
+{-| -}
 parseExpression : Int -> Int -> String -> Maybe Expression
 parseExpression generation lineNumber str =
     case Parser.run (expression generation lineNumber) str of
@@ -258,6 +269,7 @@ parseExpression generation lineNumber str =
             Nothing
 
 
+{-| -}
 expression : Int -> Int -> Parser Expression
 expression generation lineNumber =
     Parser.oneOf
@@ -427,6 +439,7 @@ chompExpression generation lineNumber parser =
         |= Parser.getSource
 
 
+{-| -}
 macro : Int -> Int -> Parser Expression
 macro generation lineNo =
     Parser.succeed (\start n o a end src_ -> fixMacro generation start lineNo n o a end src_)

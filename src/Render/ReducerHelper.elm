@@ -1,4 +1,14 @@
-module Render.ReducerHelper exposing (..)
+module Render.ReducerHelper exposing
+    ( setDictionaryItemForMacro, setEquationNumber, setSectionCounters, setTheoremNumber
+    , updateSectionNumber, updateSubsectionNumber, updateSubsubsectionNumber
+    )
+
+{-|
+
+@docs setDictionaryItemForMacro, setEquationNumber, setSectionCounters, setTheoremNumber
+@docs updateSectionNumber, updateSubsectionNumber, updateSubsubsectionNumber
+
+-}
 
 import List.Extra
 import Maybe.Extra
@@ -17,9 +27,9 @@ import Render.LaTeXState
         , setDictionaryItem
         , updateCounter
         )
-import Utility
 
 
+{-| -}
 updateSectionNumber : List Expression -> LaTeXState -> LaTeXState
 updateSectionNumber macroArgs latexState =
     let
@@ -33,6 +43,7 @@ updateSectionNumber macroArgs latexState =
         |> addSection (unpackString macroArgs) label 1
 
 
+{-| -}
 updateSubsectionNumber : List Expression -> LaTeXState -> LaTeXState
 updateSubsectionNumber macroArgs latexState =
     let
@@ -51,6 +62,7 @@ updateSubsectionNumber macroArgs latexState =
         |> addSection (unpackString macroArgs) label 2
 
 
+{-| -}
 updateSubsubsectionNumber : List Expression -> LaTeXState -> LaTeXState
 updateSubsubsectionNumber macroArgs latexState =
     let
@@ -71,6 +83,7 @@ updateSubsubsectionNumber macroArgs latexState =
         |> addSection (unpackString macroArgs) label 2
 
 
+{-| -}
 setSectionCounters : List Expression -> LaTeXState -> LaTeXState
 setSectionCounters macroArgs latexState =
     let
@@ -104,6 +117,7 @@ setSectionCounters macroArgs latexState =
         latexState
 
 
+{-| -}
 setDictionaryItemForMacro : String -> List Expression -> LaTeXState -> LaTeXState
 setDictionaryItemForMacro name args latexState =
     let
@@ -113,6 +127,7 @@ setDictionaryItemForMacro name args latexState =
     setDictionaryItem name value latexState
 
 
+{-| -}
 setTheoremNumber : Expression -> LaTeXState -> LaTeXState
 setTheoremNumber body latexState =
     let
@@ -143,6 +158,7 @@ setTheoremNumber body latexState =
     latexState2
 
 
+{-| -}
 setEquationNumber : Expression -> LaTeXState -> LaTeXState
 setEquationNumber body latexState =
     let
@@ -173,6 +189,7 @@ setEquationNumber body latexState =
     latexState2
 
 
+{-| -}
 setBibItemXRef : List Expression -> List Expression -> LaTeXState -> LaTeXState
 setBibItemXRef optionalArgs args latexState =
     let
@@ -189,6 +206,7 @@ setBibItemXRef optionalArgs args latexState =
     setDictionaryItem ("bibitem:" ++ label) value latexState
 
 
+{-| -}
 setMacroDefinition : String -> Expression -> LaTeXState -> LaTeXState
 setMacroDefinition name body latexState =
     setMacroDefinition name body latexState
@@ -201,6 +219,7 @@ setMacroDefinition name body latexState =
 --   List.Extra.getAt k list_ |> Maybe.withDefault "xxx"
 
 
+{-| -}
 getElement : Int -> List Expression -> String
 getElement k list =
     let
@@ -215,6 +234,7 @@ getElement k list =
             "yyy"
 
 
+{-| -}
 getLabel str =
     let
         maybeMacro =
@@ -230,6 +250,7 @@ getLabel str =
             ""
 
 
+{-| -}
 getFirstMacroArg : String -> Expression -> String
 getFirstMacroArg macroName latexExpression =
     let
@@ -244,6 +265,7 @@ getFirstMacroArg macroName latexExpression =
             ""
 
 
+{-| -}
 getSimpleMacroArgs : String -> Expression -> List String
 getSimpleMacroArgs macroName latexExpression =
     latexExpression
@@ -252,6 +274,7 @@ getSimpleMacroArgs macroName latexExpression =
         |> Maybe.Extra.values
 
 
+{-| -}
 getMacroArgs : String -> Expression -> List (List Expression)
 getMacroArgs macroName latexExpression =
     case latexExpression of
@@ -285,11 +308,13 @@ setDictionary str latexState =
             latexState
 
 
+{-| -}
 setDictionaryAux : List Expression -> LaTeXState -> LaTeXState
 setDictionaryAux list latexState =
     List.foldl macroDictReducer latexState list
 
 
+{-| -}
 macroDictReducer : Expression -> LaTeXState -> LaTeXState
 macroDictReducer lexpr state =
     case lexpr of
@@ -304,6 +329,7 @@ macroDictReducer lexpr state =
 -- HELPERS
 
 
+{-| -}
 headExpression : List Expression -> Expression
 headExpression list =
     let
@@ -318,6 +344,7 @@ headExpression list =
     he
 
 
+{-| -}
 valueOfLatexList : Expression -> List Expression
 valueOfLatexList latexList =
     case latexList of
@@ -328,6 +355,7 @@ valueOfLatexList latexList =
             [ Text "Error getting value of LatexList" Parser.Expression.dummySourceMap ]
 
 
+{-| -}
 valueOfLXString : Expression -> String
 valueOfLXString expr =
     case expr of
@@ -369,6 +397,7 @@ unpackString expr =
 --        ""
 
 
+{-| -}
 latexList2List : Expression -> List Expression
 latexList2List latexExpression =
     case latexExpression of
@@ -379,6 +408,7 @@ latexList2List latexExpression =
             []
 
 
+{-| -}
 macroValue : String -> Expression -> Maybe String
 macroValue macroName envBody =
     case envBody of
@@ -389,6 +419,7 @@ macroValue macroName envBody =
             Nothing
 
 
+{-| -}
 macroValue_ : String -> List Expression -> Maybe String
 macroValue_ macroName list =
     list
@@ -400,6 +431,7 @@ macroValue_ macroName list =
         |> Maybe.map getString
 
 
+{-| -}
 getMacroArgs2 : Expression -> List (List Expression)
 getMacroArgs2 latexExpression =
     case latexExpression of
@@ -411,6 +443,7 @@ getMacroArgs2 latexExpression =
             []
 
 
+{-| -}
 getString : Expression -> String
 getString latexString =
     case latexString of
@@ -421,6 +454,7 @@ getString latexString =
             ""
 
 
+{-| -}
 filterMacro : String -> List Expression -> List Expression
 filterMacro macroName list =
     List.filter (isMacro macroName) list

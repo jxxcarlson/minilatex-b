@@ -1,26 +1,28 @@
 module Parser.Expression exposing
-    ( Expression(..), Problem(..), SourceMap
-    , dummySourceMap, getSelectionFromSourceMap, getSource, getSourceOfList, sourceMapIndex, sourceMapToString
-    , incrementOffset, problemAsString
-    , equivalentProblem, incrementBlockOffset, setSourceMap, toString
+    ( Expression(..), incrementBlockOffset, incrementOffset, toString
+    , SourceMap, dummySourceMap, getSelectionFromSourceMap, getSource, getSourceOfList, sourceMapIndex, sourceMapToString, setSourceMap
+    , Problem(..), equivalentProblem, problemAsString
     )
 
-{-|
+{-| Module **Parser.Expression** defines various data structures used by the parser (module Parser.Parser).
+Chief among them is _Expression_, which is the type of the syntax tree. An expression contains both
+syntax information and a _SourceMap_, which locates the part of the source text from which that element
+was derived. This is useful in interactive editing apps.
 
 
-# Types
+## Expression
 
-@docs Expression, Problem, SourceMap
-
-
-# SourceMap
-
-@docs dummySourceMap, getSelectionFromSourceMap, getSource, getSourceOfList, sourceMapIndex, sourceMapToString
+@docs Expression, incrementBlockOffset, incrementOffset, toString
 
 
-# Other
+## SourceMap
 
-@docs incrementOffset, problemAsString
+@docs SourceMap, dummySourceMap, getSelectionFromSourceMap, getSource, getSourceOfList, sourceMapIndex, sourceMapToString, setSourceMap
+
+
+## Problem
+
+@docs Problem, equivalentProblem, problemAsString
 
 -}
 
@@ -92,6 +94,7 @@ type Problem
     | ExpectingPrefixes (List Char)
 
 
+{-| -}
 equivalentProblem : Problem -> Problem -> Bool
 equivalentProblem p1 p2 =
     case ( p1, p2 ) of
@@ -212,6 +215,7 @@ sourceMapToString sm =
         ++ "}"
 
 
+{-| -}
 toString : Expression -> String
 toString expr =
     case expr of
@@ -374,6 +378,7 @@ incrementBlockOffset delta expr =
             LXInstruction instr { source | blockOffset = source.blockOffset + delta }
 
 
+{-| -}
 setSourceMap : SourceMap -> Expression -> Expression
 setSourceMap sm expr =
     case expr of

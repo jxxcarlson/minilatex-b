@@ -1,22 +1,17 @@
 module Parser.Helpers exposing
-    ( between
-    , braces
-    , brackets
+    ( between, braces, brackets, many, manyHelp, nonEmptyItemList
+    , parens, parseBetweenSymbols, parseToSymbol, parseUntil, removeLabel
+    , some, spaces, transformWords, ws, itemList
     , getTag
-    , itemList
-    , many
-    , manyHelp
-    , nonEmptyItemList
-    , parens
-    , parseBetweenSymbols
-    , parseToSymbol
-    , parseUntil
-    , removeLabel
-    , some
-    , spaces
-    , transformWords
-    , ws
     )
+
+{-| Helper functions for Parsing. ((Eliminate that which is redundant.))
+
+@docs between, braces, brackets, getTag  itemList, many, manyHelp, nonEmptyItemList
+@docs parens, parseBetweenSymbols, parseToSymbol, parseUntil, removeLabel
+@docs some, spaces, transformWords, ws, nonEmptyItemList, manyHelp, itemList, many
+
+-}
 
 import Parser.Advanced exposing (..)
 
@@ -40,6 +35,7 @@ type Problem
     | ExpectingLabel
 
 
+{-| -}
 removeLabel : String -> String
 removeLabel str =
     case getArg "label" str of
@@ -50,11 +46,13 @@ removeLabel str =
             String.replace ("\\label{" ++ word ++ "}") "" str
 
 
+{-| -}
 getTag : String -> Maybe String
 getTag str =
     getArg "tag" str
 
 
+{-| -}
 parseArg : String -> HParser String
 parseArg macroName =
     succeed identity
@@ -63,6 +61,7 @@ parseArg macroName =
         |. symbol (Token "}" ExpectingRightBrace)
 
 
+{-| -}
 getArg : String -> String -> Maybe String
 getArg macroName str =
     case Parser.Advanced.run (parseArg macroName) str of
@@ -86,16 +85,19 @@ getArg macroName str =
 -}
 
 
+{-| -}
 spaces : HParser ()
 spaces =
     chompWhile (\c -> c == ' ')
 
 
+{-| -}
 ws : HParser ()
 ws =
     chompWhile (\c -> c == ' ' || c == '\n')
 
 
+{-| -}
 parseUntil : String -> HParser String
 parseUntil marker =
     getChompedString <| chompUntil (Token marker ExpectingMarker)
@@ -114,6 +116,7 @@ parseToSymbol marker =
         |> map (String.dropRight (String.length marker))
 
 
+{-| -}
 parseBetweenSymbols : String -> String -> HParser String
 parseBetweenSymbols startSymbol endSymbol =
     succeed identity
@@ -126,22 +129,26 @@ parseBetweenSymbols startSymbol endSymbol =
 {- ITEM LIST PARSERS -}
 
 
+{-| -}
 nonEmptyItemList : HParser a -> HParser (List a)
 nonEmptyItemList itemParser =
     itemParser
         |> andThen (\x -> itemList_ [ x ] itemParser)
 
 
+{-| -}
 itemList : HParser a -> HParser (List a)
 itemList itemParser =
     itemList_ [] itemParser
 
 
+{-| -}
 itemList_ : List a -> HParser a -> HParser (List a)
 itemList_ initialList itemParser =
     loop initialList (itemListHelper itemParser)
 
 
+{-| -}
 itemListHelper : HParser a -> List a -> HParser (Step (List a) (List a))
 itemListHelper itemParser revItems =
     oneOf
@@ -270,6 +277,7 @@ brackets =
 -- HELPERS
 
 
+{-| -}
 manyHelp : HParser a -> List a -> HParser (Step (List a) (List a))
 manyHelp p vs =
     oneOf

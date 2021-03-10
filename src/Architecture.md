@@ -59,6 +59,9 @@ type Expression
     | LXInstruction Instr SourceMap
 ```
 
+See the file `./src/Parser/Grammar.md` for a description
+of the grammar underlying the syntax tree.
+
 ### Modules
 
 ```
