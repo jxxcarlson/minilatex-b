@@ -60,8 +60,8 @@ initWithString generation selectedId input
   - _input_ the source text
 
 -}
-initWithString2 : Int -> String -> String -> LaTeXData
-initWithString2 generation selectedId input =
+initWithString : Int -> String -> String -> LaTeXData
+initWithString generation selectedId input =
     let
         state : Document.State
         state =
@@ -87,8 +87,8 @@ initWithString2 generation selectedId input =
     }
 
 
-initWithString : Int -> String -> String -> LaTeXData
-initWithString generation selectedId input =
+initWithString1 : Int -> String -> String -> LaTeXData
+initWithString1 generation selectedId input =
     let
         state : Document.State
         state =
