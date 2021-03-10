@@ -2,7 +2,7 @@
 
 _This document is a work-in-progress._
 
-The MiniLaTeX packaged provides two modules, `MiniLaTeX` and 
+The MiniLaTeX package provides two modules, `MiniLaTeX` and 
 `LaTeXMsg`.  The function
 
 ```elm
