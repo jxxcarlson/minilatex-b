@@ -628,14 +628,25 @@ macroDict =
         , ( "red", \si state ms args sm -> rmas si ms state args sm [ HA.style "color" state.config.redColor ] )
         , ( "blue", \si state ms args sm -> rmas si ms state args sm [ HA.style "color" state.config.blueColor ] )
         , ( "code", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-family" "Monospace", HA.style "color" state.config.redColor ] )
-        , ( "section", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-size" "150%" ] )
+        , ( "section", \si state ms args sm -> renderSection si ms state args sm [ HA.style "font-size" "150%" ] )
         ]
 
 
 {-| rmas = render macro as span
 -}
+rmas : String -> b -> LaTeXState -> List Expression -> SourceMap -> List (Attribute LaTeXMsg) -> Html LaTeXMsg
 rmas si ms state args sm st =
     render si state args |> Html.span (st ++ active sm si)
+
+
+renderSection : String -> b -> LaTeXState -> List Expression -> SourceMap -> List (Attribute LaTeXMsg) -> Html LaTeXMsg
+renderSection si ms state args sm st =
+    sectionNumber state :: render si state args |> Html.span (st ++ active sm si)
+
+
+sectionNumber : LaTeXState -> Html msg
+sectionNumber state =
+    Html.span [] [ Html.text <| String.fromInt (LaTeXState.getCounter "s1" state) ++ ". " ]
 
 
 {-| rmas = render macro as code

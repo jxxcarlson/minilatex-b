@@ -1,10 +1,20 @@
 module Render.Reduce exposing (laTeXState)
 
+{-| Update LaTeXState with the information in a List Expression, e.g.,
+cross-references and section numbering.
+This function is used by Document.nextState to accumulate a LaTeXState
+for a full document as it parses it block-by-block.
+
+@docs laTeXState
+
+-}
+
 import Parser.Expression exposing (Expression(..))
 import Render.LaTeXState exposing (LaTeXState)
 import Render.ReducerHelper as ReducerHelper
 
 
+{-| -}
 laTeXState : List Expression -> LaTeXState -> LaTeXState
 laTeXState list state =
     List.foldr latexStateReducerAux state list
@@ -13,8 +23,9 @@ laTeXState list state =
 latexStateReducerAux : Expression -> LaTeXState -> LaTeXState
 latexStateReducerAux lexpr state =
     case lexpr of
-        --Macro name optionalArgs args sm ->
-        --    macroReducer name optionalArgs args state
+        Macro name optionalArgs args sm ->
+            macroReducer name optionalArgs args state
+
         --SMacro name optionalArgs args latexExpression ->
         --    smacroReducer name optionalArgs args latexExpression state
         --NewCommand name nArgs body ->
@@ -87,7 +98,7 @@ dictionaryWords =
     [ "title", "author", "date", "email", "revision", "host", "setclient", "setdocid" ]
 
 
-macroReducer : String -> List Expression -> List Expression -> LaTeXState -> LaTeXState
+macroReducer : String -> Maybe Expression -> List Expression -> LaTeXState -> LaTeXState
 macroReducer name optionalArgs args state =
     if List.member name dictionaryWords then
         ReducerHelper.setDictionaryItemForMacro name args state

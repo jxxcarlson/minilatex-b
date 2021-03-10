@@ -1,13 +1,21 @@
 module Parser.Document exposing
-    ( process
-    , Block, BlockType(..), LineType(..), State, toParsed, toText
+    ( process, toParsed, toText
+    , State, Block, BlockType(..), LineType(..)
     )
 
 {-| The main function in this module is process, which takes as input
 a string representing a MiniLaTeX document and produces as output
 a value of type AST = List (List Expression).
 
-@docs process
+
+## Functions
+
+@docs process, toParsed, toText
+
+
+## Types
+
+@docs State, Block, BlockType, LineType
 
 -}
 
@@ -19,6 +27,7 @@ import Render.LaTeXState as LaTeXState exposing (LaTeXState)
 import Render.Reduce as Reduce
 
 
+{-| -}
 type alias State =
     { input : List String
     , lineNumber : Int
@@ -31,10 +40,12 @@ type alias State =
     }
 
 
+{-| -}
 type alias Block =
     { blockType : BlockType, content : List String }
 
 
+{-| -}
 type BlockType
     = Start
     | TextBlock
@@ -43,6 +54,7 @@ type BlockType
     | ErrorBlock
 
 
+{-| -}
 type LineType
     = LTStart
     | LTTextBlock
@@ -51,23 +63,8 @@ type LineType
     | EndEnvBlock String
 
 
-{-| Compute the AST of a string of source text.
-
-    process =
-        runProcess >> toParsed
-
-Function runProcess operates a state machine which identifies logical
-chunks of text, parses these using Parser.Parser.parseLoop,
-and prepends them to a list of TextCursor. The function
-toParsed extracts the AST from State.
-
+{-| Compute the syntax tree and LaTeXState of a string of source text.
 -}
-
-
-
---process : Int -> String -> List (List Expression)
-
-
 process : Int -> String -> State
 process generation =
     runProcess generation
@@ -97,6 +94,9 @@ toParsed state =
     state.output |> List.map .parsed
 
 
+{-| Return a list of logical paragraphs (blocks(: ordinary paragraphs
+or outer begin-end blocks.
+-}
 toText : State -> List String
 toText state =
     state.output |> List.map .block

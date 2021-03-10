@@ -16,7 +16,9 @@ It can also be used for static text, as in this simple demo app
 using the function \\code{MiniLaTeX.compile document}.
 
 
-First off, one can write in-line formulas enclosed by
+\\section{Formulas}
+
+One can write in-line formulas enclosed by
 single dollar signs: $a^2 + b^2 = c^2$.  For displayed
 formulas, double dollar signs work:
 

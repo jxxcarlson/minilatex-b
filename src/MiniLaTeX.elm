@@ -29,7 +29,7 @@ import Parser.Block as Block
 import Parser.Document as Document
 import Parser.Expression exposing (Expression)
 import Parser.TextCursor
-import Render.LaTeXState as LaTeXState
+import Render.LaTeXState as LaTeXState exposing (LaTeXState)
 import Render.Render as Render
 
 
@@ -41,6 +41,7 @@ type alias LaTeXData =
     , parsedText : List (List Expression)
     , sourceMapIndex : List (List Int)
     , renderedText : List (Html LaTeXMsg)
+    , laTeXState : LaTeXState
     }
 
 
@@ -61,6 +62,7 @@ initWithString generation selectedId input
 initWithString : Int -> String -> String -> LaTeXData
 initWithString generation selectedId input =
     let
+        state : Document.State
         state =
             Document.process generation input
 
@@ -76,7 +78,8 @@ initWithString generation selectedId input =
     , generations = getGenerations parsedText
     , parsedText = parsedText
     , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length lines_) parsedText
-    , renderedText = render selectedId parsedText
+    , renderedText = render selectedId state.laTeXState parsedText
+    , laTeXState = state.laTeXState
     }
 
 
@@ -167,7 +170,7 @@ updateWithString generation selectedId input data =
 
                 deltaRenderedText : List (Html LaTeXMsg)
                 deltaRenderedText =
-                    render selectedId deltaParsed
+                    render selectedId data.laTeXState deltaParsed
 
                 renderedTextAfter : List (Html LaTeXMsg)
                 renderedTextAfter =
@@ -179,13 +182,14 @@ updateWithString generation selectedId input data =
             , parsedText = parsedText
             , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length input_) parsedText
             , renderedText = renderedTextBefore ++ deltaRenderedText ++ renderedTextAfter
+            , laTeXState = data.laTeXState -- TODO: this is very crude: make it better!
             }
 
 
-render : String -> List (List Expression) -> List (Html LaTeXMsg)
-render selectedId parsed =
+render : String -> LaTeXState -> List (List Expression) -> List (Html LaTeXMsg)
+render selectedId laTeXSTate parsed =
     parsed
-        |> List.map (Render.render selectedId LaTeXState.init >> Html.div docStyle)
+        |> List.map (Render.render selectedId laTeXSTate >> Html.div docStyle)
 
 
 getGenerations : List (List Expression) -> List Int

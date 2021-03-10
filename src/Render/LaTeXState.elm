@@ -1,12 +1,31 @@
 module Render.LaTeXState exposing
-    ( LaTeXState, getCounter, init
-    , Counters, CrossReferences, addSection, incrementCounter, setCrossReference, setDictionaryItem, updateCounter
+    ( LaTeXState, init
+    , Counters, getCounter, incrementCounter, updateCounter
+    , CrossReferences, setCrossReference
+    , setDictionaryItem, addSection
     )
 
 {-| This module defines and manages LaTeXState, shich is used to
 compute and render data such as section numbers and cross-references.
 
-@docs LaTeXState, getCounter, init
+@docs LaTeXState, init
+
+
+## Counters
+
+@docs Counters, getCounter, incrementCounter, updateCounter
+
+
+## Cross-references
+
+@docs CrossReferences, setCrossReference
+
+
+## Other
+
+@docs setDictionaryItem, addSection
+
+
 
 -}
 
@@ -80,18 +99,22 @@ defaultConfig =
     }
 
 
+{-| -}
 type alias Counters =
     Dict.Dict String Int
 
 
+{-| -}
 type alias CrossReferences =
     Dict.Dict String String
 
 
+{-| -}
 type alias TableOfContents =
     List TocEntry
 
 
+{-| -}
 type alias TocEntry =
     { name : String, label : String, level : Int }
 
@@ -109,6 +132,7 @@ emptyDict =
     Dict.empty
 
 
+{-| -}
 addSection : String -> String -> Int -> LaTeXState -> LaTeXState
 addSection sectionName label level latexState =
     let
@@ -153,6 +177,7 @@ getDictionaryItem key latexState =
             ""
 
 
+{-| -}
 setDictionaryItem : String -> String -> LaTeXState -> LaTeXState
 setDictionaryItem key value latexState =
     let
@@ -165,6 +190,7 @@ setDictionaryItem key value latexState =
     { latexState | dictionary = newDictionary }
 
 
+{-| -}
 incrementCounter : String -> LaTeXState -> LaTeXState
 incrementCounter name latexState =
     let
@@ -177,6 +203,7 @@ incrementCounter name latexState =
     { latexState | counters = newCounters }
 
 
+{-| -}
 updateCounter : String -> Int -> LaTeXState -> LaTeXState
 updateCounter name value latexState =
     let
@@ -189,6 +216,7 @@ updateCounter name value latexState =
     { latexState | counters = newCounters }
 
 
+{-| -}
 setCrossReference : String -> String -> LaTeXState -> LaTeXState
 setCrossReference label value latexState =
     let
