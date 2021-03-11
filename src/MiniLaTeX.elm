@@ -1,4 +1,8 @@
-module MiniLaTeX exposing (compile, LaTeXData, initWithString, updateWithString)
+module MiniLaTeX exposing
+    ( compile
+    , LaTeXData, initWithString, updateWithString
+    , viewLaTeXData, viewLaTeXDataAsElement
+    )
 
 {-| For simple applications, use
 
@@ -9,21 +13,32 @@ document as input and produces Html for your web app.
 For more details, see the app `./simple-demo`.\`
 
 For applications that use interactive editing, use _LaTeXData_
-and the functions _initWithString_ and _updateWithString_
+and the functions _initWithString_ and _updateWithString_.
+
 The function initWithString will set up a LaTeXData value.
 It carries all the information needed for
 efficient interactive editing. Once this is done,
 the field _renderedText_ holds the rendered document. Successive
 edits to it are made using updateWithString.
 
-@docs compile, LaTeXData, initWithString, updateWithString
+
+## Render
+
+@docs compile, renderLaTeXDataToHtml, renderLaTeXDataToElement
+
+
+## LaTeXData
+
+@docs LaTeXData, initWithString, updateWithString
 
 -}
 
 import Compiler.Differ as Differ
 import Compiler.GenericDiffer as GenericDiffer
+import Element exposing (Element)
 import Html exposing (Html)
 import Html.Attributes as HA
+import Html.Keyed
 import LaTeXMsg exposing (LaTeXMsg(..))
 import Parser.Block as Block
 import Parser.Document as Document
@@ -141,7 +156,8 @@ updateWithString generation selectedId input data =
     in
     case deltNewBlocks |> List.head of
         Nothing ->
-            data
+            -- TODO: this is a crude way to handle non-localized edits; let's make it better
+            initWithString generation selectedId input
 
         Just changedBlock ->
             let
@@ -201,6 +217,35 @@ render : String -> LaTeXState -> List (List Expression) -> List (Html LaTeXMsg)
 render selectedId laTeXSTate parsed =
     parsed
         |> List.map (Render.render selectedId laTeXSTate >> Html.div docStyle)
+
+
+{-| Render a LaTeXData value to `Html LaTeXMsg` given style information.
+-}
+viewLaTeXData : List (Html.Attribute LaTeXMsg) -> LaTeXData -> Html LaTeXMsg
+viewLaTeXData style laTeXData =
+    Html.div style
+        (List.map2 mathNode laTeXData.generations laTeXData.renderedText)
+
+
+{-| Similar to `renderLaTeXDataToHtml`: render a LaTeXData value to `Element LaTeXMsg` given style information.
+See `./app/Main.elm` for an example
+-}
+viewLaTeXDataAsElement : List (Html.Attribute LaTeXMsg) -> LaTeXData -> Element LaTeXMsg
+viewLaTeXDataAsElement style laTeXData =
+    viewLaTeXData style laTeXData |> Element.html
+
+
+mathNode : Int -> Html LaTeXMsg -> Html LaTeXMsg
+mathNode generation html =
+    Html.Keyed.node "div" laTeXStyle [ ( String.fromInt generation, html ) ]
+
+
+laTeXStyle =
+    [ HA.style "margin-bottom" "12px" ]
+
+
+
+-- HELPERS
 
 
 getGenerations : List (List Expression) -> List Int

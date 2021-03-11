@@ -8,7 +8,12 @@ document1 =
 
 
 document =
-    """
+    """aaa
+bbb
+
+ccc
+ddd
+
 \\strong{\\italic{Note.}} \\italic{This app is a demo of the simplest rendering
  features of the} \\red{MiniLaTeX library.}
  \\italic{Thus, while you can see the source text
