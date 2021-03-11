@@ -204,8 +204,7 @@ viewRenderedText model =
         , padding 20
         ]
         (MiniLaTeX.compile Data.document
-            |> List.map (Html.map LaTeXMsg)
-            |> List.map Element.html
+            |> List.map (Html.map LaTeXMsg >> Element.html)
         )
 
 
