@@ -4,7 +4,8 @@
     "summary": "Compile MiniLaTeX to Html",
     "license": "MIT",
     "version": "0.1.0",
-    "exposed-modules": [
+    "exposed-modules" : ["MiniLaTeX",  "LaTeXMsg"],
+    "unexposed-modules": [
         "MiniLaTeX",
         "LaTeXMsg",
         "Compiler.GenericDiffer",

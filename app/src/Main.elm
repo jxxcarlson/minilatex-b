@@ -405,26 +405,12 @@ renderedTextDisplay_ model =
             [ spacing 8
             , Font.size 14
             , Background.color (Element.rgb255 250 247 230)
-            , Element.htmlAttribute (HA.style "line-height" "1.5")
             , paddingXY 8 12
             , scrollbarY
             , width (px panelWidth)
             , height (px panelHeight)
             ]
-            -- (List.map2 mathNode model.laTeXData.generations model.laTeXData.renderedText)
             [ MiniLaTeX.viewLaTeXDataAsElement [] model.laTeXData ]
-
-
-mathNode : Int -> Html LaTeXMsg -> Element Msg
-mathNode generation html =
-    Html.Keyed.node "div" laTeXStyle [ ( String.fromInt generation, html ) ]
-        |> Html.map LaTeXMsg
-        |> Element.html
-
-
-laTeXStyle : List (Html.Attribute msg)
-laTeXStyle =
-    [ HA.style "margin-bottom" "12px" ]
 
 
 parsedTextDisplay : Model -> Element Msg
