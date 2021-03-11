@@ -1,7 +1,6 @@
 module MiniLaTeX exposing
-    ( compile
+    ( compile, viewLaTeXData, viewLaTeXDataAsElement
     , LaTeXData, initWithString, updateWithString
-    , viewLaTeXData, viewLaTeXDataAsElement
     )
 
 {-| For simple applications, use
@@ -24,7 +23,7 @@ edits to it are made using updateWithString.
 
 ## Render
 
-@docs compile, renderLaTeXDataToHtml, renderLaTeXDataToElement
+@docs compile, viewLaTeXData, viewLaTeXDataAsElement
 
 
 ## LaTeXData
@@ -63,7 +62,7 @@ type alias LaTeXData =
 
 {-| Initialize LaTeXData using
 
-initWithString generation selectedId input
+    initWithString generation selectedId input
 
   - _generation_: an integer that changes on each edit;
     needed for optimization and proper rendering by
@@ -72,7 +71,7 @@ initWithString generation selectedId input
   - _selectedId_: a string which identifies an element
     in the rendered text that the user wants highlighted
 
-  - _input_ the source text
+  - _input_: the source text
 
 -}
 initWithString : Int -> String -> String -> LaTeXData
@@ -106,7 +105,7 @@ initWithString generation selectedId input =
     }
 
 
-{-| Use `compile` for short documents or documents in a non-interactive editing context.
+{-| Use `compile` for short documents or documents in a non-interactive-editing context.
 
     compile document
 
@@ -118,15 +117,15 @@ compile document =
     (initWithString 0 "nada" document).renderedText
 
 
-{-| `updateWithString` efficiently modifies the LaTeXState by identifying
-the block of text that has changes, parsing and rendering that text,
+{-| This function efficiently modifies the LaTeXState by identifying
+the block of text that has changed, parsing and rendering that text,
 and inserting the resulting parse data and rendered text in their
 respective lists which are in turn fields of LaTeXState.
 
     updateWithString generation selectedId input data
 
 The arguments are as with initWithString with one addition,
-`data`, which is the current value of LaTeXData.
+`data`, which is the current LaTeXData value.
 
 -}
 updateWithString : Int -> String -> String -> LaTeXData -> LaTeXData
@@ -221,18 +220,18 @@ render selectedId laTeXSTate parsed =
 
 {-| Render a LaTeXData value to `Html LaTeXMsg` given style information.
 -}
-viewLaTeXData : List (Html.Attribute LaTeXMsg) -> LaTeXData -> Html LaTeXMsg
-viewLaTeXData style laTeXData =
-    Html.div style
+viewLaTeXData : LaTeXData -> Html LaTeXMsg
+viewLaTeXData laTeXData =
+    Html.div []
         (List.map2 mathNode laTeXData.generations laTeXData.renderedText)
 
 
 {-| Similar to `renderLaTeXDataToHtml`: render a LaTeXData value to `Element LaTeXMsg` given style information.
 See `./app/Main.elm` for an example
 -}
-viewLaTeXDataAsElement : List (Html.Attribute LaTeXMsg) -> LaTeXData -> Element LaTeXMsg
-viewLaTeXDataAsElement style laTeXData =
-    viewLaTeXData style laTeXData |> Element.html
+viewLaTeXDataAsElement : LaTeXData -> Element LaTeXMsg
+viewLaTeXDataAsElement laTeXData =
+    viewLaTeXData laTeXData |> Element.html
 
 
 mathNode : Int -> Html LaTeXMsg -> Html LaTeXMsg

@@ -24,8 +24,7 @@ viewRenderedText : Element Msg
 viewRenderedText =
     column [ .. ]
         (MiniLaTeX.compile Data.document
-            |> List.map (Html.map LaTeXMsg)
-            |> List.map Element.html
+            |> List.map (Html.map LaTeXMsg >> Element.html)
         )
         
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -40,15 +39,18 @@ update msg model =
 
 If some interactivity is needed, e.g., responding
 to clicks in the rendered text, you must handle `latexMsg` in
-the update function.
+the update function.  You can use the style parameter `[ .. ]` to
+set font size and color as well as background color for the rendered
+text.
 
 
 ## Interactive Editing
 
 The MiniLaTeX compiler offers a more sophisticated interface for
 apps with interactive editing with real-time rendering
-to Html.  See the documentation of the **MiniLaTeX** module for more
-on this.  Also the code in `./demo`.
+to Html.  In such a context, re-rendering on each character
+stroke is desiable.  See the documentation of the **MiniLaTeX** 
+module for more on this.  Also the code in `./demo`.
 
 ## Notes
 

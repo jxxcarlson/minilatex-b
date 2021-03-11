@@ -410,7 +410,7 @@ renderedTextDisplay_ model =
             , width (px panelWidth)
             , height (px panelHeight)
             ]
-            [ MiniLaTeX.viewLaTeXDataAsElement [] model.laTeXData ]
+            [ MiniLaTeX.viewLaTeXDataAsElement model.laTeXData ]
 
 
 parsedTextDisplay : Model -> Element Msg
