@@ -13,6 +13,7 @@ import Html.Attributes as HA
 import Html.Events exposing (onClick)
 import Json.Encode
 import LaTeXMsg exposing (LaTeXMsg(..))
+import List.Extra
 import Parser.Expression exposing (Expression(..), SourceMap)
 import Parser.Helpers
 import Render.LaTeXState as LaTeXState exposing (LaTeXState)
@@ -32,6 +33,15 @@ section numbers, etc.
 render : String -> LaTeXState -> List Expression -> List (Html LaTeXMsg)
 render selectedId state exprs =
     List.map (renderExpr selectedId state) exprs
+
+
+renderToString : String -> LaTeXState -> List Expression -> List String
+renderToString selectedId state exprs =
+    List.map Parser.Expression.toString exprs
+
+
+
+-- |> List.map Parser.Expression.toString
 
 
 clicker sm =
@@ -609,10 +619,6 @@ highlightWithSourceMap sourceMap text sourceMapIndex_ =
                 ]
 
 
-
--- MACRO DICT
-
-
 type alias MacroDict =
     Dict String (LaTeXState -> Maybe String -> List Expression -> SourceMap -> Html LaTeXMsg)
 
@@ -627,8 +633,16 @@ macroDict =
         , ( "italic", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-style" "italic" ] )
         , ( "red", \si state ms args sm -> rmas si ms state args sm [ HA.style "color" state.config.redColor ] )
         , ( "blue", \si state ms args sm -> rmas si ms state args sm [ HA.style "color" state.config.blueColor ] )
+        , ( "highlight", \si state ms args sm -> rmas si ms state args sm [ HA.style "background-color" "yellow !important", HA.style "padding" "3px" ] ) -- TODO: not working
+        , ( "strike", \si state ms args sm -> rmas si ms state args sm [ HA.style "text-decoration" "line-through" ] )
         , ( "code", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-family" "Monospace", HA.style "color" state.config.redColor ] )
-        , ( "section", \si state ms args sm -> renderSection sectionNumber si ms state args sm [ HA.style "font-size" "150%" ] )
+        , ( "section", \si state ms args sm -> renderSection sectionNumber si ms state args sm [ HA.style "font-size" "160%" ] )
+        , ( "subsection", \si state ms args sm -> renderSection subsectionNumber si ms state args sm [ HA.style "font-size" "130%" ] )
+        , ( "subsubsection", \si state ms args sm -> renderSection subsubsectionNumber si ms state args sm [ HA.style "font-size" "110%" ] )
+        , ( "section*", \si state ms args sm -> renderSection noSectionNumber si ms state args sm [ HA.style "font-size" "150%" ] )
+        , ( "subsection*", \si state ms args sm -> renderSection noSectionNumber si ms state args sm [ HA.style "font-size" "125%" ] )
+        , ( "subsubsection*", \si state ms args sm -> renderSection noSectionNumber si ms state args sm [ HA.style "font-size" "100%" ] )
+        , ( "href", \si state ms args sm -> renderHRef state args )
         ]
 
 
@@ -639,6 +653,21 @@ rmas si ms state args sm st =
     render si state args |> Html.span (st ++ active sm si)
 
 
+renderHRef : LaTeXState -> List Expression -> Html msg
+renderHRef latexState args =
+    let
+        args_ =
+            renderToString "" latexState args
+
+        url =
+            List.Extra.getAt 0 args_ |> Maybe.withDefault "URL"
+
+        label =
+            List.Extra.getAt 1 args_ |> Maybe.withDefault "LABEL"
+    in
+    Html.a [ HA.href url, HA.target "_blank" ] [ Html.text label ]
+
+
 renderSection : (LaTeXState -> Html LaTeXMsg) -> String -> b -> LaTeXState -> List Expression -> SourceMap -> List (Attribute LaTeXMsg) -> Html LaTeXMsg
 renderSection labelFunction si ms state args sm st =
     labelFunction state :: render si state args |> Html.span (st ++ active sm si)
@@ -647,6 +676,21 @@ renderSection labelFunction si ms state args sm st =
 sectionNumber : LaTeXState -> Html msg
 sectionNumber state =
     Html.span [] [ Html.text <| String.fromInt (LaTeXState.getCounter "s1" state) ++ ". " ]
+
+
+subsectionNumber : LaTeXState -> Html msg
+subsectionNumber state =
+    Html.span [] [ Html.text <| String.fromInt (LaTeXState.getCounter "s1" state) ++ "." ++ String.fromInt (LaTeXState.getCounter "s2" state) ++ ". " ]
+
+
+subsubsectionNumber : LaTeXState -> Html msg
+subsubsectionNumber state =
+    Html.span [] [ Html.text <| String.fromInt (LaTeXState.getCounter "s1" state) ++ "." ++ String.fromInt (LaTeXState.getCounter "s2" state) ++ "." ++ String.fromInt (LaTeXState.getCounter "s3" state) ++ ". " ]
+
+
+noSectionNumber : LaTeXState -> Html msg
+noSectionNumber state =
+    Html.span [] []
 
 
 {-| rmas = render macro as code
@@ -669,12 +713,10 @@ rmac si ms state args sm st =
 --       , ( "ellie", \s x y z -> renderEllie s x z )
 --       , ( "emph", \s x y z -> renderItalic s x z )
 --       , ( "eqref", \s x y z -> renderEqRef s x z )
---       , ( "href", \s x y z -> renderHRef s x z )
 --       , ( "iframe", \s x y z -> renderIFrame s x z )
 --       , ( "image", \s x y z -> renderImage s x z )
 --       , ( "imageref", \s x y z -> renderImageRef s x z )
 --       , ( "index", \s x y z -> renderIndex s x z )
---       , ( "italic", \s x y z -> renderItalic s x z )
 --       , ( "label", \s x y z -> renderLabel s x z )
 --       , ( "maintableofcontents", \s x y z -> renderMainTableOfContents s x z )
 --       , ( "maketitle", \s x y z -> renderMakeTitle s x z )
@@ -687,22 +729,13 @@ rmac si ms state args sm st =
 --       , ( "medskip", \s x y z -> renderMedSkip s x z )
 --       , ( "par", \s x y z -> renderMedSkip s x z)
 --       , ( "smallskip", \s x y z -> renderSmallSkip s x z )
---       , ( "section", \s x y z -> renderSection s x z )
---       , ( "section*", \s x y z -> renderSectionStar s x z )
---       , ( "subsection", \s x y z -> renderSubsection s x z )
---       , ( "subsection*", \s x y z -> renderSubsectionStar s x z )
---       , ( "subsubsection", \s x y z -> renderSubSubsection s x z )
---       , ( "subsubsection*", \s x y z -> renderSubSubsectionStar s x z )
 --       , ( "setcounter", \s x y z -> renderSetCounter s x z )
 --       , ( "subheading", \s x y z -> renderSubheading s x z )
 --       , ( "tableofcontents", \s x y z -> renderTableOfContents s x z )
 --       , ( "innertableofcontents", \s x y z -> renderInnerTableOfContents s x z )
---       , ( "red", \s x y z -> renderRed s x z )
---       , ( "blue", \s x y z -> renderBlue s x z )
 --       , ( "remote", \s x y z -> renderRemote s x z )
 --       , ( "local", \s x y z -> renderLocal s x z )
 --       , ( "note", \s x y z -> renderAttachNote s x z )
---       , ( "highlight", \s x y z -> renderHighlighted s x z )
 --       , ( "strike", \s x y z -> renderStrikeThrough s x z )
 --       , ( "term", \s x y z -> renderTerm s x z )
 --       , ( "xlink", \s x y z -> renderXLink s x z )
