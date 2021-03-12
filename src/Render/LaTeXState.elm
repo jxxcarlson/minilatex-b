@@ -1,8 +1,8 @@
 module Render.LaTeXState exposing
     ( LaTeXState, init, reset
     , Counters, getCounter, incrementCounter, updateCounter
-    , CrossReferences, setCrossReference
-    , setDictionaryItem, addSection
+    , CrossReferences, setCrossReference, getCrossReference
+    , setDictionaryItem, getDictionaryItem, addSection
     )
 
 {-| This module defines and manages LaTeXState, shich is used to
@@ -18,12 +18,12 @@ compute and render data such as section numbers and cross-references.
 
 ## Cross-references
 
-@docs CrossReferences, setCrossReference
+@docs CrossReferences, setCrossReference, getCrossReference
 
 
 ## Other
 
-@docs setDictionaryItem, addSection
+@docs setDictionaryItem, getDictionaryItem, addSection
 
 -}
 
@@ -162,6 +162,7 @@ getCounter name latexState =
             0
 
 
+{-| -}
 getCrossReference : String -> LaTeXState -> String
 getCrossReference label latexState =
     case Dict.get label latexState.crossReferences of
@@ -172,6 +173,7 @@ getCrossReference label latexState =
             "??"
 
 
+{-| -}
 getDictionaryItem : String -> LaTeXState -> String
 getDictionaryItem key latexState =
     case Dict.get key latexState.dictionary of

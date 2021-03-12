@@ -16,6 +16,7 @@ import LaTeXMsg exposing (LaTeXMsg(..))
 import List.Extra
 import Parser.Expression exposing (Expression(..), SourceMap)
 import Parser.Helpers
+import Render.Image
 import Render.LaTeXState as LaTeXState exposing (LaTeXState)
 import Utility
 
@@ -35,9 +36,14 @@ render selectedId state exprs =
     List.map (renderExpr selectedId state) exprs
 
 
-renderToString : String -> LaTeXState -> List Expression -> List String
-renderToString selectedId state exprs =
+renderToStingList : List Expression -> List String
+renderToStingList exprs =
     List.map Parser.Expression.toString exprs
+
+
+getStringAtWithDefault : Int -> String -> List String -> String
+getStringAtWithDefault k default strings =
+    List.Extra.getAt k strings |> Maybe.withDefault default
 
 
 
@@ -630,7 +636,15 @@ type alias MacroDict =
 macroDict =
     Dict.fromList
         [ ( "strong", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-weight" "bold" ] )
+        , ( "textbf", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-weight" "bold" ] )
         , ( "italic", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-style" "italic" ] )
+        , ( "term", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-style" "italic" ] )
+        , ( "emph", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-style" "italic" ] )
+        , ( "par", \si state ms args sm -> rmas si ms state args sm [ HA.style "height" "10px" ] )
+        , ( "par", \si state ms args sm -> rmas si ms state args sm [ HA.style "height" "10px" ] )
+        , ( "bigskip", \si state ms args sm -> rmas si ms state args sm [ HA.style "height" "40px" ] )
+        , ( "medskip", \si state ms args sm -> rmas si ms state args sm [ HA.style "height" "10px" ] )
+        , ( "smallksip", \si state ms args sm -> rmas si ms state args sm [ HA.style "height" "0px" ] )
         , ( "red", \si state ms args sm -> rmas si ms state args sm [ HA.style "color" state.config.redColor ] )
         , ( "blue", \si state ms args sm -> rmas si ms state args sm [ HA.style "color" state.config.blueColor ] )
         , ( "highlight", \si state ms args sm -> rmas si ms state args sm [ HA.style "background-color" "yellow !important", HA.style "padding" "3px" ] ) -- TODO: not working
@@ -643,7 +657,122 @@ macroDict =
         , ( "subsection*", \si state ms args sm -> renderSection noSectionNumber si ms state args sm [ HA.style "font-size" "125%" ] )
         , ( "subsubsection*", \si state ms args sm -> renderSection noSectionNumber si ms state args sm [ HA.style "font-size" "100%" ] )
         , ( "href", \si state ms args sm -> renderHRef state args )
+        , ( "image", \si state ms args sm -> renderImage state args )
+        , ( "include", \si state ms args sm -> nullSpan )
+        , ( "setclient", \si state ms args sm -> nullSpan )
+        , ( "setdocid", \si state ms args sm -> nullSpan )
+        , ( "title", \si state ms args sm -> nullSpan )
+        , ( "author", \si state ms args sm -> nullSpan )
+        , ( "date", \si state ms args sm -> nullSpan )
+        , ( "revision", \si state ms args sm -> nullSpan )
+        , ( "index", \si state ms args sm -> nullSpan )
+        , ( "ilink1", \si state ms args sm -> nullSpan )
+        , ( "ilink2", \si state ms args sm -> nullSpan )
+        , ( "ilink3", \si state ms args sm -> nullSpan )
+        , ( "xlink", \si state ms args sm -> renderXLink Nothing state args )
+        , ( "publiclink", \si state ms args sm -> renderXLink Nothing state args )
+        , ( "homepagelink", \si state ms args sm -> renderXLink (Just "h") state args )
+        , ( "note", \si state ms args sm -> attachNote args )
+        , ( "cite", \si state ms args sm -> renderCite state args )
+        , ( "dollar", \si state ms args sm -> Html.span [] [ Html.text "$" ] )
+        , ( "percent", \si state ms args sm -> Html.span [] [ Html.text "%" ] )
+        , ( "texbegin", \si state ms args sm -> Html.span [] [ Html.text "\\begin" ] )
+        , ( "texend", \si state ms args sm -> Html.span [] [ Html.text "\\end" ] )
+        , ( "underscore", \si state ms args sm -> Html.span [] [ Html.text "_" ] )
+        , ( "mdash", \si state ms args sm -> Html.span [] [ Html.text "— " ] )
+        , ( "ndash", \si state ms args sm -> Html.span [] [ Html.text "– " ] )
+        , ( "eqref", \si state ms args sm -> renderEqRef state args )
+        , ( "ref", \si state ms args sm -> renderRef state args )
         ]
+
+
+
+-- NEW
+
+
+renderRef : LaTeXState -> List Expression -> Html msg
+renderRef latexState args =
+    let
+        args_ =
+            renderToStingList args
+
+        key =
+            getStringAtWithDefault 0 "KEY" args_
+    in
+    Html.span [] [ Html.text <| LaTeXState.getCrossReference key latexState ]
+
+
+renderEqRef : LaTeXState -> List Expression -> Html msg
+renderEqRef latexState args =
+    let
+        args_ =
+            renderToStingList args
+
+        key =
+            getStringAtWithDefault 0 "KEY" args_
+
+        ref =
+            LaTeXState.getCrossReference key latexState
+    in
+    Html.i [] [ Html.text "(", Html.text ref, Html.text ")" ]
+
+
+renderCite : LaTeXState -> List Expression -> Html msg
+renderCite latexState args =
+    let
+        args_ =
+            renderToStingList args
+
+        label_ =
+            getStringAtWithDefault 0 "LABLE" args_
+
+        ref =
+            LaTeXState.getDictionaryItem ("bibitem:" ++ label_) latexState
+
+        label =
+            if ref /= "" then
+                ref
+
+            else
+                label_
+    in
+    Html.strong []
+        [ Html.span [] [ Html.text "[" ]
+        , Html.a [ HA.href ("#bibitem:" ++ label) ] [ Html.text label ]
+        , Html.span [] [ Html.text "] " ]
+        ]
+
+
+attachNote : List Expression -> Html msg
+attachNote args =
+    -- TODO: Finish this
+    let
+        args_ =
+            renderToStingList args
+
+        author =
+            getStringAtWithDefault 1 "AUTHOR" args_
+
+        content =
+            getStringAtWithDefault 0 "CONTENT" args_
+    in
+    Html.div
+        [ HA.style "display" "flex"
+        , HA.style "flex-direction" "column"
+        ]
+        [ Html.div [ HA.style "background-color" "yellow", HA.style "padding" "8px" ]
+            [ Html.text <| content
+            , Html.div [ HA.style "font-weight" "bold" ] [ Html.text <| author ]
+            ]
+        ]
+
+
+nullSpan =
+    Html.span [] []
+
+
+
+-- Utility
 
 
 {-| rmas = render macro as span
@@ -657,15 +786,47 @@ renderHRef : LaTeXState -> List Expression -> Html msg
 renderHRef latexState args =
     let
         args_ =
-            renderToString "" latexState args
+            renderToStingList args
 
         url =
-            List.Extra.getAt 0 args_ |> Maybe.withDefault "URL"
+            getStringAtWithDefault 0 "URL" args_
 
         label =
-            List.Extra.getAt 1 args_ |> Maybe.withDefault "LABEL"
+            getStringAtWithDefault 1 "LABEL" args_
     in
     Html.a [ HA.href url, HA.target "_blank" ] [ Html.text label ]
+
+
+
+-- LINK
+
+
+renderXLink : Maybe String -> LaTeXState -> List Expression -> Html msg
+renderXLink urlFragment latexState args =
+    -- e.g, let urlFragment = "h" for homePageLink
+    let
+        args_ =
+            renderToStingList args
+
+        id =
+            getStringAtWithDefault 0 "nada" args_
+
+        ref =
+            case urlFragment of
+                Nothing ->
+                    LaTeXState.getDictionaryItem "setclient" latexState ++ "/" ++ id
+
+                Just frag ->
+                    LaTeXState.getDictionaryItem "setclient" latexState ++ "/" ++ frag ++ "/" ++ id
+
+        label =
+            getStringAtWithDefault 1 "nada" args_
+    in
+    Html.a [ HA.href ref ] [ Html.text label ]
+
+
+
+-- SECTION
 
 
 renderSection : (LaTeXState -> Html LaTeXMsg) -> String -> b -> LaTeXState -> List Expression -> SourceMap -> List (Attribute LaTeXMsg) -> Html LaTeXMsg
@@ -693,6 +854,113 @@ noSectionNumber state =
     Html.span [] []
 
 
+
+-- IMAGE
+
+
+renderImage : LaTeXState -> List Expression -> Html msg
+renderImage latexState args =
+    let
+        args_ =
+            renderToStingList args
+
+        url =
+            getStringAtWithDefault 0 "URL" args_
+
+        label =
+            getStringAtWithDefault 1 "LABEL" args_
+
+        attributeString =
+            getStringAtWithDefault 2 "IMAGE ATTRIBUTES" args_
+
+        imageAttrs =
+            Render.Image.parseImageAttributes attributeString
+
+        width =
+            String.fromInt imageAttrs.width ++ "px"
+    in
+    if imageAttrs.float == "left" then
+        Html.div [ HA.style "float" "left" ]
+            [ Html.img [ HA.src url, HA.alt label, HA.style "width" width, HA.style "margin-right" "12px" ] []
+            , Html.br [] []
+            , Html.div [ HA.style "width" width, HA.style "text-align" "center", HA.style "display" "block" ] [ Html.text label ]
+            ]
+
+    else if imageAttrs.float == "right" then
+        Html.div [ HA.style "float" "right" ]
+            [ Html.img [ HA.src url, HA.alt label, HA.style "width" width, HA.style "margin-left" "12px" ] []
+            , Html.br [] []
+            , Html.div [ HA.style "width" width, HA.style "text-align" "center", HA.style "display" "block" ] [ Html.text label ]
+            ]
+
+    else if imageAttrs.align == "center" then
+        Html.div [ HA.style "margin-left" "auto", HA.style "margin-right" "auto", HA.style "width" width ]
+            [ Html.img [ HA.src url, HA.alt label, HA.style "width" width ] []
+            , Html.br [] []
+            , Html.div [ HA.style "width" width, HA.style "text-align" "center", HA.style "display" "block" ] [ Html.text label ]
+            ]
+
+    else
+        Html.div [ HA.style "margin-left" "auto", HA.style "margin-right" "auto", HA.style "width" width ]
+            [ Html.img [ HA.src url, HA.alt label, HA.style "width" width ] []
+            , Html.br [] []
+            , Html.div [ HA.style "width" width, HA.style "text-align" "center", HA.style "display" "block" ] [ Html.text label ]
+            ]
+
+
+renderImageRef : LaTeXState -> List Expression -> Html msg
+renderImageRef latexState args =
+    let
+        args_ =
+            renderToStingList args
+
+        url =
+            getStringAtWithDefault 0 "URL" args_
+
+        imageUrl =
+            getStringAtWithDefault 1 "IMAGE URL" args_
+
+        attributeString =
+            getStringAtWithDefault 2 "IMAGE ATTRIBUTES" args_
+
+        imageAttrs =
+            Render.Image.parseImageAttributes attributeString
+
+        width =
+            String.fromInt imageAttrs.width ++ "px"
+
+        theImage =
+            if imageAttrs.float == "left" then
+                Html.div [ HA.style "float" "left" ]
+                    [ Html.img [ HA.src imageUrl, HA.alt "image link", HA.style "width" width, HA.style "margin-right" "12px" ] []
+                    , Html.br [] []
+                    , Html.div [ HA.style "width" width, HA.style "text-align" "center", HA.style "display" "block" ] []
+                    ]
+
+            else if imageAttrs.float == "right" then
+                Html.div [ HA.style "float" "right" ]
+                    [ Html.img [ HA.src imageUrl, HA.alt "image link", HA.style "width" width, HA.style "margin-left" "12px" ] []
+                    , Html.br [] []
+                    , Html.div [ HA.style "width" width, HA.style "text-align" "center", HA.style "display" "block" ] []
+                    ]
+
+            else if imageAttrs.align == "center" then
+                Html.div [ HA.style "margin-left" "auto", HA.style "margin-right" "auto", HA.style "width" width ]
+                    [ Html.img [ HA.src imageUrl, HA.alt "image link", HA.style "width" width ] []
+                    , Html.br [] []
+                    , Html.div [ HA.style "width" width, HA.style "text-align" "center", HA.style "display" "block" ] []
+                    ]
+
+            else
+                Html.div [ HA.style "margin-left" "auto", HA.style "margin-right" "auto", HA.style "width" width ]
+                    [ Html.img [ HA.src imageUrl, HA.alt "image link", HA.style "width" width ] []
+                    , Html.br [] []
+                    , Html.div [ HA.style "width" width, HA.style "text-align" "center", HA.style "display" "block" ] []
+                    ]
+    in
+    Html.a [ HA.href url ] [ theImage ]
+
+
 {-| rmas = render macro as code
 -}
 rmac si ms state args sm st =
@@ -700,60 +968,24 @@ rmac si ms state args sm st =
 
 
 
---[ ( "bigskip", \s x y z -> renderBigSkip s x z )
---       , ( "medskip", \s x y z -> renderMedSkip s x z )
---       , ( "smallskip", \s x y z -> renderSmallSkip s x z )
---       , ( "cite", \s x y z -> renderCite s x z )
+-- OLD
+--[
 --       , ( "colored", \s x y z -> renderColored s x z )
---       , ( "dollar", \s x y z -> renderDollar s x z )
---       , ( "texbegin", \s x y z -> renderBegin s x z )
---       , ( "texend", \s x y z -> renderEnd s x z )
 --       , ( "percent", \s x y z -> renderPercent s x z )
---       , ( "code", \s x y z -> renderCode s x z )
 --       , ( "ellie", \s x y z -> renderEllie s x z )
---       , ( "emph", \s x y z -> renderItalic s x z )
---       , ( "eqref", \s x y z -> renderEqRef s x z )
 --       , ( "iframe", \s x y z -> renderIFrame s x z )
---       , ( "image", \s x y z -> renderImage s x z )
---       , ( "imageref", \s x y z -> renderImageRef s x z )
---       , ( "index", \s x y z -> renderIndex s x z )
 --       , ( "label", \s x y z -> renderLabel s x z )
 --       , ( "maintableofcontents", \s x y z -> renderMainTableOfContents s x z )
 --       , ( "maketitle", \s x y z -> renderMakeTitle s x z )
---       , ( "mdash", \s x y z -> renderMdash s x z )
---       , ( "ndash", \s x y z -> renderNdash s x z )
---       , ( "underscore", \s x y z -> renderUnderscore s x z )
 --       , ( "bs", \s x y z -> renderBackslash s x z )
 --       , ( "texarg", \s x y z -> renderTexArg s x z )
---       , ( "ref", \s x y z -> renderRef s x z )
---       , ( "medskip", \s x y z -> renderMedSkip s x z )
---       , ( "par", \s x y z -> renderMedSkip s x z)
---       , ( "smallskip", \s x y z -> renderSmallSkip s x z )
 --       , ( "setcounter", \s x y z -> renderSetCounter s x z )
 --       , ( "subheading", \s x y z -> renderSubheading s x z )
 --       , ( "tableofcontents", \s x y z -> renderTableOfContents s x z )
 --       , ( "innertableofcontents", \s x y z -> renderInnerTableOfContents s x z )
 --       , ( "remote", \s x y z -> renderRemote s x z )
 --       , ( "local", \s x y z -> renderLocal s x z )
---       , ( "note", \s x y z -> renderAttachNote s x z )
---       , ( "strike", \s x y z -> renderStrikeThrough s x z )
---       , ( "term", \s x y z -> renderTerm s x z )
---       , ( "xlink", \s x y z -> renderXLink s x z )
---       , ( "ilink1", \s x y z -> renderILink s x z )
---       , ( "ilink2", \s x y z -> renderILink s x z )
---       , ( "ilink3", \s x y z -> renderILink s x z )
---       , ( "include", \s x y z -> renderInclude s x z )
---       , ( "publiclink", \s x y z -> renderPublicLink s x z )
---       , ( "homepagelink", \s x y z -> renderHomePageLink s x z )
 --       , ( "documentTitle", \s x y z -> renderDocumentTitle s x z )
---       , ( "title", \s x y z -> renderTitle x z )
---       , ( "author", \s x y z -> renderAuthor s x z )
---       , ( "date", \s x y z -> renderDate s x z )
---       , ( "revision", \s x y z -> renderRevision s x z )
 --       , ( "email", \s x y z -> renderEmail s x z )
---       , ( "setdocid", \s x y z -> renderSetDocId s x z )
---       , ( "setclient", \s x y z -> renderSetClient s x z )
---       , ( "strong", \s x y z -> renderStrong s x z )
---       , ( "textbf", \s x y z -> renderStrong s x z )
 --       , ( "uuid", \s x y z -> renderUuid s x z )
 --       ]

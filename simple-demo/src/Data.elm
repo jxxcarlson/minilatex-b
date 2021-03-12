@@ -9,10 +9,13 @@ document1 =
 
 document =
     """aaa
-bbb
 
-ccc
-ddd
+
+\\note{I think this draft is a good start, but it needs revision}{— John}
+
+We can make forward references, e.g., to \\eqref{integral:xn}.
+
+\\image{https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcSKK5oCbORAuRM5xZjVTqEIsRGiFjTStX4euA&usqp=CAU}{Nature!}{width: 480}
 
 \\strong{\\italic{Note.}} \\italic{This app is a demo of the simplest rendering
  features of the} \\red{MiniLaTeX library.}
@@ -61,5 +64,9 @@ This is \\strike{important} OK.
 \\begin{theorem}
 There are \\highlight{infinitely} many primes $p \\equiv 1 \\text{ mod } 4$.
 \\end{theorem}
+
+
+We can make backward references, e.g., to \\eqref{integral:xn}.
+
 
 """
