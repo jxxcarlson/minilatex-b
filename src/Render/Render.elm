@@ -197,8 +197,7 @@ renderEnvironmentDict =
         --, ( "defitem", \s l e -> renderDefItemEnvironment s l e )
         --, ( "enumerate", \s l e -> renderEnumerate s l e )
         --, ( "eqnarray", \s l e -> renderEqnArray s l e )
-        , ( "equation", \si s _ e -> renderEquationEnvironment si s e )
-        , ( "equation", \si s _ e -> renderEquationEnvironment si s e )
+        , ( "equation", \si s _ e -> equation si s e )
 
         --, ( "indent", \s l e -> renderIndentEnvironment s l e )
         --, ( "itemize", \s l e -> renderItemize s l e )
@@ -349,8 +348,8 @@ renderMathEnvironment selectedId envName latexState _ body =
     displayMathTextWithLabel_ selectedId latexState sourceMap content tag
 
 
-renderEquationEnvironment : String -> LaTeXState -> Expression -> Html LaTeXMsg
-renderEquationEnvironment selectedId latexState body =
+equation : String -> LaTeXState -> Expression -> Html LaTeXMsg
+equation selectedId latexState body =
     let
         eqno =
             LaTeXState.getCounter "eqno" latexState
