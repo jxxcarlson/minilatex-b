@@ -4,24 +4,9 @@
     "summary": "Compile MiniLaTeX to Html",
     "license": "MIT",
     "version": "0.1.0",
-    "exposed-modules" : ["MiniLaTeX",  "LaTeXMsg"],
-    "unexposed-modules": [
+    "exposed-modules": [
         "MiniLaTeX",
-        "LaTeXMsg",
-        "Compiler.GenericDiffer",
-        "Compiler.Differ",
-        "Parser.Block",
-        "Render.Render",
-        "Render.LaTeXState",
-        "Render.Reduce",
-        "Parser.Document",
-        "Render.Accumulator",
-        "Parser.Expression",
-        "Render.ReducerHelper",
-        "Parser.TextCursor",
-        "Parser.Parser",
-        "Parser.Helpers",
-        "Parser.Problem"
+        "LaTeXMsg"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {
@@ -30,12 +15,14 @@
         "elm/html": "1.0.0 <= v < 2.0.0",
         "elm/json": "1.1.3 <= v < 2.0.0",
         "elm/parser": "1.1.0 <= v < 2.0.0",
+        "elm/regex": "1.0.0 <= v < 2.0.0",
         "elm-community/list-extra": "8.3.0 <= v < 9.0.0",
         "elm-community/maybe-extra": "5.2.0 <= v < 6.0.0",
         "elm-explorations/benchmark": "1.0.2 <= v < 2.0.0",
         "elm-explorations/test": "1.2.2 <= v < 2.0.0",
         "folkertdev/elm-paragraph": "1.0.0 <= v < 2.0.0",
-        "mdgriffith/elm-ui": "1.1.8 <= v < 2.0.0"
+        "mdgriffith/elm-ui": "1.1.8 <= v < 2.0.0",
+        "pablohirafuji/elm-syntax-highlight": "3.4.0 <= v < 4.0.0"
     },
     "test-dependencies": {}
 }

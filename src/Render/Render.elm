@@ -14,10 +14,13 @@ import Html.Events exposing (onClick)
 import Json.Encode
 import LaTeXMsg exposing (LaTeXMsg(..))
 import List.Extra
+import Parser exposing (DeadEnd, Problem(..))
 import Parser.Expression exposing (Expression(..), SourceMap)
 import Parser.Helpers
+import Regex
 import Render.Image
 import Render.LaTeXState as LaTeXState exposing (LaTeXState)
+import SyntaxHighlight
 import Utility
 
 
@@ -44,6 +47,13 @@ renderToStingList exprs =
 getStringAtWithDefault : Int -> String -> List String -> String
 getStringAtWithDefault k default strings =
     List.Extra.getAt k strings |> Maybe.withDefault default
+
+
+{-| render 0-th arg to string
+-}
+renderArg : List Expression -> String
+renderArg expressions =
+    List.Extra.getAt 0 (List.map Parser.Expression.toString expressions) |> Maybe.withDefault "ARG"
 
 
 
@@ -637,6 +647,7 @@ macroDict =
     Dict.fromList
         [ ( "strong", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-weight" "bold" ] )
         , ( "textbf", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-weight" "bold" ] )
+        , ( "subheading", \si state ms args sm -> rmad si ms state args sm [ HA.style "font-weight" "bold" ] )
         , ( "italic", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-style" "italic" ] )
         , ( "term", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-style" "italic" ] )
         , ( "emph", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-style" "italic" ] )
@@ -669,6 +680,9 @@ macroDict =
         , ( "ilink1", \si state ms args sm -> nullSpan )
         , ( "ilink2", \si state ms args sm -> nullSpan )
         , ( "ilink3", \si state ms args sm -> nullSpan )
+        , ( "uuid", \si state ms args sm -> nullSpan )
+        , ( "email", \si state ms args sm -> nullSpan )
+        , ( "label", \si state ms args sm -> nullSpan )
         , ( "xlink", \si state ms args sm -> renderXLink Nothing state args )
         , ( "publiclink", \si state ms args sm -> renderXLink Nothing state args )
         , ( "homepagelink", \si state ms args sm -> renderXLink (Just "h") state args )
@@ -683,11 +697,193 @@ macroDict =
         , ( "ndash", \si state ms args sm -> Html.span [] [ Html.text "– " ] )
         , ( "eqref", \si state ms args sm -> renderEqRef state args )
         , ( "ref", \si state ms args sm -> renderRef state args )
+        , ( "bs", \si state ms args sm -> Html.span [] [ Html.text <| "\\" ++ renderArg args ] )
+        , ( "texarg", \si state ms args sm -> Html.text <| "{" ++ renderArg args ++ "}" )
+        , ( "maketitle", \si state ms args sm -> maketitle state )
+        , ( "tableofcontents", \si state ms args sm -> tableOfContents state )
+        , ( "innertableofcontents", \si state ms args sm -> innerTableOfContents state )
+        , ( "colored", \si state ms args sm -> colored state args )
         ]
 
 
 
 -- NEW
+-- TABLE OF CONTENTS
+
+
+tableOfContents : LaTeXState -> Html msg
+tableOfContents latexState =
+    let
+        innerPart =
+            makeTableOfContents latexState
+    in
+    Html.div []
+        [ Html.h3 [] [ Html.text "Table of Contents" ]
+        , Html.ul [] innerPart
+        ]
+
+
+innerTableOfContents : LaTeXState -> Html msg
+innerTableOfContents latexState =
+    let
+        s1 =
+            LaTeXState.getCounter "s1" latexState
+
+        prefix =
+            String.fromInt s1 ++ "."
+
+        innerPart =
+            makeInnerTableOfContents prefix latexState
+    in
+    Html.div []
+        [ Html.h3 [] [ Html.text "Table of Contents" ]
+        , Html.ul [] innerPart
+        ]
+
+
+{-| Build a table of contents from the
+current LatexState; use only level 1 items
+-}
+makeTableOfContents : LaTeXState -> List (Html msg)
+makeTableOfContents latexState =
+    let
+        toc =
+            List.filter (\item -> item.level == 1) latexState.tableOfContents
+    in
+    List.foldl (\tocItem acc -> acc ++ [ makeTocItem "" tocItem ]) [] (List.indexedMap Tuple.pair toc)
+
+
+{-| Build a table of contents from the
+current LatexState; use only level 2 items
+-}
+makeInnerTableOfContents : String -> LaTeXState -> List (Html msg)
+makeInnerTableOfContents prefix latexState =
+    let
+        toc =
+            List.filter (\item -> item.level == 2) latexState.tableOfContents
+    in
+    List.foldl (\tocItem acc -> acc ++ [ makeTocItem prefix tocItem ]) [] (List.indexedMap Tuple.pair toc)
+
+
+makeTocItem : String -> ( Int, LaTeXState.TocEntry ) -> Html msg
+makeTocItem prefix tocItem =
+    let
+        i =
+            Tuple.first tocItem
+
+        ti =
+            Tuple.second tocItem
+
+        number =
+            prefix ++ String.fromInt (i + 1) ++ ". "
+
+        classProperty =
+            "class=\"sectionLevel" ++ String.fromInt ti.level ++ "\""
+
+        id =
+            makeIdWithPrefix (sectionPrefix ti.level) ti.name
+
+        href =
+            "#" ++ id
+    in
+    Html.p
+        [ HA.style "font-size" "14px"
+        , HA.style "padding-bottom" "0px"
+        , HA.style "margin-bottom" "0px"
+        , HA.style "padding-top" "0px"
+        , HA.style "margin-top" "0px"
+        , HA.style "line-height" "20px"
+        ]
+        [ Html.text number
+        , Html.a [ HA.href href ] [ Html.text ti.name ]
+        ]
+
+
+makeIdWithPrefix : String -> String -> String
+makeIdWithPrefix prefix name =
+    String.join "_" [ "", prefix, compress "_" name ]
+
+
+compress : String -> String -> String
+compress replaceBlank str =
+    str
+        |> String.toLower
+        |> String.replace " " replaceBlank
+        |> userReplace "[,;.!?&_]" (\_ -> "")
+
+
+userReplace : String -> (Regex.Match -> String) -> String -> String
+userReplace userRegex replacer string =
+    case Regex.fromString userRegex of
+        Nothing ->
+            string
+
+        Just regex ->
+            Regex.replace regex replacer string
+
+
+sectionPrefix : Int -> String
+sectionPrefix level =
+    case level of
+        1 ->
+            "section"
+
+        2 ->
+            "subsection"
+
+        3 ->
+            "subsubsection"
+
+        _ ->
+            "asection"
+
+
+
+-- TITLE
+
+
+maketitle : LaTeXState -> Html msg
+maketitle latexState =
+    let
+        title =
+            LaTeXState.getDictionaryItem "title" latexState
+
+        author =
+            LaTeXState.getDictionaryItem "author" latexState
+
+        date =
+            LaTeXState.getDictionaryItem "date" latexState
+
+        email =
+            LaTeXState.getDictionaryItem "email" latexState
+
+        revision =
+            LaTeXState.getDictionaryItem "revision" latexState
+
+        revisionText =
+            if revision /= "" then
+                "Last revised " ++ revision
+
+            else
+                ""
+
+        titlePart =
+            Html.div [ HA.style "font-size" "28px", HA.style "padding-bottom" "12px" ] [ Html.text <| title ]
+
+        authorPart =
+            Html.div [ HA.style "font-size" "18px", HA.style "padding-bottom" "4px" ] [ Html.text <| author ]
+
+        bodyParts =
+            [ date, revisionText, email ]
+                |> List.filter (\x -> x /= "")
+                |> List.map (\x -> Html.div [ HA.style "font-size" "14px" ] [ Html.text x ])
+    in
+    Html.div []
+        (titlePart :: authorPart :: bodyParts)
+
+
+
+-- STUFF
 
 
 renderRef : LaTeXState -> List Expression -> Html msg
@@ -780,6 +976,11 @@ nullSpan =
 rmas : String -> b -> LaTeXState -> List Expression -> SourceMap -> List (Attribute LaTeXMsg) -> Html LaTeXMsg
 rmas si ms state args sm st =
     render si state args |> Html.span (st ++ active sm si)
+
+
+rmad : String -> b -> LaTeXState -> List Expression -> SourceMap -> List (Attribute LaTeXMsg) -> Html LaTeXMsg
+rmad si ms state args sm st =
+    render si state args |> Html.div (st ++ active sm si)
 
 
 renderHRef : LaTeXState -> List Expression -> Html msg
@@ -961,6 +1162,63 @@ renderImageRef latexState args =
     Html.a [ HA.href url ] [ theImage ]
 
 
+
+-- COLORED
+
+
+colored : LaTeXState -> List Expression -> Html msg
+colored latexState args =
+    -- TODO
+    let
+        args_ =
+            renderToStingList args
+
+        lang : String -> Result (List DeadEnd) SyntaxHighlight.HCode
+        lang =
+            getLang (getStringAtWithDefault 0 "LANG" args_)
+
+        theCode =
+            getStringAtWithDefault 1 "CODE" args_
+    in
+    lang theCode
+        |> Result.map SyntaxHighlight.toInlineHtml
+        |> Result.withDefault
+            (Html.code [] [ Html.text "isEmpty : String -> Bool" ])
+
+
+getLang langString =
+    case langString of
+        "elm" ->
+            SyntaxHighlight.elm
+
+        "haskell" ->
+            SyntaxHighlight.elm
+
+        "js" ->
+            SyntaxHighlight.javascript
+
+        "xml" ->
+            SyntaxHighlight.xml
+
+        "css" ->
+            SyntaxHighlight.css
+
+        "python" ->
+            SyntaxHighlight.python
+
+        "sql" ->
+            SyntaxHighlight.sql
+
+        "json" ->
+            SyntaxHighlight.json
+
+        "nolang" ->
+            SyntaxHighlight.noLang
+
+        _ ->
+            SyntaxHighlight.noLang
+
+
 {-| rmas = render macro as code
 -}
 rmac si ms state args sm st =
@@ -970,22 +1228,10 @@ rmac si ms state args sm st =
 
 -- OLD
 --[
---       , ( "colored", \s x y z -> renderColored s x z )
---       , ( "percent", \s x y z -> renderPercent s x z )
 --       , ( "ellie", \s x y z -> renderEllie s x z )
 --       , ( "iframe", \s x y z -> renderIFrame s x z )
---       , ( "label", \s x y z -> renderLabel s x z )
 --       , ( "maintableofcontents", \s x y z -> renderMainTableOfContents s x z )
---       , ( "maketitle", \s x y z -> renderMakeTitle s x z )
---       , ( "bs", \s x y z -> renderBackslash s x z )
---       , ( "texarg", \s x y z -> renderTexArg s x z )
 --       , ( "setcounter", \s x y z -> renderSetCounter s x z )
---       , ( "subheading", \s x y z -> renderSubheading s x z )
---       , ( "tableofcontents", \s x y z -> renderTableOfContents s x z )
---       , ( "innertableofcontents", \s x y z -> renderInnerTableOfContents s x z )
 --       , ( "remote", \s x y z -> renderRemote s x z )
 --       , ( "local", \s x y z -> renderLocal s x z )
---       , ( "documentTitle", \s x y z -> renderDocumentTitle s x z )
---       , ( "email", \s x y z -> renderEmail s x z )
---       , ( "uuid", \s x y z -> renderUuid s x z )
 --       ]

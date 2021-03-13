@@ -2,7 +2,7 @@ module Render.LaTeXState exposing
     ( LaTeXState, init, reset
     , Counters, getCounter, incrementCounter, updateCounter
     , CrossReferences, setCrossReference, getCrossReference
-    , setDictionaryItem, getDictionaryItem, addSection
+    , setDictionaryItem, getDictionaryItem, addSection, TocEntry
     )
 
 {-| This module defines and manages LaTeXState, shich is used to
@@ -23,7 +23,7 @@ compute and render data such as section numbers and cross-references.
 
 ## Other
 
-@docs setDictionaryItem, getDictionaryItem, addSection
+@docs setDictionaryItem, getDictionaryItem, addSection, TocEntry
 
 -}
 

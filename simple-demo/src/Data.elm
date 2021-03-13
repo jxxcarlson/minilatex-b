@@ -8,12 +8,25 @@ document1 =
 
 
 document =
-    """aaa
+    """
+\\title{Examples}
+
+\\author{James Carlson}
+
+\\maketitle
 
 
-\\note{I think this draft is a good start, but it needs revision}{— John}
+\\tableofcontents
 
 We can make forward references, e.g., to \\eqref{integral:xn}.
+
+\\subheading{Examples}
+
+\\colored{elm}{add x y = x + y}
+
+\\bs{foo}\\texarg{bar}
+
+\\note{I think this draft is a good start, but it needs revision}{— John}
 
 \\image{https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcSKK5oCbORAuRM5xZjVTqEIsRGiFjTStX4euA&usqp=CAU}{Nature!}{width: 480}
 
