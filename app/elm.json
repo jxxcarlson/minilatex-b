@@ -7,6 +7,7 @@
     "elm-version": "0.19.1",
     "dependencies": {
         "direct": {
+            "Garados007/elm-svg-parser": "1.0.0",
             "elm/browser": "1.0.2",
             "elm/core": "1.0.5",
             "elm/html": "1.0.0",
@@ -21,10 +22,13 @@
             "pablohirafuji/elm-syntax-highlight": "3.4.0"
         },
         "indirect": {
+            "andre-dietrich/parser-combinators": "3.2.0",
             "elm/random": "1.0.0",
+            "elm/svg": "1.0.1",
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
-            "elm/virtual-dom": "1.0.2"
+            "elm/virtual-dom": "1.0.2",
+            "pilatch/flip": "1.0.0"
         }
     },
     "test-dependencies": {

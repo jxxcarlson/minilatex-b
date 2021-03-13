@@ -21,6 +21,7 @@ import Parser.Parser as Parser
 import Regex
 import Render.Image
 import Render.LaTeXState as LaTeXState exposing (LaTeXState)
+import SvgParser
 import SyntaxHighlight
 import Utility
 
@@ -212,8 +213,7 @@ renderEnvironmentDict =
         --, ( "verse", \s l e -> renderVerse s l e )
         , ( "mathmacro", \si s l e -> Html.div [] [] )
         , ( "textmacro", \si s l e -> Html.div [] [] )
-
-        --, ( "svg", \s l e -> renderSvg s l e )
+        , ( "svg", \si s l e -> svg e )
         ]
 
 
@@ -1037,6 +1037,20 @@ renderXLink urlFragment latexState args =
             getStringAtWithDefault 1 "nada" args_
     in
     Html.a [ HA.href ref ] [ Html.text label ]
+
+
+
+-- SVG
+
+
+svg : Expression -> Html msg
+svg body =
+    case SvgParser.parse (Parser.Expression.toString body) of
+        Ok html_ ->
+            html_
+
+        Err _ ->
+            Html.span [ HA.class "X6" ] [ Html.text "SVG parse error" ]
 
 
 
