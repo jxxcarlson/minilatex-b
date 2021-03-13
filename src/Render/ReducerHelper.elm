@@ -120,9 +120,10 @@ setSectionCounters macroArgs latexState =
 {-| -}
 setDictionaryItemForMacro : String -> List Expression -> LaTeXState -> LaTeXState
 setDictionaryItemForMacro name args latexState =
+    -- TODO: fix this!
     let
         value =
-            unpackString args
+            Parser.renderArg args
     in
     setDictionaryItem name value latexState
 
@@ -370,7 +371,9 @@ valueOfLXString expr =
 -}
 unpackString : List Expression -> String
 unpackString expr =
-    expr |> headExpression |> valueOfLatexList |> headExpression |> valueOfLXString
+    -- TODO: verify this fix
+    --expr |> headExpression |> valueOfLatexList |> headExpression |> valueOfLXString
+    Parser.renderArg expr
 
 
 

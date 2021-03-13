@@ -1,6 +1,7 @@
 module Parser.Parser exposing
     ( Parser, Context(..)
     , parseLoop, expression, expressionList, parseExpression, macro
+    , renderToStingList, getStringAtWithDefault, renderArg
     )
 
 {-| Function parserLoop takes as input an integer representing a "chunkNumber"
@@ -48,6 +49,11 @@ TO ADD: COMMENTS ON THE STACK
 @docs parseLoop, expression, expressionList, parseExpression, macro
 
 
+## Helpers
+
+@docs renderToStingList, getStringAtWithDefault, renderArg
+
+
 ## Uses of Parser.Parser
 
   - parseLoop in Parser.Document
@@ -75,6 +81,7 @@ TO ADD: COMMENTS ON THE STACK
 --
 
 import Dict
+import List.Extra
 import Parser.Advanced as Parser exposing ((|.), (|=))
 import Parser.Expression as Expression exposing (Expression(..), Problem(..), SourceMap)
 import Parser.Problem exposing (RecoveryData)
@@ -871,3 +878,22 @@ parseToSymbol problem marker =
             |. Parser.symbol (Parser.Token marker problem)
     )
         |> Parser.map (String.dropRight (String.length marker))
+
+
+{-| -}
+renderToStingList : List Expression -> List String
+renderToStingList exprs =
+    List.map Expression.toString exprs
+
+
+{-| -}
+getStringAtWithDefault : Int -> String -> List String -> String
+getStringAtWithDefault k default strings =
+    List.Extra.getAt k strings |> Maybe.withDefault default
+
+
+{-| render 0-th arg to string
+-}
+renderArg : List Expression -> String
+renderArg expressions =
+    List.Extra.getAt 0 (List.map Expression.toString expressions) |> Maybe.withDefault "ARG"
