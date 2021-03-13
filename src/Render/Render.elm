@@ -685,6 +685,7 @@ macroDict =
         , ( "uuid", \si state ms args sm -> nullSpan )
         , ( "email", \si state ms args sm -> nullSpan )
         , ( "label", \si state ms args sm -> nullSpan )
+        , ( "maintableofcontents", \si state ms args sm -> nullSpan )
         , ( "setcounter", \si state ms args sm -> nullSpan )
         , ( "xlink", \si state ms args sm -> renderXLink Nothing state args )
         , ( "publiclink", \si state ms args sm -> renderXLink Nothing state args )
@@ -1283,11 +1284,3 @@ iframe args =
         , HA.attribute "Content-Disposition" "inline"
         ]
         [ Html.text title ]
-
-
-
--- OLD
---[
---       , ( "maintableofcontents", \s x y z -> renderMainTableOfContents s x z )
---       ]
---       ]
