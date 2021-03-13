@@ -17,6 +17,7 @@ import List.Extra
 import Parser exposing (DeadEnd, Problem(..))
 import Parser.Expression exposing (Expression(..), SourceMap)
 import Parser.Helpers
+import Parser.Parser as Parser
 import Regex
 import Render.Image
 import Render.LaTeXState as LaTeXState exposing (LaTeXState)
@@ -66,6 +67,11 @@ clicker sm =
 
 makeId sm =
     String.fromInt sm.generation ++ ":" ++ String.fromInt sm.blockOffset ++ "-" ++ String.fromInt sm.offset
+
+
+makeId_ : String -> String -> String
+makeId_ prefix name =
+    String.join "_" [ "", prefix, compress "_" name ]
 
 
 idSuffix : String -> String
@@ -204,8 +210,9 @@ renderEnvironmentDict =
         --, ( "useforweb", \s l e -> renderUseForWeb s l e )
         --, ( "verbatim", \s l e -> renderVerbatim s l e )
         --, ( "verse", \s l e -> renderVerse s l e )
-        --, ( "mathmacro", \s l e -> renderMathMacros s l e )
-        --, ( "textmacro", \s l e -> renderTextMacros s l e )
+        , ( "mathmacro", \si s l e -> Html.div [] [] )
+        , ( "textmacro", \si s l e -> Html.div [] [] )
+
         --, ( "svg", \s l e -> renderSvg s l e )
         ]
 
@@ -1038,7 +1045,24 @@ renderXLink urlFragment latexState args =
 
 renderSection : (LaTeXState -> Html LaTeXMsg) -> String -> b -> LaTeXState -> List Expression -> SourceMap -> List (Attribute LaTeXMsg) -> Html LaTeXMsg
 renderSection labelFunction si ms state args sm st =
-    labelFunction state :: render si state args |> Html.span (st ++ active sm si)
+    let
+        args_ =
+            Parser.renderToStingList args
+
+        name =
+            Parser.getStringAtWithDefault 0 "NAME" args_
+
+        prefix =
+            "section"
+
+        compress_ str =
+            str |> String.toLower |> String.replace " " "_"
+
+        ref =
+            Debug.log "REF" <|
+                String.join "_" [ "", prefix, compress_ name ]
+    in
+    labelFunction state :: render si state args |> Html.span (st ++ active sm si ++ [ HA.id ref ])
 
 
 sectionNumber : LaTeXState -> Html msg
