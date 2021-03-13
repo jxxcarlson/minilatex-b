@@ -648,6 +648,8 @@ macroDict =
         [ ( "strong", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-weight" "bold" ] )
         , ( "textbf", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-weight" "bold" ] )
         , ( "subheading", \si state ms args sm -> rmad si ms state args sm [ HA.style "font-weight" "bold" ] )
+        , ( "remote", \si state ms args sm -> rmad si ms state args sm [ HA.style "color" "red", HA.style "white-space" "pre" ] )
+        , ( "local", \si state ms args sm -> rmad si ms state args sm [ HA.style "color" "blue", HA.style "white-space" "pre" ] )
         , ( "italic", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-style" "italic" ] )
         , ( "term", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-style" "italic" ] )
         , ( "emph", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-style" "italic" ] )
@@ -683,6 +685,7 @@ macroDict =
         , ( "uuid", \si state ms args sm -> nullSpan )
         , ( "email", \si state ms args sm -> nullSpan )
         , ( "label", \si state ms args sm -> nullSpan )
+        , ( "setcounter", \si state ms args sm -> nullSpan )
         , ( "xlink", \si state ms args sm -> renderXLink Nothing state args )
         , ( "publiclink", \si state ms args sm -> renderXLink Nothing state args )
         , ( "homepagelink", \si state ms args sm -> renderXLink (Just "h") state args )
@@ -703,6 +706,8 @@ macroDict =
         , ( "tableofcontents", \si state ms args sm -> tableOfContents state )
         , ( "innertableofcontents", \si state ms args sm -> innerTableOfContents state )
         , ( "colored", \si state ms args sm -> colored state args )
+        , ( "ellie", \si state ms args sm -> ellie args )
+        , ( "iframe", \si state ms args sm -> iframe args )
         ]
 
 
@@ -1226,12 +1231,63 @@ rmac si ms state args sm st =
 
 
 
+-- ELLIE
+
+
+ellie : List Expression -> Html msg
+ellie args =
+    let
+        args_ =
+            renderToStingList args
+
+        id =
+            getStringAtWithDefault 0 "0" args_
+
+        url =
+            "https://ellie-app.com/embed/" ++ id
+
+        title_ =
+            getStringAtWithDefault 1 "TITLE" args_
+
+        title =
+            if title_ == "xxx" then
+                "Link to Ellie"
+
+            else
+                title_
+    in
+    Html.iframe [ HA.src url, HA.width 500, HA.height 600 ] [ Html.text title ]
+
+
+
+-- IFRAME
+
+
+iframe : List Expression -> Html msg
+iframe args =
+    let
+        args_ =
+            renderToStingList args
+
+        url =
+            getStringAtWithDefault 0 "URL" args_
+
+        title =
+            getStringAtWithDefault 1 "TITLE" args_
+    in
+    Html.iframe
+        [ HA.src url
+        , HA.width 400
+        , HA.height 500
+        , HA.attribute "Content-Type" "application/pdf"
+        , HA.attribute "Content-Disposition" "inline"
+        ]
+        [ Html.text title ]
+
+
+
 -- OLD
 --[
---       , ( "ellie", \s x y z -> renderEllie s x z )
---       , ( "iframe", \s x y z -> renderIFrame s x z )
 --       , ( "maintableofcontents", \s x y z -> renderMainTableOfContents s x z )
---       , ( "setcounter", \s x y z -> renderSetCounter s x z )
---       , ( "remote", \s x y z -> renderRemote s x z )
---       , ( "local", \s x y z -> renderLocal s x z )
+--       ]
 --       ]
