@@ -1056,7 +1056,7 @@ renderSection labelFunction si ms state args sm st =
             "section"
 
         compress_ str =
-            str |> String.toLower |> String.replace " " "_"
+            str |> String.toLower |> String.replace " " ""
 
         ref =
             Debug.log "REF" <|
