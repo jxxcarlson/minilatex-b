@@ -33,6 +33,7 @@ import List.Extra
 -}
 type Expression
     = Text String SourceMap
+    | Comment String SourceMap
     | InlineMath String SourceMap
     | DisplayMath String SourceMap
     | Macro String (Maybe Expression) (List Expression) SourceMap
@@ -74,6 +75,8 @@ type alias SourceMap =
 type Problem
     = ExpectingLeadingDollarSign
     | ExpectingLeadingDoubleDollarSign
+    | ExpectingLeadingPercentSign
+    | ExpectingEndofLine
     | EndOfInput
     | ExpectingEndOfWordSpace
     | ExpectingLeftBracket
@@ -223,6 +226,9 @@ toString expr =
         Text str _ ->
             str
 
+        Comment str _ ->
+            str
+
         InlineMath str _ ->
             "$" ++ str ++ "$"
 
@@ -288,6 +294,9 @@ getSource expr =
         Text _ source ->
             source
 
+        Comment _ source ->
+            source
+
         InlineMath _ source ->
             source
 
@@ -320,6 +329,9 @@ incrementOffset delta expr =
     case expr of
         Text e source ->
             Text e { source | offset = source.offset + delta }
+
+        Comment e source ->
+            Comment e { source | offset = source.offset + delta }
 
         InlineMath e source ->
             InlineMath e { source | offset = source.offset + delta }
@@ -354,6 +366,9 @@ incrementBlockOffset delta expr =
         Text e source ->
             Text e { source | blockOffset = source.blockOffset + delta }
 
+        Comment e source ->
+            Comment e { source | blockOffset = source.blockOffset + delta }
+
         InlineMath e source ->
             InlineMath e { source | blockOffset = source.blockOffset + delta }
 
@@ -385,6 +400,9 @@ setSourceMap sm expr =
     case expr of
         Text e _ ->
             Text e sm
+
+        Comment e _ ->
+            Comment e sm
 
         InlineMath e _ ->
             InlineMath e sm
@@ -475,3 +493,9 @@ problemAsString prob =
 
         ExpectingPrefixes _ ->
             "Expecting prefixes ... (22)"
+
+        ExpectingEndofLine ->
+            "Expecting end of line (23)"
+
+        ExpectingLeadingPercentSign ->
+            "Expecting leading % ... (24)"

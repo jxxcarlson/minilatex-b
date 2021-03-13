@@ -107,6 +107,9 @@ renderExpr selectedId state expr =
         Text s sm ->
             Html.span (state.config.textSpanStyle :: active sm selectedId) [ Html.text s ]
 
+        Comment s sm ->
+            Html.span [] []
+
         InlineMath s sm ->
             inlineMathText selectedId s sm
 

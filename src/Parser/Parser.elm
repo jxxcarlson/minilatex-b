@@ -280,7 +280,8 @@ parseExpression generation lineNumber str =
 expression : Int -> Int -> Parser Expression
 expression generation lineNumber =
     Parser.oneOf
-        [ macro generation lineNumber
+        [ comment generation lineNumber
+        , macro generation lineNumber
         , environment generation lineNumber
         , displayMath generation lineNumber
         , inlineMath generation lineNumber
@@ -377,6 +378,20 @@ word generation lineNumber =
 inOptionArgWord : Char -> Bool
 inOptionArgWord c =
     not (c == '\\' || c == '$' || c == ']' || c == ' ' || c == '\n')
+
+
+
+-- Comment
+
+
+comment : Int -> Int -> Parser Expression
+comment generation lineNumber =
+    -- Parser.inContext Comment <|
+    Parser.succeed (\( s, t ) -> Comment s { t | length = String.length s + 1 })
+        |. Parser.symbol (Parser.Token "%" ExpectingLeadingPercentSign)
+        |= getChompedString generation lineNumber (Parser.chompUntilEndOr "\n")
+        -- ^^ TODO: Hmm ...
+        |. Parser.spaces
 
 
 
