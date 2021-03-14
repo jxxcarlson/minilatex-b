@@ -17,6 +17,15 @@ a value of type AST = List (List Expression).
 
 @docs State, Block, BlockType, LineType
 
+##@ About blocks
+
+The block offset is the line number in the source text
+at wwhich a block begins. Recall that a block is a string (which may contain newlines) derived
+from a set of contiguous lines. It represents a logical paragraph: either an ordinary paragraph or
+an outer begin-end pair. The offset describes the position of a string in the block. Thus, if
+the text "a\\nb\\nc" starts at line 100 of the source text and is preceded and followed by a blank line,
+then the block offset is 100, the offset of "a" is 0, the offest of "b" is 2, and the offest of "c" is 4.
+
 -}
 
 import Parser as P exposing ((|.), (|=))

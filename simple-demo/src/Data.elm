@@ -32,9 +32,11 @@ minilatexio =
 
 \\section{Introduction}
 
+
 MiniLatex is a subset of LaTeX that can be
 rendered live in the browser using a custom just-in-time compiler.
 Mathematical text is rendered by \\href{https://mathjax.org}{MathJax}:
+
 
 $$
 \\int_{-\\infty}^\\infty e^{-x^2} dx = \\pi
@@ -43,6 +45,25 @@ $$
 The combination of MiniLaTeX and MathJax
 gives you access to both text-mode
 and math-mode LaTeX in the browser.
+
+\\begin{comment}
+This is a long comment.
+It should not appear in the
+rendered text.
+\\end{comment}
+
+\\begin{obeylines}
+one
+two
+three
+\\end{obeylines}
+
+\\begin{center}
+MiniLatex is a subset of LaTeX that can be
+rendered live in the browser using a custom just-in-time compiler.
+Mathematical text is rendered by \\href{https://mathjax.org}{MathJax}:
+\\end{center}
+
 
 Feel free to
 experiment with MiniLatex using this app

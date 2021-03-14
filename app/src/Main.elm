@@ -73,7 +73,7 @@ type alias Model =
 
 initialSelectedId : String
 initialSelectedId =
-    "2-44"
+    "13-18"
 
 
 type LHViewMode

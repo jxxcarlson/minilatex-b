@@ -13,7 +13,6 @@ import Html.Attributes as HA
 import Html.Events exposing (onClick)
 import Json.Encode
 import LaTeXMsg exposing (LaTeXMsg(..))
-import List.Extra
 import Parser exposing (DeadEnd, Problem(..))
 import Parser.Expression exposing (Expression(..), SourceMap)
 import Parser.Helpers
@@ -39,45 +38,6 @@ section numbers, etc.
 render : String -> LaTeXState -> List Expression -> List (Html LaTeXMsg)
 render selectedId state exprs =
     List.map (renderExpr selectedId state) exprs
-
-
-clicker sm =
-    onClick (SendSourceMap sm)
-
-
-makeId sm =
-    String.fromInt sm.generation ++ ":" ++ String.fromInt sm.blockOffset ++ "-" ++ String.fromInt sm.offset
-
-
-makeId_ : String -> String -> String
-makeId_ prefix name =
-    String.join "_" [ "", prefix, compress "_" name ]
-
-
-idSuffix : String -> String
-idSuffix str =
-    String.split ":" str
-        |> List.drop 1
-        |> List.head
-        |> Maybe.withDefault "nada"
-
-
-active : SourceMap -> String -> List (Attribute LaTeXMsg)
-active sm selectedId =
-    let
-        id_ =
-            makeId sm
-    in
-    [ clicker sm, HA.id id_, highlight "#FAA" selectedId id_ ]
-
-
-highlight : String -> String -> String -> Attribute LaTeXMsg
-highlight color selectedId id_ =
-    if idSuffix id_ == selectedId then
-        HA.style "background-color" color
-
-    else
-        HA.style "background-color" "clear"
 
 
 renderExpr : String -> LaTeXState -> Expression -> Html LaTeXMsg
@@ -143,8 +103,6 @@ environment selectedId state name args body _ =
 
 
 
---
--- BEGIN: RENDER ENVIRONMENT
 -- RENDER ENVIRONMENTS
 
 
@@ -156,6 +114,10 @@ renderEnvironment selectedId state name args body =
 
         Nothing ->
             renderDefaultEnvironment selectedId state name args body
+
+
+
+-- Dictionary for rendering environments
 
 
 renderEnvironmentDict : Dict.Dict String (String -> LaTeXState -> List Expression -> Expression -> Html LaTeXMsg)
@@ -171,11 +133,13 @@ renderEnvironmentDict =
         , ( "vmatrix", \si s l e -> renderMathEnvironment "vmatrix" si s l e )
         , ( "Vmatrix", \si s l e -> renderMathEnvironment "Vmatrix" si s l e )
 
-        --, ( "colored", \s l e -> renderCodeEnvironment s l e )
-        --, ( "center", \s l e -> renderCenterEnvironment s l e )
-        --, ( "obeylines", \s l e -> renderObeyLinesEnvironment s l e )
+        -- , ( "colored", \s l e -> renderCodeEnvironment s l e )
+        , ( "center", \si s l e -> center si s e )
+        , ( "obeylines", \si s l e -> obeylines si s e )
+
         --, ( "CD", \s l e -> renderMathJaxEnvironment "CD" s l e )
-        --, ( "comment", \s l e -> renderCommentEnvironment s l e )
+        , ( "comment", \si s l e -> Html.div [] [] )
+
         --, ( "defitem", \s l e -> renderDefItemEnvironment s l e )
         --, ( "enumerate", \s l e -> renderEnumerate s l e )
         --, ( "eqnarray", \s l e -> renderEqnArray s l e )
@@ -196,6 +160,10 @@ renderEnvironmentDict =
         , ( "textmacro", \si s l e -> Html.div [] [] )
         , ( "svg", \si s l e -> svg e )
         ]
+
+
+
+-- Helper functions for rendering environments
 
 
 theoremLikeEnvironments : List String
@@ -262,18 +230,6 @@ renderDefaultEnvironment2 selectedId latexState name args body =
         [ Html.strong [] [ Html.text name ]
         , Html.div [] r
         ]
-
-
-
--- RENDER INDIVIDUAL ENVIRONMENTS
---renderSvg : SourceText -> LatexState -> LatexExpression -> Html msg
---renderSvg source latexState body =
---    case SvgParser.parse (Internal.RenderToString.render latexState body) of
---        Ok html_ ->
---            html_
---
---        Err _ ->
---            Html.span [ HA.class "X6" ] [ Html.text "SVG parse error" ]
 
 
 renderMathEnvironment : String -> String -> LaTeXState -> List Expression -> Expression -> Html LaTeXMsg
@@ -459,35 +415,26 @@ displayMathTextWithLabel_ selectedId latexState sm str label =
 --    displayMathJaxTextWithLabel_ latexState innerContents tag
 --
 --
---renderCenterEnvironment : SourceText -> LatexState -> LatexExpression -> Html msg
---renderCenterEnvironment source latexState body =
---    let
---        r =
---            render source latexState body
---    in
---    Html.div
---        [ HA.style "display" "flex"
---        , HA.style "flex-direction" "row"
---        , HA.style "justify-content" "center"
---        ]
---        [ r ]
---
---
---renderObeyLinesEnvironment : SourceText -> LatexState -> LatexExpression -> Html msg
---renderObeyLinesEnvironment source latexState body =
---    let
---        r =
---            render source latexState body
---    in
---    Html.div
---        [ HA.style "white-space" "pre"
---        ]
---        [ r ]
---
---
---renderCommentEnvironment : SourceText -> LatexState -> LatexExpression -> Html msg
---renderCommentEnvironment source latexState body =
---    Html.div [] []
+
+
+center : String -> LaTeXState -> Expression -> Html LaTeXMsg
+center selectedId latexState body =
+    Html.div
+        [ HA.style "margin-left" "36px"
+        , HA.style "margin-right" "48px"
+        ]
+        (render selectedId latexState [ body ])
+
+
+obeylines : String -> LaTeXState -> Expression -> Html LaTeXMsg
+obeylines selectedId latexState body =
+    Html.div
+        [ HA.style "white-space" "pre"
+        ]
+        (render selectedId latexState [ body ])
+
+
+
 --
 --
 --renderEnumerate : SourceText -> LatexState -> LatexExpression -> Html msg
@@ -1303,3 +1250,83 @@ iframe args =
         , HA.attribute "Content-Disposition" "inline"
         ]
         [ Html.text title ]
+
+
+
+-- INTERACTIVITY
+
+
+{-| Provide a unique string id for elements of rendered text. The id consists of a prefix and a suffix,
+The prefix is `generation` which is incremented on each edit. It is needed so that Elm's virtual
+DOM manager recognizes changes in the DOM and therefore renderes them.
+
+The suffix is made from the
+blockOffset and an (internal) offset. The block offset is the line number in the source text
+at wwhich a block begins. Recall that a block is a string (which may contain newlines) derived
+from a set of contiguous lines. It represents a logical paragraph: either an ordinary paragraph or
+an outer begin-end pair. The offset describes the position of a string in the block. Thus, if
+the text "a\\nb\\nc" starts at line 100 of the source text and is preceded and followed by a blank line,
+then the block offset is 100, the offset of "a" is 0, the offest of "b" is 2, and the offest of "c" is 4.
+
+Suppose given a piece of source text. Its block offset and offest can be computed, and therefere
+so can the corresponding suffix of the id. Through this correspondence, one can arrange things so that
+when the user clicks on peice of surce text, the corresponding rendered text is brought into view
+(if necessary) and then highlighted.
+
+-}
+makeId sm =
+    String.fromInt sm.generation ++ ":" ++ String.fromInt sm.blockOffset ++ "-" ++ String.fromInt sm.offset
+
+
+{-| makeId\_ is used to tag elements like sections with an identifier so that when one click on
+an item in the table of context, the corresponding section is brought into view.
+-}
+makeId_ : String -> String -> String
+makeId_ prefix name =
+    String.join "_" [ "", prefix, compress "_" name ]
+
+
+{-| Return the suffix of an id
+-}
+idSuffix : String -> String
+idSuffix str =
+    String.split ":" str
+        |> List.drop 1
+        |> List.head
+        |> Maybe.withDefault "nada"
+
+
+{-| Provide active elements to a piece of rendered text:
+
+    - a clicker (see comment belo)
+    - an id (id_ = makeId sm)
+    - a function `highlight` which changes the background
+      color of the rendered text if selectedId is
+      equivalent to id, meaning that they have the same suffx.
+
+-}
+active : SourceMap -> String -> List (Attribute LaTeXMsg)
+active sm selectedId =
+    let
+        id_ =
+            makeId sm
+    in
+    [ clicker sm, HA.id id_, highlight "#FAA" selectedId id_ ]
+
+
+{-| on click, send a message whose payload is the source map sm.
+-}
+clicker sm =
+    onClick (SendSourceMap sm)
+
+
+{-| If selectedId and id\_ have the same suffix, change the background
+of the element to color.
+-}
+highlight : String -> String -> String -> Attribute LaTeXMsg
+highlight color selectedId id =
+    if idSuffix id == selectedId then
+        HA.style "background-color" color
+
+    else
+        HA.style "background-color" "clear"
