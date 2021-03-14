@@ -46,6 +46,11 @@ The combination of MiniLaTeX and MathJax
 gives you access to both text-mode
 and math-mode LaTeX in the browser.
 
+\\begin{colored}[elm]
+foo : Int -> Int -> Int
+add x y = x + y
+\\end{colored}
+
 \\begin{comment}
 This is a long comment.
 It should not appear in the

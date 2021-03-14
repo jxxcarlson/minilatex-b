@@ -132,8 +132,7 @@ renderEnvironmentDict =
         , ( "Bmatrix", \si s l e -> renderMathEnvironment "Bmatrix" si s l e )
         , ( "vmatrix", \si s l e -> renderMathEnvironment "vmatrix" si s l e )
         , ( "Vmatrix", \si s l e -> renderMathEnvironment "Vmatrix" si s l e )
-
-        -- , ( "colored", \s l e -> renderCodeEnvironment s l e )
+        , ( "colored", \si s l e -> coloredEnv l e )
         , ( "center", \si s l e -> center si s e )
         , ( "obeylines", \si s l e -> obeylines si s e )
 
@@ -232,6 +231,10 @@ renderDefaultEnvironment2 selectedId latexState name args body =
         ]
 
 
+
+-- Math Environments
+
+
 renderMathEnvironment : String -> String -> LaTeXState -> List Expression -> Expression -> Html LaTeXMsg
 renderMathEnvironment selectedId envName latexState _ body =
     let
@@ -286,6 +289,10 @@ renderMathEnvironment selectedId envName latexState _ body =
     displayMathTextWithLabel_ selectedId latexState sourceMap content tag
 
 
+
+-- equation
+
+
 equation : String -> LaTeXState -> Expression -> Html LaTeXMsg
 equation selectedId latexState body =
     let
@@ -333,6 +340,10 @@ equation selectedId latexState body =
     -- REVIEW; changed for KaTeX
     -- displayMathText_ latexState  (contents ++ tag)
     displayMathTextWithLabel_ selectedId latexState sm contents tag
+
+
+
+-- displayMathText...
 
 
 displayMathTextWithLabel_ : String -> LaTeXState -> SourceMap -> String -> String -> Html LaTeXMsg
@@ -415,6 +426,7 @@ displayMathTextWithLabel_ selectedId latexState sm str label =
 --    displayMathJaxTextWithLabel_ latexState innerContents tag
 --
 --
+-- Style environments
 
 
 center : String -> LaTeXState -> Expression -> Html LaTeXMsg
@@ -443,6 +455,7 @@ obeylines selectedId latexState body =
 --    Html.ol [ HA.style "margin-top" "0px" ] [ render source latexState body ]
 --
 --
+-- defItem
 
 
 defitem : String -> LaTeXState -> List Expression -> Expression -> Html LaTeXMsg
@@ -582,6 +595,40 @@ highlightWithSourceMap sourceMap text sourceMapIndex_ =
 
 type alias MacroDict =
     Dict String (LaTeXState -> Maybe String -> List Expression -> SourceMap -> Html LaTeXMsg)
+
+
+
+-- SYNTAX COLORING
+
+
+coloredEnv : List Expression -> Expression -> Html msg
+coloredEnv optArgs body =
+    let
+        lang =
+            Parser.renderArg optArgs
+
+        prefix =
+            "\\begin{colored}[" ++ lang ++ "]\n"
+
+        suffix =
+            "\n\\end{colored}"
+
+        source =
+            Parser.renderArg [ body ] |> String.replace prefix "" |> String.replace suffix "" |> String.trim
+    in
+    highlightSyntax lang source
+
+
+highlightSyntax : String -> String -> Html msg
+highlightSyntax lang_ source =
+    Html.div [ HA.style "class" "elmsh-pa" ]
+        [ SyntaxHighlight.useTheme SyntaxHighlight.oneDark
+        , getLang lang_ source
+            |> Result.map (SyntaxHighlight.toBlockHtml (Just 1))
+            -- |> Result.map (SH.toBlockHtml (Just 1) >> \x -> Html.div [HA.style "class" "pre.elmsh {padding: 8px;}"] [x])
+            |> Result.withDefault
+                (Html.pre [] [ Html.code [ HA.style "padding" "8px" ] [ Html.text source ] ])
+        ]
 
 
 
