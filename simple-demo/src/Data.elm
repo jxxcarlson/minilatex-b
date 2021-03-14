@@ -52,11 +52,27 @@ It should not appear in the
 rendered text.
 \\end{comment}
 
+\\begin{defitem}[Bug]
+Nested environments don't parse properly.
+\\end{defitem}
+
+\\begin{defitem}[Bug]
+Highlight macro not working.
+\\end{defitem}
+
+\\begin{indent}
+The combination of MiniLaTeX and MathJax
+gives you access to both text-mode
+and math-mode LaTeX in the browser.
+\\end{indent}
+
+
 \\begin{obeylines}
 one
 two
 three
 \\end{obeylines}
+
 
 \\begin{center}
 MiniLatex is a subset of LaTeX that can be

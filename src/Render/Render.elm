@@ -139,13 +139,13 @@ renderEnvironmentDict =
 
         --, ( "CD", \s l e -> renderMathJaxEnvironment "CD" s l e )
         , ( "comment", \si s l e -> Html.div [] [] )
+        , ( "defitem", \s l e -> defitem s l e )
 
-        --, ( "defitem", \s l e -> renderDefItemEnvironment s l e )
         --, ( "enumerate", \s l e -> renderEnumerate s l e )
         --, ( "eqnarray", \s l e -> renderEqnArray s l e )
         , ( "equation", \si s _ e -> equation si s e )
+        , ( "indent", \si s l e -> indent si s e )
 
-        --, ( "indent", \s l e -> renderIndentEnvironment s l e )
         --, ( "itemize", \s l e -> renderItemize s l e )
         --, ( "listing", \s l e -> renderListing s l e )
         --, ( "macros", \s l e -> renderMacros s l e )
@@ -155,7 +155,7 @@ renderEnvironmentDict =
         --, ( "thebibliography", \s l e -> renderTheBibliography s l e )
         --, ( "useforweb", \s l e -> renderUseForWeb s l e )
         --, ( "verbatim", \s l e -> renderVerbatim s l e )
-        --, ( "verse", \s l e -> renderVerse s l e )
+        , ( "verse", \si s l e -> obeylines si s e )
         , ( "mathmacro", \si s l e -> Html.div [] [] )
         , ( "textmacro", \si s l e -> Html.div [] [] )
         , ( "svg", \si s l e -> svg e )
@@ -443,12 +443,17 @@ obeylines selectedId latexState body =
 --    Html.ol [ HA.style "margin-top" "0px" ] [ render source latexState body ]
 --
 --
---renderDefItemEnvironment : SourceText -> LatexState -> List LatexExpression -> LatexExpression -> Html msg
---renderDefItemEnvironment source latexState optArgs body =
---    Html.div []
---        [ Html.strong [] [ Html.text <| Internal.RenderToString.Parser.renderArg 0 latexState optArgs ]
---        , Html.div [ HA.style "margin-left" "25px", HA.style "margin-top" "10px" ] [ render source latexState body ]
---        ]
+
+
+defitem : String -> LaTeXState -> List Expression -> Expression -> Html LaTeXMsg
+defitem selectedId latexState optArgs body =
+    Html.div []
+        [ Html.strong [] [ Html.text <| Parser.renderArg (Debug.log "!!OPTARGS" optArgs) ]
+        , Html.div [ HA.style "margin-left" "25px", HA.style "margin-top" "10px" ] (render selectedId latexState [ body ])
+        ]
+
+
+
 --
 --
 --{-| XXX
@@ -468,9 +473,14 @@ obeylines selectedId latexState body =
 --
 --renderEquationEnvironment : SourceText
 --
---renderIndentEnvironment : SourceText -> LatexState -> LatexExpression -> Html msg
---renderIndentEnvironment source latexState body =
---    Html.div [ HA.style "margin-left" "2em" ] [ render source latexState body ]
+
+
+indent : String -> LaTeXState -> Expression -> Html LaTeXMsg
+indent selectedId latexState body =
+    Html.div [ HA.style "margin-left" "2em" ] (render selectedId latexState [ body ])
+
+
+
 --
 --
 --renderItemize : SourceText -> LatexState -> LatexExpression -> Html msg

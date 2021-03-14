@@ -2,7 +2,7 @@ module Parser.Parser exposing
     ( Parser, Context(..)
     , parseLoop, expression, expressionList, parseExpression, macro
     , getStringAtWithDefault, renderArg
-    , renderToStringList
+    , optionalArg, renderToStringList
     )
 
 {-| Function parserLoop takes as input an integer representing a "chunkNumber"
@@ -528,15 +528,6 @@ optArg generation lineNo =
     Parser.oneOf [ optArg__ generation lineNo |> Parser.map Just, Parser.succeed Nothing ]
 
 
-optArg__ : Int -> Int -> Parser ( Expression, SourceMap )
-optArg__ generation lineNo =
-    Parser.inContext OptArgContext <|
-        Parser.succeed identity
-            |. Parser.symbol (Parser.Token "[" ExpectingLeftBracket)
-            |= Parser.lazy (\_ -> chompExpression generation lineNo (expression generation lineNo))
-            |. Parser.symbol (Parser.Token "]" ExpectingRightBracket)
-
-
 optionalArg : Int -> Int -> Parser Expression
 optionalArg generation chunkOffset =
     Parser.succeed identity
@@ -549,6 +540,15 @@ optionalArg generation chunkOffset =
 optArg2 : Int -> Int -> Parser Expression
 optArg2 generation chunkOffset =
     optArg__ generation chunkOffset |> Parser.map Tuple.first
+
+
+optArg__ : Int -> Int -> Parser ( Expression, SourceMap )
+optArg__ generation lineNo =
+    Parser.inContext OptArgContext <|
+        Parser.succeed identity
+            |. Parser.symbol (Parser.Token "[" ExpectingLeftBracket)
+            |= Parser.lazy (\_ -> chompExpression generation lineNo (expression generation lineNo))
+            |. Parser.symbol (Parser.Token "]" ExpectingRightBracket)
 
 
 arg : Int -> Int -> Parser Expression
@@ -565,6 +565,23 @@ arg generation lineNo =
                 , text_ generation lineNo [ '}' ]
                 ]
             |. Parser.symbol (Parser.Token "}" ExpectingRightBrace)
+            |= Parser.getOffset
+
+
+argBracket : Int -> Int -> Parser Expression
+argBracket generation lineNo =
+    Parser.inContext ArgContext <|
+        Parser.succeed (\o1 e o2 -> fixArg o1 e o2)
+            |= Parser.getOffset
+            |. Parser.symbol (Parser.Token "[" ExpectingLeftBracket)
+            |= Parser.oneOf
+                [ inlineMath generation lineNo
+
+                --, Parser.lazy (\_ -> Parser.oneOf [ Parser.backtrackable (bareMacro lineNo), macro lineNo ])
+                , Parser.lazy (\_ -> macro generation lineNo)
+                , text_ generation lineNo [ ']' ]
+                ]
+            |. Parser.symbol (Parser.Token "]" ExpectingRightBracket)
             |= Parser.getOffset
 
 
@@ -657,9 +674,13 @@ environmentDict =
 standardEnvironmentBody : Int -> Int -> String -> String -> Parser Expression
 standardEnvironmentBody generation chunkOffset endWoord envType =
     -- Parser.succeed (fixExpr chunkOffset envType)
+    let
+        _ =
+            Debug.log "!!t STD EB" envType
+    in
     Parser.succeed (\start oa body end src -> Environment envType oa body { content = src, blockOffset = chunkOffset, offset = start, length = end - start, generation = generation })
         |= Parser.getOffset
-        |= many (optionalArg generation chunkOffset)
+        |= many (argBracket generation chunkOffset)
         |. Parser.spaces
         |= innerParseEnvironment generation chunkOffset
         |. Parser.spaces
