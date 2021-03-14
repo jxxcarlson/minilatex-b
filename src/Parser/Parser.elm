@@ -1,7 +1,8 @@
 module Parser.Parser exposing
     ( Parser, Context(..)
     , parseLoop, expression, expressionList, parseExpression, macro
-    , renderToStingList, getStringAtWithDefault, renderArg
+    , getStringAtWithDefault, renderArg
+    , renderToStringList
     )
 
 {-| Function parserLoop takes as input an integer representing a "chunkNumber"
@@ -896,8 +897,8 @@ parseToSymbol problem marker =
 
 
 {-| -}
-renderToStingList : List Expression -> List String
-renderToStingList exprs =
+renderToStringList : List Expression -> List String
+renderToStringList exprs =
     List.map Expression.toString exprs
 
 

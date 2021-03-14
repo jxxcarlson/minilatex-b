@@ -41,27 +41,6 @@ render selectedId state exprs =
     List.map (renderExpr selectedId state) exprs
 
 
-renderToStingList : List Expression -> List String
-renderToStingList exprs =
-    List.map Parser.Expression.toString exprs
-
-
-getStringAtWithDefault : Int -> String -> List String -> String
-getStringAtWithDefault k default strings =
-    List.Extra.getAt k strings |> Maybe.withDefault default
-
-
-{-| render 0-th arg to string
--}
-renderArg : List Expression -> String
-renderArg expressions =
-    List.Extra.getAt 0 (List.map Parser.Expression.toString expressions) |> Maybe.withDefault "ARG"
-
-
-
--- |> List.map Parser.Expression.toString
-
-
 clicker sm =
     onClick (SendSourceMap sm)
 
@@ -520,7 +499,7 @@ displayMathTextWithLabel_ selectedId latexState sm str label =
 --renderDefItemEnvironment : SourceText -> LatexState -> List LatexExpression -> LatexExpression -> Html msg
 --renderDefItemEnvironment source latexState optArgs body =
 --    Html.div []
---        [ Html.strong [] [ Html.text <| Internal.RenderToString.renderArg 0 latexState optArgs ]
+--        [ Html.strong [] [ Html.text <| Internal.RenderToString.Parser.renderArg 0 latexState optArgs ]
 --        , Html.div [ HA.style "margin-left" "25px", HA.style "margin-top" "10px" ] [ render source latexState body ]
 --        ]
 --
@@ -710,8 +689,8 @@ macroDict =
         , ( "ndash", \si state ms args sm -> Html.span [] [ Html.text "– " ] )
         , ( "eqref", \si state ms args sm -> renderEqRef state args )
         , ( "ref", \si state ms args sm -> renderRef state args )
-        , ( "bs", \si state ms args sm -> Html.span [] [ Html.text <| "\\" ++ renderArg args ] )
-        , ( "texarg", \si state ms args sm -> Html.text <| "{" ++ renderArg args ++ "}" )
+        , ( "bs", \si state ms args sm -> Html.span [] [ Html.text <| "\\" ++ Parser.renderArg args ] )
+        , ( "texarg", \si state ms args sm -> Html.text <| "{" ++ Parser.renderArg args ++ "}" )
         , ( "maketitle", \si state ms args sm -> maketitle state )
         , ( "tableofcontents", \si state ms args sm -> tableOfContents state )
         , ( "innertableofcontents", \si state ms args sm -> innerTableOfContents state )
@@ -905,10 +884,10 @@ renderRef : LaTeXState -> List Expression -> Html msg
 renderRef latexState args =
     let
         args_ =
-            renderToStingList args
+            Parser.renderToStringList args
 
         key =
-            getStringAtWithDefault 0 "KEY" args_
+            Parser.getStringAtWithDefault 0 "KEY" args_
     in
     Html.span [] [ Html.text <| LaTeXState.getCrossReference key latexState ]
 
@@ -917,10 +896,10 @@ renderEqRef : LaTeXState -> List Expression -> Html msg
 renderEqRef latexState args =
     let
         args_ =
-            renderToStingList args
+            Parser.renderToStringList args
 
         key =
-            getStringAtWithDefault 0 "KEY" args_
+            Parser.getStringAtWithDefault 0 "KEY" args_
 
         ref =
             LaTeXState.getCrossReference key latexState
@@ -932,10 +911,10 @@ renderCite : LaTeXState -> List Expression -> Html msg
 renderCite latexState args =
     let
         args_ =
-            renderToStingList args
+            Parser.renderToStringList args
 
         label_ =
-            getStringAtWithDefault 0 "LABLE" args_
+            Parser.getStringAtWithDefault 0 "LABLE" args_
 
         ref =
             LaTeXState.getDictionaryItem ("bibitem:" ++ label_) latexState
@@ -959,13 +938,13 @@ attachNote args =
     -- TODO: Finish this
     let
         args_ =
-            renderToStingList args
+            Parser.renderToStringList args
 
         author =
-            getStringAtWithDefault 1 "AUTHOR" args_
+            Parser.getStringAtWithDefault 1 "AUTHOR" args_
 
         content =
-            getStringAtWithDefault 0 "CONTENT" args_
+            Parser.getStringAtWithDefault 0 "CONTENT" args_
     in
     Html.div
         [ HA.style "display" "flex"
@@ -1002,13 +981,13 @@ renderHRef : LaTeXState -> List Expression -> Html msg
 renderHRef latexState args =
     let
         args_ =
-            renderToStingList args
+            Parser.renderToStringList args
 
         url =
-            getStringAtWithDefault 0 "URL" args_
+            Parser.getStringAtWithDefault 0 "URL" args_
 
         label =
-            getStringAtWithDefault 1 "LABEL" args_
+            Parser.getStringAtWithDefault 1 "LABEL" args_
     in
     Html.a [ HA.href url, HA.target "_blank" ] [ Html.text label ]
 
@@ -1022,10 +1001,10 @@ renderXLink urlFragment latexState args =
     -- e.g, let urlFragment = "h" for homePageLink
     let
         args_ =
-            renderToStingList args
+            Parser.renderToStringList args
 
         id =
-            getStringAtWithDefault 0 "nada" args_
+            Parser.getStringAtWithDefault 0 "nada" args_
 
         ref =
             case urlFragment of
@@ -1036,7 +1015,7 @@ renderXLink urlFragment latexState args =
                     LaTeXState.getDictionaryItem "setclient" latexState ++ "/" ++ frag ++ "/" ++ id
 
         label =
-            getStringAtWithDefault 1 "nada" args_
+            Parser.getStringAtWithDefault 1 "nada" args_
     in
     Html.a [ HA.href ref ] [ Html.text label ]
 
@@ -1063,7 +1042,7 @@ renderSection : (LaTeXState -> Html LaTeXMsg) -> String -> b -> LaTeXState -> Li
 renderSection labelFunction si ms state args sm st =
     let
         args_ =
-            Parser.renderToStingList args
+            Parser.renderToStringList args
 
         name =
             Parser.getStringAtWithDefault 0 "NAME" args_
@@ -1109,16 +1088,16 @@ renderImage : LaTeXState -> List Expression -> Html msg
 renderImage latexState args =
     let
         args_ =
-            renderToStingList args
+            Parser.renderToStringList args
 
         url =
-            getStringAtWithDefault 0 "URL" args_
+            Parser.getStringAtWithDefault 0 "URL" args_
 
         label =
-            getStringAtWithDefault 1 "LABEL" args_
+            Parser.getStringAtWithDefault 1 "LABEL" args_
 
         attributeString =
-            getStringAtWithDefault 2 "IMAGE ATTRIBUTES" args_
+            Parser.getStringAtWithDefault 2 "IMAGE ATTRIBUTES" args_
 
         imageAttrs =
             Render.Image.parseImageAttributes attributeString
@@ -1159,16 +1138,16 @@ renderImageRef : LaTeXState -> List Expression -> Html msg
 renderImageRef latexState args =
     let
         args_ =
-            renderToStingList args
+            Parser.renderToStringList args
 
         url =
-            getStringAtWithDefault 0 "URL" args_
+            Parser.getStringAtWithDefault 0 "URL" args_
 
         imageUrl =
-            getStringAtWithDefault 1 "IMAGE URL" args_
+            Parser.getStringAtWithDefault 1 "IMAGE URL" args_
 
         attributeString =
-            getStringAtWithDefault 2 "IMAGE ATTRIBUTES" args_
+            Parser.getStringAtWithDefault 2 "IMAGE ATTRIBUTES" args_
 
         imageAttrs =
             Render.Image.parseImageAttributes attributeString
@@ -1217,14 +1196,14 @@ colored latexState args =
     -- TODO
     let
         args_ =
-            renderToStingList args
+            Parser.renderToStringList args
 
         lang : String -> Result (List DeadEnd) SyntaxHighlight.HCode
         lang =
-            getLang (getStringAtWithDefault 0 "LANG" args_)
+            getLang (Parser.getStringAtWithDefault 0 "LANG" args_)
 
         theCode =
-            getStringAtWithDefault 1 "CODE" args_
+            Parser.getStringAtWithDefault 1 "CODE" args_
     in
     lang theCode
         |> Result.map SyntaxHighlight.toInlineHtml
@@ -1279,16 +1258,16 @@ ellie : List Expression -> Html msg
 ellie args =
     let
         args_ =
-            renderToStingList args
+            Parser.renderToStringList args
 
         id =
-            getStringAtWithDefault 0 "0" args_
+            Parser.getStringAtWithDefault 0 "0" args_
 
         url =
             "https://ellie-app.com/embed/" ++ id
 
         title_ =
-            getStringAtWithDefault 1 "TITLE" args_
+            Parser.getStringAtWithDefault 1 "TITLE" args_
 
         title =
             if title_ == "xxx" then
@@ -1308,13 +1287,13 @@ iframe : List Expression -> Html msg
 iframe args =
     let
         args_ =
-            renderToStingList args
+            Parser.renderToStringList args
 
         url =
-            getStringAtWithDefault 0 "URL" args_
+            Parser.getStringAtWithDefault 0 "URL" args_
 
         title =
-            getStringAtWithDefault 1 "TITLE" args_
+            Parser.getStringAtWithDefault 1 "TITLE" args_
     in
     Html.iframe
         [ HA.src url
