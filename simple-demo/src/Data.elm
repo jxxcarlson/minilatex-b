@@ -65,18 +65,26 @@ Nested environments don't parse properly.
 Highlight macro not working.
 \\end{defitem}
 
-\\begin{indent}
-The combination of MiniLaTeX and MathJax
-gives you access to both text-mode
-and math-mode LaTeX in the browser.
-\\end{indent}
+\\begin{defitem}[Bug]
+Display math not centered
+\\end{defitem}
 
+\\begin{defitem}[Bug]
+Syntax colors not displayed.  CSS not read.
+\\end{defitem}
 
 \\begin{obeylines}
 one
 two
 three
 \\end{obeylines}
+
+\\begin{indent}
+The combination of MiniLaTeX and MathJax
+gives you access to both text-mode
+and math-mode LaTeX in the browser.
+\\end{indent}
+
 
 
 \\begin{center}

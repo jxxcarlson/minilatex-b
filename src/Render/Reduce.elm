@@ -11,6 +11,7 @@ for a full document as it parses it block-by-block.
 
 import Parser.Expression exposing (Expression(..))
 import Render.LaTeXState exposing (LaTeXState)
+import Render.MathMacro
 import Render.ReducerHelper as ReducerHelper
 
 
@@ -53,17 +54,18 @@ envReducer name optonalArgs body state =
             "align" ->
                 ReducerHelper.setEquationNumber body state
 
-            --"mathmacro" ->
-            --    case body of
-            --        LXString str ->
-            --            let
-            --                mathDict =
-            --                    Internal.MathMacro.makeMacroDict (String.trim str)
-            --            in
-            --            { state | mathMacroDictionary = mathDict }
-            --
-            --        _ ->
-            --            state
+            "mathmacro" ->
+                case body of
+                    Text str _ ->
+                        let
+                            mathDict =
+                                Render.MathMacro.makeMacroDict (String.trim str)
+                        in
+                        { state | mathMacroDictionary = mathDict }
+
+                    _ ->
+                        state
+
             --
             --"textmacro" ->
             --    case body of

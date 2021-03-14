@@ -20,6 +20,7 @@ import Parser.Parser as Parser
 import Regex
 import Render.Image
 import Render.LaTeXState as LaTeXState exposing (LaTeXState)
+import Render.MathMacro
 import SvgParser
 import SyntaxHighlight
 import Utility
@@ -50,10 +51,10 @@ renderExpr selectedId state expr =
             Html.span [] []
 
         InlineMath s sm ->
-            inlineMathText selectedId s sm
+            inlineMathText selectedId state s sm
 
         DisplayMath s sm ->
-            displayMathText selectedId s sm
+            displayMathText state selectedId s sm
 
         Macro name optArg args sm ->
             macro selectedId state name optArg args sm
@@ -318,7 +319,7 @@ equation selectedId latexState body =
                 Text str sm_ ->
                     ( str
                         |> String.trim
-                        --|> Internal.MathMacro.evalStr latexState.mathMacroDictionary
+                        |> Render.MathMacro.evalStr latexState.mathMacroDictionary
                         -- TODO: implement macro expansion
                         |> Parser.Helpers.removeLabel
                     , sm_
@@ -353,7 +354,7 @@ displayMathTextWithLabel_ selectedId latexState sm str label =
         [ Html.div ([ HA.style "float" "right", HA.style "margin-top" "3px" ] ++ active sm selectedId)
             [ Html.text label ]
         , Html.div (active sm selectedId)
-            [ mathText DisplayMathMode selectedId (String.trim str) sm ]
+            [ mathText latexState DisplayMathMode selectedId (String.trim str) sm ]
         ]
 
 
@@ -516,13 +517,13 @@ indent selectedId latexState body =
 -- END: RENDER ENVIRONMENT
 
 
-mathText : DisplayMode -> String -> String -> SourceMap -> Html LaTeXMsg
-mathText displayMode selectedId content sm =
+mathText : LaTeXState -> DisplayMode -> String -> String -> SourceMap -> Html LaTeXMsg
+mathText state displayMode selectedId content sm =
     Html.node "math-text"
         (active sm selectedId
             ++ [ HA.property "delay" (Json.Encode.bool False)
                , HA.property "display" (Json.Encode.bool (isDisplayMathMode displayMode))
-               , HA.property "content" (Json.Encode.string (content |> String.replace "\\ \\" "\\\\"))
+               , HA.property "content" (Json.Encode.string (content |> Render.MathMacro.evalStr state.mathMacroDictionary |> String.replace "\\ \\" "\\\\"))
                , clicker sm
                , HA.id (makeId sm)
 
@@ -542,14 +543,14 @@ isDisplayMathMode displayMode =
             True
 
 
-inlineMathText : String -> String -> SourceMap -> Html LaTeXMsg
-inlineMathText selectedId str_ sm =
-    mathText InlineMathMode selectedId (String.trim str_) sm
+inlineMathText : String -> LaTeXState -> String -> SourceMap -> Html LaTeXMsg
+inlineMathText selectedId state str_ sm =
+    mathText state InlineMathMode selectedId (String.trim str_) sm
 
 
-displayMathText : String -> String -> SourceMap -> Html LaTeXMsg
-displayMathText selectedId str_ sm =
-    mathText DisplayMathMode selectedId (String.trim str_) sm
+displayMathText : LaTeXState -> String -> String -> SourceMap -> Html LaTeXMsg
+displayMathText state selectedId str_ sm =
+    mathText state DisplayMathMode selectedId (String.trim str_) sm
 
 
 {-| Highlight the segment of a text defined by the sourceMap. The information

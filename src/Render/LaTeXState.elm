@@ -32,6 +32,7 @@ import Html exposing (Attribute)
 import Html.Attributes as HA
 import LaTeXMsg exposing (LaTeXMsg)
 import Parser.Expression exposing (Expression(..), SourceMap)
+import Render.MathMacro
 
 
 
@@ -50,7 +51,7 @@ type alias LaTeXState =
     , tableOfContents : TableOfContents
     , dictionary : Dictionary
     , textMacroDictionary : MacroDictionary
-    , mathMacroDictionary : MacroDictionary
+    , mathMacroDictionary : Render.MathMacro.MathMacroDict
     , config : Config
     }
 
