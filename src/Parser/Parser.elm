@@ -2,7 +2,7 @@ module Parser.Parser exposing
     ( Parser, Context(..)
     , parseLoop, expression, expressionList, parseExpression, macro
     , getStringAtWithDefault, renderArg
-    , optionalArg, renderToStringList
+    , optionalArg, parse, renderToStringList
     )
 
 {-| Function parserLoop takes as input an integer representing a "chunkNumber"
@@ -189,7 +189,7 @@ handleError tc_ e =
             e |> List.head
 
         problem =
-            mFirstError |> Maybe.map .problem |> Maybe.withDefault GenericError
+            mFirstError |> Maybe.map .problem |> Maybe.withDefault UnHandledError
 
         errorColumn =
             mFirstError |> Maybe.map .col |> Maybe.withDefault 0
@@ -282,6 +282,7 @@ expression : Int -> Int -> Parser Expression
 expression generation lineNumber =
     Parser.oneOf
         [ comment generation lineNumber
+        , newcommand -- ARGS? (TODO)
         , macro generation lineNumber
         , environment generation lineNumber
         , displayMath generation lineNumber
@@ -290,8 +291,21 @@ expression generation lineNumber =
         ]
 
 
+{-| Transform a string into a list of LatexExpressions
 
--- Text
+    parse "Pythagoras: $a^2 + b^2 = c^2$"
+    --> [LXString ("Pythagoras: "),InlineMath ("a^2 + b^2 = c^2")]
+
+-}
+parse : String -> List Expression
+parse str =
+    case Parser.run (expressionList 0 0) str of
+        Ok list ->
+            list
+
+        Err _ ->
+            -- TODO: vvv very bad code.  Fix this! vvv
+            [ LXError "Error parsing expression list" UnHandledError Expression.dummySourceMap ]
 
 
 text : Int -> Int -> Parser Expression
@@ -417,6 +431,44 @@ displayMath generation lineNumber =
             |= getChompedString generation lineNumber (Parser.chompUntil (Parser.Token "$$" ExpectingTrailingDoubleDollarSign))
             |. Parser.symbol (Parser.Token "$$" ExpectingTrailingDoubleDollarSign)
             |. Parser.spaces
+
+
+
+-- Newcommand
+
+
+newcommand : Parser Expression
+newcommand =
+    Parser.succeed (\name nargs arg_ -> NewCommand name nargs arg_ Expression.dummySourceMap)
+        |. Parser.symbol (Parser.Token "\\newcommand{" ExpectingLeftBrace)
+        |= (macroName 0 0 |> Parser.map Tuple.first)
+        |. Parser.symbol (Parser.Token "}" ExpectingRightBrace)
+        |= numberOfArgs
+        |= arg 0 0
+        |. Parser.spaces
+
+
+{-|
+
+    import LXParser
+
+    LXParser.run numberOfArgs "[3]"
+    --> Ok 3
+
+-}
+numberOfArgs : Parser Int
+numberOfArgs =
+    many numberOfArgs_
+        |> Parser.map List.head
+        |> Parser.map (Maybe.withDefault 0)
+
+
+numberOfArgs_ : Parser Int
+numberOfArgs_ =
+    Parser.succeed identity
+        |. Parser.symbol (Parser.Token "[" ExpectingLeftBracket)
+        |= Parser.int ExpectingInt InvalidInt
+        |. Parser.symbol (Parser.Token "]" ExpectingRightBracket)
 
 
 
@@ -674,10 +726,6 @@ environmentDict =
 standardEnvironmentBody : Int -> Int -> String -> String -> Parser Expression
 standardEnvironmentBody generation chunkOffset endWoord envType =
     -- Parser.succeed (fixExpr chunkOffset envType)
-    let
-        _ =
-            Debug.log "!!t STD EB" envType
-    in
     Parser.succeed (\start oa body end src -> Environment envType oa body { content = src, blockOffset = chunkOffset, offset = start, length = end - start, generation = generation })
         |= Parser.getOffset
         |= many (argBracket generation chunkOffset)
@@ -774,7 +822,7 @@ runParser p str =
             latexExpr
 
         Err error ->
-            [ LXError "error running Parser" GenericError Expression.dummySourceMap ]
+            [ LXError "error running Parser" UnHandledError Expression.dummySourceMap ]
 
 
 

@@ -13,6 +13,7 @@ import Parser.Expression exposing (Expression(..))
 import Render.LaTeXState exposing (LaTeXState)
 import Render.MathMacro
 import Render.ReducerHelper as ReducerHelper
+import Render.TextMacro
 
 
 {-| -}
@@ -29,8 +30,9 @@ latexStateReducerAux lexpr state =
 
         --SMacro name optionalArgs args latexExpression ->
         --    smacroReducer name optionalArgs args latexExpression state
-        --NewCommand name nArgs body ->
-        --    ReducerHelper.setMacroDefinition name body state
+        NewCommand name nArgs body _ ->
+            Render.TextMacro.setMacroDefinition name body state
+
         Environment name optonalArgs body _ ->
             envReducer name optonalArgs body state
 
@@ -66,13 +68,21 @@ envReducer name optonalArgs body state =
                     _ ->
                         state
 
-            --
-            --"textmacro" ->
-            --    case body of
-            --        LXString str ->
-            --            ReducerHelper.setDictionary str state
-            --_ ->
-            --    state
+            "textmacro" ->
+                case body of
+                    Text str _ ->
+                        let
+                            laTeXState_ =
+                                Render.TextMacro.setMacroDictionary (Debug.log "BODY" str) state
+
+                            _ =
+                                Debug.log "TEXT MACROS (D)" laTeXState_.textMacroDictionary
+                        in
+                        laTeXState_
+
+                    _ ->
+                        state
+
             _ ->
                 state
 

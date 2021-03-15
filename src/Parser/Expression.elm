@@ -86,7 +86,9 @@ type Problem
     | ExpectingRightBrace
     | ExpectingTrailingDollarSign
     | ExpectingTrailingDoubleDollarSign
-    | GenericError
+    | UnHandledError
+    | ExpectingInt
+    | InvalidInt
     | ExpectingPrefix Char
     | ExpectingSpace
     | RejectMacroReservedWord
@@ -143,7 +145,6 @@ getSelectionFromSourceMap sourceMap str sourceMapIndex_ =
                 |> List.map Tuple.second
                 |> List.head
                 |> Maybe.withDefault []
-                |> Debug.log "DATA (get sel from src)"
 
         sel_ : List String
         sel_ =
@@ -458,7 +459,7 @@ problemAsString prob =
         ExpectingRightBracket ->
             "Expecting right bracket (10)"
 
-        GenericError ->
+        UnHandledError ->
             "Generic error (11)s"
 
         ExpectingEndOfWordSpace ->
@@ -499,3 +500,9 @@ problemAsString prob =
 
         ExpectingLeadingPercentSign ->
             "Expecting leading % ... (24)"
+
+        ExpectingInt ->
+            "Expecting Int (25)"
+
+        InvalidInt ->
+            "Invalid Int (26)"

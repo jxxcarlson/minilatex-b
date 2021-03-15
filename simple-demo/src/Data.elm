@@ -319,6 +319,8 @@ Likewise, the text
 
 yields \\hello{John}.
 
+\\strong{Example:} \\reverseconcat{A}{B}{C}
+
 \\section{MiniLatex Macros}
 
 MiniLatex has a number of macros of its own,  For

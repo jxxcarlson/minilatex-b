@@ -10,6 +10,7 @@ module Render.ReducerHelper exposing
 
 -}
 
+import Dict
 import List.Extra
 import Maybe.Extra
 import Parser.Advanced
@@ -27,6 +28,7 @@ import Render.LaTeXState
         , setDictionaryItem
         , updateCounter
         )
+import Render.TextMacro
 
 
 {-| -}
@@ -207,13 +209,10 @@ setBibItemXRef optionalArgs args latexState =
     setDictionaryItem ("bibitem:" ++ label) value latexState
 
 
-{-| -}
-setMacroDefinition : String -> Expression -> LaTeXState -> LaTeXState
-setMacroDefinition name body latexState =
-    setMacroDefinition name body latexState
 
-
-
+--setMacroDefinition : String -> Expression -> LaTeXState -> LaTeXState
+--setMacroDefinition name body latexState =
+--    setMacroDefinition name body latexState
 {- Helpers -}
 --List.Extra.getAt : Int -> List String -> String
 --List.Extra.getAt k list_ =
@@ -289,41 +288,6 @@ getMacroArgs macroName latexExpression =
 
         _ ->
             []
-
-
-
--- FOR TEXTMACRO DICTONARY
-
-
-{-| Take a string of text-mode macro definitions, parse them,
-and add them to latexState.macrodictionary
--}
-setDictionary : String -> LaTeXState -> LaTeXState
-setDictionary str latexState =
-    case Parser.parseExpression 0 0 str of
-        Just e ->
-            -- TODO: I am pretty sure the below is wrong, even if it compiles.
-            setDictionaryAux [ e ] latexState
-
-        Nothing ->
-            latexState
-
-
-{-| -}
-setDictionaryAux : List Expression -> LaTeXState -> LaTeXState
-setDictionaryAux list latexState =
-    List.foldl macroDictReducer latexState list
-
-
-{-| -}
-macroDictReducer : Expression -> LaTeXState -> LaTeXState
-macroDictReducer lexpr state =
-    case lexpr of
-        NewCommand name nArgs body _ ->
-            setMacroDefinition name body state
-
-        _ ->
-            state
 
 
 

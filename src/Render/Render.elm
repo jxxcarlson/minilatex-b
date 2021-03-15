@@ -21,6 +21,7 @@ import Regex
 import Render.Image
 import Render.LaTeXState as LaTeXState exposing (LaTeXState)
 import Render.MathMacro
+import Render.TextMacro
 import SvgParser
 import SyntaxHighlight
 import Utility
@@ -87,11 +88,24 @@ errorString p _ =
 macro : String -> LaTeXState -> String -> Maybe Expression -> List Expression -> SourceMap -> Html LaTeXMsg
 macro selectedId state name optArg args sm =
     case Dict.get name macroDict of
-        Nothing ->
-            undefinedMacro name sm
-
         Just f ->
             f selectedId state optArg args sm
+
+        Nothing ->
+            case Dict.get name state.textMacroDictionary of
+                Nothing ->
+                    --  reproduceMacro source name latexState optArgs args
+                    undefinedMacro name sm
+
+                Just macroDefinition ->
+                    let
+                        macro_ =
+                            Macro name Nothing args Parser.Expression.dummySourceMap
+
+                        expr =
+                            Render.TextMacro.expandMacro macro_ macroDefinition
+                    in
+                    render "nada" state [ expr ] |> (\x -> Html.span [] x)
 
 
 undefinedMacro : String -> SourceMap -> Html LaTeXMsg
@@ -462,7 +476,7 @@ obeylines selectedId latexState body =
 defitem : String -> LaTeXState -> List Expression -> Expression -> Html LaTeXMsg
 defitem selectedId latexState optArgs body =
     Html.div []
-        [ Html.strong [] [ Html.text <| Parser.renderArg (Debug.log "!!OPTARGS" optArgs) ]
+        [ Html.strong [] [ Html.text <| Parser.renderArg optArgs ]
         , Html.div [ HA.style "margin-left" "25px", HA.style "margin-top" "10px" ] (render selectedId latexState [ body ])
         ]
 
@@ -1059,8 +1073,7 @@ renderSection labelFunction si ms state args sm st =
             str |> String.toLower |> String.replace " " ""
 
         ref =
-            Debug.log "REF" <|
-                String.join "_" [ "", prefix, compress_ name ]
+            String.join "_" [ "", prefix, compress_ name ]
     in
     labelFunction state :: render si state args |> Html.span (st ++ active sm si ++ [ HA.id ref ])
 
