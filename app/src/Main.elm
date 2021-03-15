@@ -113,26 +113,13 @@ initialText =
 
 
 \\begin{textmacro}
-\\newcommand{\\boss}{Phineas Fogg}
 \\newcommand{\\hello}[1]{Hello \\strong{#1}!}
-\\newcommand{\\reverseconcat}[3]{#3#2#1}
 \\end{textmacro}
+\\newcommand{\\reverseconcat}[3]{#3#2#1}
 
 \\hello{John}
 
-% \\reverseconcat{A}{B}{C}
-
-\\strong{\\italic{Note.}} \\italic{This app is a demo of the simplest rendering
-features of the} \\red{MiniLaTeX library.}
-\\italic{Thus, while you can see the source text
-(left panel), the source text cannot be edited.}
-
-\\section{Introduction}
-
-\\strong{MiniLatex} is a subset of LaTeX that can be
-rendered live in the browser using a custom just-in-time compiler.
-It can also be used for static text, as in this simple demo app
-using the function \\code{MiniLaTeX.compile document}.
+\\reverseconcat{A}{B}{C}
 """
 
 

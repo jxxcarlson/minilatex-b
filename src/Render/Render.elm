@@ -85,12 +85,13 @@ errorString p _ =
         ++ Parser.Expression.problemAsString p
 
 
+{-| If the macro definition is in macroDict : Dict .., use the dictionary
+entry to render the macro. If it is not in the dictionary, see if
+it is defined in the runtime dictionary laTeXState.textDictionary: MacroDictionary.
+In that case, expand the macro using `Render.TextMacro.expandMacro` and apply it.
+-}
 macro : String -> LaTeXState -> String -> Maybe Expression -> List Expression -> SourceMap -> Html LaTeXMsg
 macro selectedId state name optArg args sm =
-    let
-        _ =
-            Debug.log "!! macro" name
-    in
     case Dict.get name macroDict of
         Just f ->
             f selectedId state optArg args sm
@@ -104,12 +105,10 @@ macro selectedId state name optArg args sm =
                 Just macroDefinition ->
                     let
                         macro_ =
-                            Debug.log "macro_"
-                                (Macro name Nothing args Parser.Expression.dummySourceMap)
+                            Macro name Nothing args Parser.Expression.dummySourceMap
 
                         expr =
-                            Debug.log "expr" <|
-                                Render.TextMacro.expandMacro macro_ macroDefinition
+                            Render.TextMacro.expandMacro macro_ macroDefinition
                     in
                     render "nada" state [ expr ] |> (\x -> Html.span [] x)
 

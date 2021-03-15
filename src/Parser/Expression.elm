@@ -248,9 +248,9 @@ toString expr =
             -- TODO: incomplete
             "\\begin{" ++ name ++ "} ... \\end{" ++ name ++ "}"
 
-        NewCommand name _ _ _ ->
+        NewCommand name _ e _ ->
             -- TODO: incomplete
-            "\\newcommand: " ++ name
+            "\\newcommand: " ++ toString e
 
         LXError str p sm ->
             "((( Error at " ++ String.fromInt sm.offset ++ ": " ++ problemAsString p ++ " [" ++ str ++ "]  )))"
