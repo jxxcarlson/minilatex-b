@@ -73,10 +73,7 @@ envReducer name optonalArgs body state =
                     Text str _ ->
                         let
                             laTeXState_ =
-                                Render.TextMacro.setMacroDictionary (Debug.log "BODY" str) state
-
-                            _ =
-                                Debug.log "TEXT MACROS (D)" laTeXState_.textMacroDictionary
+                                Render.TextMacro.setMacroDictionary str state
                         in
                         laTeXState_
 

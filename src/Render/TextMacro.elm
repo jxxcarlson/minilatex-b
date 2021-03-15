@@ -152,25 +152,13 @@ setMacroDictionary str latexState =
 
 setDictionaryAux : List Expression -> LaTeXState -> LaTeXState
 setDictionaryAux list latexState =
-    let
-        _ =
-            Debug.log "LIST" list
-    in
     List.foldl macroDictReducer latexState list
 
 
 macroDictReducer : Expression -> LaTeXState -> LaTeXState
 macroDictReducer lexpr state =
-    let
-        _ =
-            Debug.log "MDR" lexpr
-    in
     case lexpr of
         NewCommand name nArgs_ body _ ->
-            let
-                _ =
-                    Debug.log "MDR (name, body)" ( name, body )
-            in
             setMacroDefinition name body state
 
         _ ->
@@ -184,7 +172,7 @@ setMacroDefinition macroName macroDefinition latexState =
         macroDictionary =
             latexState.textMacroDictionary
     in
-    { latexState | textMacroDictionary = Dict.insert (Debug.log "SMD" macroName) macroDefinition macroDictionary }
+    { latexState | textMacroDictionary = Dict.insert macroName macroDefinition macroDictionary }
 
 
 
