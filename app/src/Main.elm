@@ -109,11 +109,18 @@ type alias Flags =
 
 
 initialText =
-    """aaa
-bbb
+    """
 
-ccc
-ddd
+
+\\begin{textmacro}
+\\newcommand{\\boss}{Phineas Fogg}
+\\newcommand{\\hello}[1]{Hello \\strong{#1}!}
+\\newcommand{\\reverseconcat}[3]{#3#2#1}
+\\end{textmacro}
+
+\\hello{John}
+
+% \\reverseconcat{A}{B}{C}
 
 \\strong{\\italic{Note.}} \\italic{This app is a demo of the simplest rendering
 features of the} \\red{MiniLaTeX library.}

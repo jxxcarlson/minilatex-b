@@ -87,6 +87,10 @@ errorString p _ =
 
 macro : String -> LaTeXState -> String -> Maybe Expression -> List Expression -> SourceMap -> Html LaTeXMsg
 macro selectedId state name optArg args sm =
+    let
+        _ =
+            Debug.log "!! macro" name
+    in
     case Dict.get name macroDict of
         Just f ->
             f selectedId state optArg args sm
@@ -100,10 +104,12 @@ macro selectedId state name optArg args sm =
                 Just macroDefinition ->
                     let
                         macro_ =
-                            Macro name Nothing args Parser.Expression.dummySourceMap
+                            Debug.log "macro_"
+                                (Macro name Nothing args Parser.Expression.dummySourceMap)
 
                         expr =
-                            Render.TextMacro.expandMacro macro_ macroDefinition
+                            Debug.log "expr" <|
+                                Render.TextMacro.expandMacro macro_ macroDefinition
                     in
                     render "nada" state [ expr ] |> (\x -> Html.span [] x)
 

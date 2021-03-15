@@ -89,6 +89,7 @@ type Problem
     | UnHandledError
     | ExpectingInt
     | InvalidInt
+    | ExpectingValidMacroArgWord
     | ExpectingPrefix Char
     | ExpectingSpace
     | RejectMacroReservedWord
@@ -506,3 +507,6 @@ problemAsString prob =
 
         InvalidInt ->
             "Invalid Int (26)"
+
+        ExpectingValidMacroArgWord ->
+            "Expecting valid macro arg word (27)"

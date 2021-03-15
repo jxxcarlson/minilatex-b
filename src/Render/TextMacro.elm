@@ -28,16 +28,21 @@ import Render.LaTeXState exposing (LaTeXState)
     --> LatexList [LXString ("Hello "),Macro "strong" [] [LatexList [LXString "John"]],LXString "!"]
 
 -}
-expandMacro_ : Expression -> Expression -> Expression
-expandMacro_ macro macroDef =
+expandMacro : Expression -> Expression -> Expression
+expandMacro macro macroDef =
     let
         _ =
-            Debug.log "EXP (1)" macro
+            Debug.log "EXPAND (1)" macro
 
         _ =
             Debug.log "EXPAND (2)" macroDef
     in
-    case expandMacro_ macro macroDef of
+    let
+        foo : Expression
+        foo =
+            Debug.log "EXPAND (3)" (expandMacro_ macro macroDef)
+    in
+    case foo of
         NewCommand _ _ latexList _ ->
             latexList
 
@@ -45,8 +50,20 @@ expandMacro_ macro macroDef =
             LXError "!! Error expanding macro" Parser.Expression.UnHandledError Parser.Expression.dummySourceMap
 
 
-expandMacro : Expression -> Expression -> Expression
-expandMacro macro macroDef =
+
+--
+--expandMacro : Expression -> Expression -> Expression
+--expandMacro macro macroDef =
+--    case expandMacro_ macro macroDef of
+--        NewCommand _ _ latexList _ ->
+--            latexList
+--
+--        _ ->
+--            LXError "Error expanding macro" Parser.Expression.UnHandledError Parser.Expression.dummySourceMap
+
+
+expandMacro_ : Expression -> Expression -> Expression
+expandMacro_ macro macroDef =
     case macroDef of
         Comment str sm ->
             Comment str sm
@@ -71,7 +88,11 @@ expandMacro macro macroDef =
             LXList (List.map (expandMacro_ macro) latexList)
 
         Text str sm ->
-            Text (substitute macro str) sm
+            let
+                _ =
+                    Debug.log "Text" str
+            in
+            Text (substitute macro str) sm |> Debug.log "SUB"
 
         NewCommand commandName numberOfArgs commandBody sm ->
             NewCommand commandName numberOfArgs (expandMacro_ macro commandBody) sm

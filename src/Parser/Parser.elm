@@ -282,7 +282,7 @@ expression : Int -> Int -> Parser Expression
 expression generation lineNumber =
     Parser.oneOf
         [ comment generation lineNumber
-        , newcommand -- ARGS? (TODO)
+        , newcommand generation lineNumber
         , macro generation lineNumber
         , environment generation lineNumber
         , displayMath generation lineNumber
@@ -435,17 +435,21 @@ displayMath generation lineNumber =
 
 
 -- Newcommand
+--     { blockOffset = 0, length = 0, offset = 0, content = "", generation = 0 }
 
 
-newcommand : Parser Expression
-newcommand =
-    Parser.succeed (\name nargs arg_ -> NewCommand name nargs arg_ Expression.dummySourceMap)
+newcommand : Int -> Int -> Parser Expression
+newcommand generation lineNumber =
+    Parser.succeed (\first_ name nargs arg_ last_ src -> NewCommand name nargs arg_ { blockOffset = lineNumber, generation = generation, length = last_ - first_, offset = first_, content = src })
+        |= Parser.getOffset
         |. Parser.symbol (Parser.Token "\\newcommand{" ExpectingLeftBrace)
         |= (macroName 0 0 |> Parser.map Tuple.first)
         |. Parser.symbol (Parser.Token "}" ExpectingRightBrace)
         |= numberOfArgs
-        |= arg 0 0
+        |= argForNewCommand
         |. Parser.spaces
+        |= Parser.getOffset
+        |= Parser.getSource
 
 
 {-|
@@ -618,6 +622,39 @@ arg generation lineNo =
                 ]
             |. Parser.symbol (Parser.Token "}" ExpectingRightBrace)
             |= Parser.getOffset
+
+
+argForNewCommand : Parser Expression
+argForNewCommand =
+    (Parser.succeed identity
+        |. Parser.symbol (Parser.Token "{" ExpectingLeftBrace)
+        |= many (Parser.oneOf [ macroArgWords, inlineMath 0 0, Parser.lazy (\_ -> macro 0 0) ])
+        |. Parser.symbol (Parser.Token "}" ExpectingRightBrace)
+    )
+        |> Parser.map LXList
+
+
+macroArgWords : Parser Expression
+macroArgWords =
+    nonEmptyItemList (wordX ExpectingValidMacroArgWord inMacroArg)
+        |> Parser.map (String.join " ")
+        |> Parser.map (\s -> Text s Expression.dummySourceMap)
+
+
+wordX : Problem -> (Char -> Bool) -> Parser String
+wordX problem inWord =
+    Parser.succeed String.slice
+        |= Parser.getOffset
+        |. Parser.chompIf inWord problem
+        |. Parser.chompWhile inWord
+        |. Parser.spaces
+        |= Parser.getOffset
+        |= Parser.getSource
+
+
+inMacroArg : Char -> Bool
+inMacroArg c =
+    not (c == '\\' || c == '$' || c == '}' || c == ' ' || c == '\n')
 
 
 argBracket : Int -> Int -> Parser Expression
