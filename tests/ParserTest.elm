@@ -9,6 +9,23 @@ import Parser.TestHelper exposing (parseAndRecompose, roundTripCheck, squeezeSpa
 import Test exposing (describe, fuzz, test)
 
 
+simpleEnvironment =
+    """\\begin{foo}
+xyz
+\\end{foo}
+"""
+
+
+nestedEnvironment =
+    """
+\\begin{foo}
+\\begin{bar}
+one two three
+\\end{bar}
+\\end{foo}
+"""
+
+
 suite =
     describe "The Parser module"
         [ describe "expressionList"
@@ -44,6 +61,11 @@ suite =
                     "\\strong{stuff"
                         |> run (expression 0 0)
                         |> Expect.equal (Err [ { col = 14, contextStack = [ { col = 8, context = ArgContext, row = 1 } ], problem = ExpectingRightBrace, row = 1 } ])
+            , test "simple environtments" <|
+                \_ ->
+                    simpleEnvironment
+                        |> run (expression 0 0)
+                        |> Expect.equal (Ok (Environment "foo" [] (LXList [ Text "xyz\n" { blockOffset = 0, content = "xyz\n", generation = 0, length = 4, offset = 12 } ]) { blockOffset = 0, content = "\\begin{foo}\nxyz\n\\end{foo}\n", generation = 0, length = 25, offset = 0 }))
 
             -- fuzz runs the test 100 times with randomly-generated inputs!
             , fuzz string "restores the original string if you run it again" <|
