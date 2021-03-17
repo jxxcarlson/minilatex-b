@@ -54,6 +54,11 @@ suite =
                     "\\begin{foo}\n\\begin{bar}\nxyz\n\\end{bar}\n\\end{foo}"
                         |> run (expression 0 0)
                         |> Expect.equal (Ok (Environment "foo" [] (LXList [ Environment "bar" [] (LXList [ Text "xyz\n" { blockOffset = 0, content = "xyz\n", generation = 0, length = 4, offset = 24 } ]) { blockOffset = 0, content = "\\begin{foo}\n\\begin{bar}\nxyz\n\\end{bar}\n\\end{foo}", generation = 0, length = 25, offset = 12 }, Text "\n" { blockOffset = 0, content = "\n", generation = 0, length = 1, offset = 37 } ]) { blockOffset = 0, content = "\\begin{foo}\n\\begin{bar}\nxyz\n\\end{bar}\n\\end{foo}", generation = 0, length = 47, offset = 0 }))
+            , test "environment containing display math" <|
+                \_ ->
+                    "\\begin{foo}\n$$\na^2 + b^2\n$$\n\\end{foo}"
+                        |> run (expression 0 0)
+                        |> Expect.equal (Ok (Environment "foo" [] (LXList [ DisplayMath "\na^2 + b^2\n" { blockOffset = 0, content = "\na^2 + b^2\n", generation = 0, length = 27, offset = 0 } ]) { blockOffset = 0, content = "\\begin{foo}\n$$\na^2 + b^2\n$$\n\\end{foo}", generation = 0, length = 37, offset = 0 }))
 
             -- fuzz runs the test 100 times with randomly-generated inputs!
             , fuzz string "restores the original string if you run it again" <|

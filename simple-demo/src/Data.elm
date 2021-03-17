@@ -37,10 +37,20 @@ MiniLatex is a subset of LaTeX that can be
 rendered live in the browser using a custom just-in-time compiler.
 Mathematical text is rendered by \\href{https://mathjax.org}{MathJax}:
 
-
+\\begin{theorem}
+Euler sez:
 $$
 \\int_{-\\infty}^\\infty e^{-x^2} dx = \\pi
 $$
+\\end{theorem}
+
+\\begin{center}
+The following environment is nested:
+\\begin{bar}
+Ho ho ho!
+\\end{bar}
+\\end{center}
+
 
 The combination of MiniLaTeX and MathJax
 gives you access to both text-mode

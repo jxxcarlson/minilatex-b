@@ -768,6 +768,7 @@ innerParseEnvironment generation chunkOffset =
         (Parser.oneOf
             [ environment generation chunkOffset
             , macro generation chunkOffset
+            , displayMath generation chunkOffset
             , inlineMath generation chunkOffset
             , environmentText generation chunkOffset
             ]
