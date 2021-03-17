@@ -277,6 +277,13 @@ type Step state a
 -- CLASSIFY LINE
 
 
+{-| type LineType
+= LTStart -- always succeeds
+| LTTextBlock -- always succeeds
+| LTMathBlock -- starts with $$
+| BeginEnvBlock String -- starts with \\begin{
+| EndEnvBlock String -- starts with \\end{
+-}
 classify : String -> LineType
 classify str =
     case P.run lineTypeParser str of
