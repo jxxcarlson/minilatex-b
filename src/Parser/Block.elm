@@ -93,7 +93,7 @@ nextState state_ =
                     { state_ | input = List.drop 1 state_.input }
             in
             case ( state.blockType, classify currentLine ) of
-                ( Start, LTStart ) ->
+                ( Start, LTBlank ) ->
                     Loop (start state)
 
                 ( Start, LTMathBlock ) ->
@@ -109,7 +109,7 @@ nextState state_ =
                     Loop (initBlock TextBlock currentLine state)
 
                 --
-                ( ErrorBlock, LTStart ) ->
+                ( ErrorBlock, LTBlank ) ->
                     Loop { state | blockType = Start, blockContents = [] }
 
                 ( ErrorBlock, LTMathBlock ) ->
@@ -125,7 +125,7 @@ nextState state_ =
                     Loop (initWithBlockType TextBlock currentLine state)
 
                 --
-                ( TextBlock, LTStart ) ->
+                ( TextBlock, LTBlank ) ->
                     Loop { state | blockType = Start, blockContents = [], output = List.reverse state.blockContents :: state.output }
 
                 ( TextBlock, LTMathBlock ) ->
@@ -141,7 +141,7 @@ nextState state_ =
                     Loop (addToBlockContents TextBlock currentLine state)
 
                 --
-                ( MathBlock, LTStart ) ->
+                ( MathBlock, LTBlank ) ->
                     Loop { state | blockType = Start, blockContents = [], output = List.reverse state.blockContents :: state.output }
 
                 ( MathBlock, LTMathBlock ) ->
@@ -157,8 +157,8 @@ nextState state_ =
                     Loop (addToBlockContents MathBlock currentLine state)
 
                 ---
-                ( EnvBlock _, LTStart ) ->
-                    Loop state
+                ( EnvBlock et, LTBlank ) ->
+                    Loop (addToBlockContents (EnvBlock et) currentLine state)
 
                 ( EnvBlock et, LTMathBlock ) ->
                     Loop (addToBlockContents (EnvBlock et) currentLine state)
@@ -291,11 +291,11 @@ classify str =
             lt
 
         Err _ ->
-            LTStart
+            LTBlank
 
 
 lineTypeParser =
-    P.oneOf [ mathBlockParser, beginEnvLineParser, endEnvLineParser, textBlockParser, P.succeed LTStart ]
+    P.oneOf [ mathBlockParser, beginEnvLineParser, endEnvLineParser, textBlockParser, P.succeed LTBlank ]
 
 
 beginEnvLineParser : P.Parser LineType

@@ -214,12 +214,21 @@ renderEnvironmentDict =
         --, ( "tabular", \s l e -> renderTabular s l e )
         --, ( "thebibliography", \s l e -> renderTheBibliography s l e )
         --, ( "useforweb", \s l e -> renderUseForWeb s l e )
-        --, ( "verbatim", \s l e -> renderVerbatim s l e )
+        , ( "verbatim", \si s l e -> verbatim si e )
         , ( "verse", \si s l e -> obeylines si s e )
         , ( "mathmacro", \si s l e -> Html.div [] [] )
         , ( "textmacro", \si s l e -> Html.div [] [] )
         , ( "svg", \si s l e -> svg e )
         ]
+
+
+verbatim : String -> Expression -> Html LaTeXMsg
+verbatim selectedId body =
+    let
+        body2 =
+            Parser.Expression.toString body
+    in
+    Html.pre [ HA.style "margin-top" "0px", HA.style "margin-bottom" "0px", HA.style "margin-left" "25px", HA.style "font-size" "14px" ] [ Html.text body2 ]
 
 
 

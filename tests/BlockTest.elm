@@ -56,11 +56,11 @@ suite =
             \_ ->
                 ex2
                     |> compile 0
-                    |> Expect.equal [ [ "\\begin{foo}", "a", "\n", "b", "\n", "c", "\\end{foo}" ], [ "one", "two", "three" ], [] ]
+                    |> Expect.equal [ [ "\\begin{foo}", "a", "b", "c", "\\end{foo}" ], [ "one", "two", "three" ], [] ]
         , test "environment with blank lines" <|
             -- TODO: should we respect blank lines inside environments?
             \_ ->
                 ex3
                     |> compile 0
-                    |> Expect.equal [ [ "\\begin{foo}", "a", "b", "c", "\\end{foo}" ], [] ]
+                    |> Expect.equal [ [ "\\begin{foo}", "a", "", "b", "", "c", "\\end{foo}" ], [] ]
         ]
