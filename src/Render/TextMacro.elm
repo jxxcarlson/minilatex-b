@@ -1,8 +1,19 @@
-module Render.TextMacro exposing (expandMacro, setMacroDefinition, setMacroDictionary)
+module Render.TextMacro exposing (expandMacro, setMacroDictionary, setMacroDefinition)
 
-{-| Expand text-mode macros
+{-| Expand text-mode macros. This code is used in module **Render.Reducce**:
 
-@docs expandMacro, setMacroDefinition, setMacroDictionary
+  - expandMacro — does the expansion
+  - setMacroDictionary — sets up a Dict String Expression which holds the macro definitions
+
+Text-mode macros are defined in a `textmacro` environment:
+
+    \begin{textmacro}
+    \newcommand{\boss}{Phineas Fogg}
+    \newcommand{\hello}[1]{Hello \strong{#1}!}
+    \newcommand{\reverseconcat}[3]{#3#2#1}
+    \end{textmacro}
+
+@docs expandMacro, setMacroDictionary, setMacroDefinition
 
 -}
 
@@ -12,26 +23,21 @@ import Parser.Parser
 import Render.LaTeXState exposing (LaTeXState)
 
 
-{-| EXAMPLE
-
-    import Parser exposing(run)
-    import Internal.Parser exposing(..)
-    import Internal.Macro exposing(..)
-
-    run latexExpression "\\newcommand{\\hello}[1]{Hello \\strong{#1}!}"
-    --> Ok (NewCommand "hello" 1 (LatexList [LXString ("Hello "),Macro "strong" [] [LatexList [LXString "#1"]],LXString "!"]))
-
-    run latexExpression "\\hello{John}"
-    --> Ok (Macro "hello" [] [LatexList [LXString "John"]])
-
-    macroDef : Expression
-    macroDef = NewCommand "hello" 1 (LatexList [LXString ("Hello "),Macro "strong" [] [LatexList [LXString "#1"]],LXString "!"])
-
-    macro : Expression
-    macro = Macro "hello" [] [LatexList [LXString "John"]]
+{-| In the function call below
 
     expandMacro macro macroDef
-    --> LatexList [LXString ("Hello "),Macro "strong" [] [LatexList [LXString "John"]],LXString "!"]
+
+the first argument is the actual macro to be expanded and the second is the
+definition of the macro. Suppose, for example that in pseudocode we have
+
+    macro =
+        parse "\\hello John"
+
+    macroDef =
+        parse "\\newcommand{\\hello}[1]{Hello \\strong{#1}!}"
+
+    evalMacro macro macroDef =
+        parse "Hello \\strong{John}!"
 
 -}
 expandMacro : Expression -> Expression -> Expression
@@ -142,7 +148,8 @@ renderArg_ k expressions =
 
 
 {-| Take a string of text-mode macro definitions, parse them,
-and add them to latexState.macrodictionary
+and add them to latexState.macrodictionary. This is code is
+called by Render.Reduce.envReducer
 -}
 setMacroDictionary : String -> LaTeXState -> LaTeXState
 setMacroDictionary str latexState =
@@ -164,7 +171,14 @@ macroDictReducer lexpr state =
             state
 
 
-{-| -}
+{-| This function is called in Render.Reduce by the NewCommand clause of
+
+    latexStateReducerAux : Expression -> LaTeXState -> LaTeXState
+
+which is in turn called by Render.Reduce.latexStateReducer, which
+is called by Render.Document.process.
+
+-}
 setMacroDefinition : String -> Expression -> LaTeXState -> LaTeXState
 setMacroDefinition macroName macroDefinition latexState =
     let

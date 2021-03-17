@@ -50,7 +50,7 @@ type alias LaTeXState =
     , crossReferences : CrossReferences
     , tableOfContents : TableOfContents
     , dictionary : Dictionary
-    , textMacroDictionary : MacroDictionary
+    , textMacroDictionary : TextMacroDictionary
     , mathMacroDictionary : Render.MathMacro.MathMacroDict
     , config : Config
     }
@@ -129,7 +129,7 @@ type alias Dictionary =
     Dict.Dict String String
 
 
-type alias MacroDictionary =
+type alias TextMacroDictionary =
     Dict.Dict String Expression
 
 

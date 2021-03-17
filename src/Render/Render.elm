@@ -1,7 +1,45 @@
 module Render.Render exposing (render, highlightWithSourceMap)
 
-{-| The render function transforma an Expression to Html,
-given a LaTeXState, which we _assume to have already been ocomputed._
+{-| The **render** function transforms a LaTeXState and a List Expression to
+a value of type List (Html LaTeXMsg).
+
+    render :
+        String
+        -> LaTeXState
+        -> List Expression
+        -> List (Html LaTeXMsg))
+
+The first argument is a unique string identifier (id). If it is matches one of the
+ids of the elements of List Expression, the counterpart to that expression in the
+rendered text will be highlighted.
+
+Elements of rendered text are _active_: when
+a user clicks on an element, a LaTeXMsg the id of that element is sent to
+the Elm runtime. The id specifies the part of the source text from which
+the rendered element was derived.
+
+The highlight and active-click features establish a two-way correspondence
+between the source and rendered text. Given an element of one, the corresponding
+element of the other can be found.
+
+
+## About ids
+
+An id for an element of rnedenered text is a string of the form `47:22-11`.
+The 47 is the _generation number_, an integer
+that increases by one on each edit. Different elements have different
+generation numbers depending on when they were edited. This part of the id
+is used to facilitate management of the virtual DOM. Elements whose generation
+number has changed will be re-rendered, those whose generation number is unchanged
+are not re-rendered.
+
+The 22 in the id is the _block offset_, which is the line number of the source text
+of the block of source text parsed in forming the given rendered text element.
+A block is a string representing either an ordinary paragraph (contiguous lines bordered
+by blank lines) or an outer begin-end pair. The 11 in the id is the (internal) offset,
+that is, the the index of the character which begins the string parsed to form the
+element. Note that a block parses to a List Expression, and so the element in question
+is just one member of such a list.
 
 @docs render, highlightWithSourceMap
 
@@ -32,10 +70,13 @@ type DisplayMode
     | DisplayMathMode
 
 
-{-| render a list of Expression using a given selectedId and LaTeXState.
-The selectedId determines wich element in the renderedText (if any) is
-highlighted. The LaTeXState carries information on cross-references,
+{-| Render a list of Expression using a given selectedId and LaTeXState.
+The selectedId determines which element in the renderedText (if any) is
+highlighted.
+
+The LaTeXState carries information on cross-references,
 section numbers, etc.
+
 -}
 render : String -> LaTeXState -> List Expression -> List (Html LaTeXMsg)
 render selectedId state exprs =
@@ -540,13 +581,10 @@ mathText : LaTeXState -> DisplayMode -> String -> String -> SourceMap -> Html La
 mathText state displayMode selectedId content sm =
     Html.node "math-text"
         (active sm selectedId
-            ++ [ HA.property "delay" (Json.Encode.bool False)
-               , HA.property "display" (Json.Encode.bool (isDisplayMathMode displayMode))
+            ++ [ HA.property "display" (Json.Encode.bool (isDisplayMathMode displayMode))
                , HA.property "content" (Json.Encode.string (content |> Render.MathMacro.evalStr state.mathMacroDictionary |> String.replace "\\ \\" "\\\\"))
                , clicker sm
                , HA.id (makeId sm)
-
-               --, HA.property "content" (Json.Encode.string content |> String.replace "\\ \\" "\\\\"))
                ]
         )
         []
