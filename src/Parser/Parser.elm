@@ -690,7 +690,7 @@ environment generation chunkOffset =
             Expression.setSourceMap { blockOffset = chunkOffset, length = end - start, offset = start, content = src, generation = generation } expr
         )
         |= Parser.getOffset
-        |= (envName generation chunkOffset |> Parser.andThen (environmentOfType generation chunkOffset))
+        |= (envName generation chunkOffset |> Parser.andThen (environment_ generation chunkOffset))
         |= Parser.getOffset
         |= Parser.getSource
 
@@ -718,8 +718,8 @@ envName generation chunkOffset =
 {- DISPATCHER AND SUBPARSERS -}
 
 
-environmentOfType : Int -> Int -> ( String, SourceMap ) -> Parser Expression
-environmentOfType generation chunkOffset ( envType, sm ) =
+environment_ : Int -> Int -> ( String, SourceMap ) -> Parser Expression
+environment_ generation chunkOffset ( envType, sm ) =
     let
         theEndWord =
             "\\end{"
@@ -736,17 +736,20 @@ environmentOfType generation chunkOffset ( envType, sm ) =
             else
                 envType
     in
-    environmentParser generation chunkOffset envKind theEndWord envType
-
-
-environmentParser : Int -> Int -> String -> String -> String -> Parser Expression
-environmentParser generation chunkOffset envKind theEndWord envType =
     case Dict.get envKind environmentDict of
         Just p ->
             p generation chunkOffset theEndWord envType
 
         Nothing ->
-            standardEnvironmentBody generation chunkOffset theEndWord envType
+            Parser.succeed (\start oa body end src -> Environment envType oa body { content = src, blockOffset = chunkOffset, offset = start, length = end - start, generation = generation })
+                |= Parser.getOffset
+                |= many (argBracket generation chunkOffset)
+                |. Parser.spaces
+                |= innerParseEnvironment generation chunkOffset
+                |. Parser.spaces
+                |. Parser.symbol (Parser.Token theEndWord (ExpectingEndWord theEndWord))
+                |= Parser.getOffset
+                |= Parser.getSource
 
 
 environmentDict : Dict.Dict String (Int -> Int -> String -> String -> Parser Expression)
@@ -760,24 +763,11 @@ environmentDict =
         ]
 
 
-standardEnvironmentBody : Int -> Int -> String -> String -> Parser Expression
-standardEnvironmentBody generation chunkOffset endWoord envType =
-    -- Parser.succeed (fixExpr chunkOffset envType)
-    Parser.succeed (\start oa body end src -> Environment envType oa body { content = src, blockOffset = chunkOffset, offset = start, length = end - start, generation = generation })
-        |= Parser.getOffset
-        |= many (argBracket generation chunkOffset)
-        |. Parser.spaces
-        |= innerParseEnvironment generation chunkOffset
-        |. Parser.spaces
-        |. Parser.symbol (Parser.Token endWoord (ExpectingEndWord endWoord))
-        |= Parser.getOffset
-        |= Parser.getSource
-
-
 innerParseEnvironment generation chunkOffset =
     many
         (Parser.oneOf
-            [ macro generation chunkOffset
+            [ environment generation chunkOffset
+            , macro generation chunkOffset
             , inlineMath generation chunkOffset
             , environmentText generation chunkOffset
             ]
