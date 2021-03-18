@@ -68,8 +68,9 @@ rendered text.
 \\end{comment}
 
 \\begin{defitem}[Bug]
-Nested environments don't parse properly.
+Update on other than "point" changes not working.
 \\end{defitem}
+
 
 \\begin{defitem}[Bug]
 Highlight macro not working.
@@ -80,7 +81,7 @@ Display math not centered
 \\end{defitem}
 
 \\begin{defitem}[Bug]
-Syntax colors not displayed.  CSS not read.
+Syntax colors not displayed.  CSS not read?
 \\end{defitem}
 
 \\begin{obeylines}

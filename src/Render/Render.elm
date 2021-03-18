@@ -92,6 +92,10 @@ renderExpr selectedId state expr =
         Comment s sm ->
             Html.span [] []
 
+        Item _ e sm ->
+            Html.li (state.config.textSpanStyle :: HA.style "margin-bottom" "8px" :: active sm selectedId)
+                (render selectedId state [ e ])
+
         InlineMath s sm ->
             inlineMathText selectedId state s sm
 

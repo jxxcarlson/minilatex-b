@@ -755,11 +755,12 @@ environment_ generation chunkOffset ( envType, sm ) =
 environmentDict : Dict.Dict String (Int -> Int -> String -> String -> Parser Expression)
 environmentDict =
     Dict.fromList
-        [ -- ( "enumerate", \endWoord envType -> itemEnvironmentBody endWoord envType )
-          --, ( "itemize", \endWoord envType -> itemEnvironmentBody endWoord envType )
-          --, ( "thebibliography", \endWoord envType -> biblioEnvironmentBody endWoord envType )
-          --, ( "tabular", \endWoord envType -> tabularEnvironmentBody endWoord envType )
-          ( "passThrough", \generation chunkOffset endWoord envType -> passThroughBody generation chunkOffset endWoord envType )
+        [ ( "enumerate", \generation chunkOffset endWoord envType -> itemEnvironmentBody generation chunkOffset endWoord envType )
+
+        --, ( "itemize", \endWoord envType -> itemEnvironmentBody endWoord envType )
+        --, ( "thebibliography", \endWoord envType -> biblioEnvironmentBody endWoord envType )
+        --, ( "tabular", \endWoord envType -> tabularEnvironmentBody endWoord envType )
+        , ( "passThrough", \generation chunkOffset endWoord envType -> passThroughBody generation chunkOffset endWoord envType )
         ]
 
 
@@ -851,6 +852,37 @@ runParser p str =
 
         Err error ->
             [ LXError "error running Parser" UnHandledError Expression.dummySourceMap ]
+
+
+
+-- Itemize and enumerate
+
+
+itemEnvironmentBody : Int -> Int -> String -> String -> Parser Expression
+itemEnvironmentBody generation chunkOffset endWoord envType =
+    ---  inContext "itemEnvironmentBody" <|
+    Parser.succeed (\start expr finish src -> Environment envType [] (LXList expr) (Expression.makeSourceMap generation chunkOffset start finish src))
+        |= Parser.getOffset
+        |. Parser.spaces
+        |= itemList (Parser.oneOf [ item generation chunkOffset ])
+        -- |= itemList (Parser.oneOf [ item generation chunkOffset, Parser.lazy (\_ -> environment generation chunkOffset) ])
+        |. Parser.spaces
+        |. Parser.symbol (Parser.Token endWoord (ExpectingEndWordInItemList endWoord))
+        |. Parser.spaces
+        |= Parser.getOffset
+        |= Parser.getSource
+
+
+item : Int -> Int -> Parser Expression
+item generation lineNumber =
+    ---  inContext "item" <|
+    Parser.succeed (\e -> Item 1 (LXList e) Expression.dummySourceMap)
+        |. Parser.spaces
+        |. Parser.symbol (Parser.Token "\\item" ExpectingEscapedItem)
+        |. Parser.symbol (Parser.Token " " ExpectingSpaceAfterItem)
+        |. Parser.spaces
+        |= itemList (Parser.oneOf [ text generation lineNumber, inlineMath generation lineNumber, macro generation lineNumber ])
+        |. Parser.spaces
 
 
 

@@ -2,6 +2,7 @@ module Parser.Expression exposing
     ( Expression(..), incrementBlockOffset, incrementOffset, toString
     , SourceMap, dummySourceMap, getSelectionFromSourceMap, getSource, getSourceOfList, sourceMapIndex, sourceMapToString, setSourceMap
     , Problem(..), equivalentProblem, problemAsString
+    , makeSourceMap
     )
 
 {-| Module **Parser.Expression** defines various data structures used by the parser (module Parser.Parser).
@@ -34,6 +35,7 @@ import List.Extra
 type Expression
     = Text String SourceMap
     | Comment String SourceMap
+    | Item Int Expression SourceMap
     | InlineMath String SourceMap
     | DisplayMath String SourceMap
     | Macro String (Maybe Expression) (List Expression) SourceMap
@@ -70,6 +72,10 @@ type alias SourceMap =
     }
 
 
+makeSourceMap gen bo start fin src =
+    { blockOffset = bo, generation = gen, offset = start, length = fin - start, content = src }
+
+
 {-| Used to identify parse errors
 -}
 type Problem
@@ -79,7 +85,10 @@ type Problem
     | ExpectingEndofLine
     | EndOfInput
     | ExpectingEndOfWordSpace
+    | ExpectingEndWordInItemList String
     | ExpectingLeftBracket
+    | ExpectingEscapedItem
+    | ExpectingSpaceAfterItem
     | ExpectingRightBracket
     | ExpectingBackslash
     | ExpectingLeftBrace
@@ -231,6 +240,9 @@ toString expr =
         Comment str _ ->
             str
 
+        Item _ e _ ->
+            toString e
+
         InlineMath str _ ->
             "$" ++ str ++ "$"
 
@@ -299,6 +311,9 @@ getSource expr =
         Comment _ source ->
             source
 
+        Item _ _ source ->
+            source
+
         InlineMath _ source ->
             source
 
@@ -334,6 +349,9 @@ incrementOffset delta expr =
 
         Comment e source ->
             Comment e { source | offset = source.offset + delta }
+
+        Item k e source ->
+            Item k e { source | offset = source.offset + delta }
 
         InlineMath e source ->
             InlineMath e { source | offset = source.offset + delta }
@@ -371,6 +389,9 @@ incrementBlockOffset delta expr =
         Comment e source ->
             Comment e { source | blockOffset = source.blockOffset + delta }
 
+        Item k e source ->
+            Item k e { source | blockOffset = source.blockOffset + delta }
+
         InlineMath e source ->
             InlineMath e { source | blockOffset = source.blockOffset + delta }
 
@@ -405,6 +426,9 @@ setSourceMap sm expr =
 
         Comment e _ ->
             Comment e sm
+
+        Item k e _ ->
+            Item k e sm
 
         InlineMath e _ ->
             InlineMath e sm
@@ -510,3 +534,12 @@ problemAsString prob =
 
         ExpectingValidMacroArgWord ->
             "Expecting valid macro arg word (27)"
+
+        ExpectingEndWordInItemList _ ->
+            "Expecting end word in item lsit (28)"
+
+        ExpectingEscapedItem ->
+            "Expecting escaped item (29)"
+
+        ExpectingSpaceAfterItem ->
+            "Expecting space after item (30)"

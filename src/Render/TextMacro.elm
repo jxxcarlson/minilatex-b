@@ -61,8 +61,9 @@ expandMacro_ macro macroDef =
 
         --SMacro name optArgs args le ->
         --    SMacro name optArgs (List.map (expandMacro_ macro) args) (expandMacro_ macro le)
-        --Item level latexExpr ->
-        --    Item level (expandMacro_ macro latexExpr)
+        Item level latexExpr sm ->
+            Item level (expandMacro_ macro latexExpr) sm
+
         InlineMath str sm ->
             InlineMath str sm
 
