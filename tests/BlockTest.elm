@@ -44,6 +44,20 @@ c
 """
 
 
+exItemized =
+    """
+\\begin{itemize}
+
+\\item Eggs
+
+\\item Milk
+
+\\item Butter
+
+\\end{itemize}
+"""
+
+
 suite =
     describe "The Parser.Block module"
         [ test "compile for formula and multi-line text" <|
@@ -52,15 +66,18 @@ suite =
                     |> compile 0
                     |> Expect.equal [ [ "Pythagoras said that" ], [ "$$a^2 + b^2 = c^2$$" ], [ "one", "two", "three" ], [] ]
         , test "environment" <|
-            -- TODO: should we respect blank lines inside environments?
             \_ ->
                 ex2
                     |> compile 0
                     |> Expect.equal [ [ "\\begin{foo}", "a", "b", "c", "\\end{foo}" ], [ "one", "two", "three" ], [] ]
         , test "environment with blank lines" <|
-            -- TODO: should we respect blank lines inside environments?
             \_ ->
                 ex3
                     |> compile 0
                     |> Expect.equal [ [ "\\begin{foo}", "a", "", "b", "", "c", "\\end{foo}" ], [] ]
+        , test "itemized environment" <|
+            \_ ->
+                exItemized
+                    |> compile 0
+                    |> Expect.equal [ [ "\\begin{itemize}", "", "\\item Eggs", "", "\\item Milk", "", "\\item Butter", "", "\\end{itemize}" ], [] ]
         ]

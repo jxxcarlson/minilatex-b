@@ -1,4 +1,4 @@
-module ParserTest exposing (suite)
+module ParserTest exposing (exItemized, suite)
 
 import Expect
 import Fuzz exposing (string)
@@ -7,6 +7,20 @@ import Parser.Expression exposing (..)
 import Parser.Parser exposing (..)
 import Parser.TestHelper exposing (parseAndRecompose, roundTripCheck, squeezeSpace)
 import Test exposing (describe, fuzz, test)
+
+
+exItemized =
+    """
+\\begin{itemize}
+
+\\item Eggs
+
+\\item Milk
+
+\\item Butter
+
+\\end{itemize}
+"""
 
 
 suite =
