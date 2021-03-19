@@ -2,7 +2,7 @@ module Parser.Expression exposing
     ( Expression(..), incrementBlockOffset, incrementOffset, toString
     , SourceMap, dummySourceMap, getSelectionFromSourceMap, getSource, getSourceOfList, sourceMapIndex, sourceMapToString, setSourceMap
     , Problem(..), equivalentProblem, problemAsString
-    , makeSourceMap
+    , Context(..), makeSourceMap
     )
 
 {-| Module **Parser.Expression** defines various data structures used by the parser (module Parser.Parser).
@@ -72,8 +72,20 @@ type alias SourceMap =
     }
 
 
+makeSourceMap : Int -> Int -> Int -> Int -> String -> SourceMap
 makeSourceMap gen bo start fin src =
     { blockOffset = bo, generation = gen, offset = start, length = fin - start, content = src }
+
+
+{-| -}
+type Context
+    = InlineMathContext
+    | DisplayMathContext
+    | MacroNameContext
+    | OptArgContext
+    | ArgContext
+    | WordContext
+    | EnvNameContext
 
 
 {-| Used to identify parse errors

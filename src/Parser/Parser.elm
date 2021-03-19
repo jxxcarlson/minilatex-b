@@ -1,5 +1,5 @@
 module Parser.Parser exposing
-    ( Parser, Context(..)
+    ( Parser
     , parseLoop, expression, expressionList, parseExpression, macro
     , getStringAtWithDefault, renderArg
     , optionalArg, parse, renderToStringList
@@ -84,26 +84,16 @@ TO ADD: COMMENTS ON THE STACK
 import Dict
 import List.Extra
 import Parser.Advanced as Parser exposing ((|.), (|=))
-import Parser.Expression as Expression exposing (Expression(..), Problem(..), SourceMap)
+import Parser.Expression as Expression exposing (Context(..), Expression(..), Problem(..), SourceMap)
 import Parser.Problem exposing (RecoveryData)
 import Parser.TextCursor as TextCursor exposing (TextCursor)
+import Parser.ToolAdvanced as ParserTool
 import Set
 
 
 {-| -}
 type alias Parser a =
     Parser.Parser Context Problem a
-
-
-{-| -}
-type Context
-    = InlineMathContext
-    | DisplayMathContext
-    | MacroNameContext
-    | OptArgContext
-    | ArgContext
-    | WordContext
-    | EnvNameContext
 
 
 
@@ -321,31 +311,42 @@ rawTextP_ generation lineNumber prefixChar stopChars =
             |. Parser.chompWhile (\c -> not (List.member c stopChars))
 
 
-textNP : Int -> Int -> List Char -> List Char -> Parser Expression
 textNP generation lineNumber prefixChars stopChars =
     let
-        sm : Int -> Int -> String -> Expression
-        sm start end src =
-            let
-                content =
-                    String.slice start end src
-
-                sm_ =
-                    { content = content
-                    , length = end - start
-                    , blockOffset = lineNumber
-                    , offset = start
-                    , generation = generation
-                    }
-            in
-            Text content sm_
+        makeSM =
+            Expression.makeSourceMap generation lineNumber
     in
-    Parser.succeed sm
-        |= Parser.getOffset
-        |. Parser.chompIf (\c -> not (List.member c prefixChars)) (ExpectingPrefixes prefixChars)
-        |. Parser.chompWhile (\c -> not (List.member c stopChars))
-        |= Parser.getOffset
-        |= Parser.getSource
+    ParserTool.textPS (\c -> not (List.member c prefixChars)) stopChars
+        |> Parser.map (\data -> Text data.content (makeSM data.start data.finish data.content))
+
+
+
+--
+--textNP1 : Int -> Int -> List Char -> List Char -> Parser Expression
+--textNP1 generation lineNumber prefixChars stopChars =
+--    let
+--        sm : Int -> Int -> String -> Expression
+--        sm start end src =
+--            let
+--                content =
+--                    String.slice start end src
+--
+--                sm_ =
+--                    { content = content
+--                    , length = end - start
+--                    , blockOffset = lineNumber
+--                    , offset = start
+--                    , generation = generation
+--                    }
+--            in
+--            Text content sm_
+--    in
+--    Parser.succeed sm
+--        |= Parser.getOffset
+--        |. Parser.chompIf (\c -> not (List.member c prefixChars)) (ExpectingPrefixes prefixChars)
+--        |. Parser.chompWhile (\c -> not (List.member c stopChars))
+--        |= Parser.getOffset
+--        |= Parser.getSource
 
 
 text_ : Int -> Int -> List Char -> Parser Expression

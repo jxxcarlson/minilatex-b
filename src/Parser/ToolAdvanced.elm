@@ -1,6 +1,11 @@
-module Parser.Tool exposing (many, optional, second, textPS)
+module Parser.ToolAdvanced exposing (..)
 
-import Parser exposing ((|.), (|=), Parser)
+import Parser.Advanced as Parser exposing ((|.), (|=))
+import Parser.Expression exposing (Context(..), Problem(..))
+
+
+type alias Parser a =
+    Parser.Parser Context Problem a
 
 
 {-| Apply a parser zero or more times and return a list of the results.
@@ -49,7 +54,7 @@ textPS : (Char -> Bool) -> List Char -> Parser { start : Int, finish : Int, cont
 textPS prefixTest stopChars =
     Parser.succeed (\start finish content -> { start = start, finish = finish, content = String.left (finish - start) content })
         |= Parser.getOffset
-        |. Parser.chompIf (\c -> prefixTest c)
+        |. Parser.chompIf (\c -> prefixTest c) UnHandledError
         |. Parser.chompWhile (\c -> not (List.member c stopChars))
         |= Parser.getOffset
         |= Parser.getSource
