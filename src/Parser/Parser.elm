@@ -253,7 +253,7 @@ newStack tc_ errorText_ mRecoveryData =
 -}
 expressionList : Int -> Int -> Parser (List Expression)
 expressionList generation lineNumber =
-    many (expression generation lineNumber)
+    ParserTool.many (expression generation lineNumber)
 
 
 {-| -}
@@ -437,7 +437,7 @@ newcommand generation lineNumber =
 -}
 numberOfArgs : Parser Int
 numberOfArgs =
-    many numberOfArgs_
+    ParserTool.many numberOfArgs_
         |> Parser.map List.head
         |> Parser.map (Maybe.withDefault 0)
 
@@ -500,7 +500,7 @@ macro generation lineNo =
         |= Parser.getOffset
         |= macroName generation lineNo
         |= optArg generation lineNo
-        |= many (arg generation lineNo)
+        |= ParserTool.many (arg generation lineNo)
         |= Parser.getOffset
         |= Parser.getSource
 
@@ -563,7 +563,7 @@ optionalArg : Int -> Int -> Parser Expression
 optionalArg generation chunkOffset =
     Parser.succeed identity
         |. Parser.symbol (Parser.Token "[" ExpectingLeftBracket)
-        |= itemList (Parser.oneOf [ optArg2 generation chunkOffset, inlineMath generation chunkOffset ])
+        |= ParserTool.many (Parser.oneOf [ optArg2 generation chunkOffset, inlineMath generation chunkOffset ])
         |. Parser.symbol (Parser.Token "]" ExpectingRightBracket)
         |> Parser.map LXList
 
@@ -603,7 +603,7 @@ argForNewCommand : Parser Expression
 argForNewCommand =
     (Parser.succeed identity
         |. Parser.symbol (Parser.Token "{" ExpectingLeftBrace)
-        |= many (Parser.oneOf [ macroArgWords, inlineMath 0 0, Parser.lazy (\_ -> macro 0 0) ])
+        |= ParserTool.many (Parser.oneOf [ macroArgWords, inlineMath 0 0, Parser.lazy (\_ -> macro 0 0) ])
         |. Parser.symbol (Parser.Token "}" ExpectingRightBrace)
     )
         |> Parser.map LXList
@@ -707,7 +707,7 @@ environment_ generation chunkOffset ( envType, sm ) =
         Nothing ->
             Parser.succeed (\start oa body end src -> Environment envType oa body { content = src, blockOffset = chunkOffset, offset = start, length = end - start, generation = generation })
                 |= Parser.getOffset
-                |= many (argBracket generation chunkOffset)
+                |= ParserTool.many (argBracket generation chunkOffset)
                 |. Parser.spaces
                 |= innerParseEnvironment generation chunkOffset
                 |. Parser.spaces
@@ -729,7 +729,7 @@ environmentDict =
 
 
 innerParseEnvironment generation chunkOffset =
-    many
+    ParserTool.many
         (Parser.oneOf
             [ environment generation chunkOffset
             , macro generation chunkOffset
@@ -779,7 +779,7 @@ passThroughData generation envType source lines =
     let
         optArgs =
             -- TODO: copout
-            runParser (itemList (optionalArg generation 0)) (List.head lines |> Maybe.withDefault "")
+            runParser (ParserTool.many (optionalArg generation 0)) (List.head lines |> Maybe.withDefault "")
 
         envTypeLength =
             String.length envType + 8
@@ -898,54 +898,6 @@ loop s nextState =
 
 
 
--- Many
-
-
-{-| Apply a parser zero or more times and return a list of the results.
--}
-many : Parser a -> Parser (List a)
-many p =
-    Parser.loop [] (manyHelp p)
-
-
-manyHelp : Parser a -> List a -> Parser (Parser.Step (List a) (List a))
-manyHelp p vs =
-    Parser.oneOf
-        [ eof |> Parser.map (\_ -> Parser.Done (List.reverse vs))
-        , Parser.succeed (\v -> Parser.Loop (v :: vs))
-            |= p
-        , Parser.succeed ()
-            |> Parser.map (\_ -> Parser.Done (List.reverse vs))
-        ]
-
-
-manyNonEmpty : Parser a -> Parser (List a)
-manyNonEmpty p =
-    p
-        |> Parser.andThen (\x -> itemList_ [ x ] p)
-
-
-
--- Many2
-
-
-many2 : (a -> Maybe a -> a) -> Parser a -> Parser (List a)
-many2 f p =
-    Parser.loop [] (manyHelp2 f p)
-
-
-manyHelp2 : (a -> Maybe a -> a) -> Parser a -> List a -> Parser (Parser.Step (List a) (List a))
-manyHelp2 f p vs =
-    Parser.oneOf
-        [ eof |> Parser.map (\_ -> Parser.Done (List.reverse vs))
-        , Parser.succeed (\v -> Parser.Loop (f v (List.head vs) :: vs))
-            |= p
-        , Parser.succeed ()
-            |> Parser.map (\_ -> Parser.Done (List.reverse vs))
-        ]
-
-
-
 -- ItemList
 
 
@@ -973,11 +925,6 @@ itemListHelper itemParser revItems =
         , Parser.succeed ()
             |> Parser.map (\_ -> Parser.Done (List.reverse revItems))
         ]
-
-
-eof : Parser ()
-eof =
-    Parser.end EndOfInput
 
 
 {-| chomp to end of the marker and return the

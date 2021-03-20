@@ -1,4 +1,4 @@
-module Parser.ToolAdvanced exposing (..)
+module Parser.ToolAdvanced exposing (many, manyNonEmpty, optional, second, textPS)
 
 import Parser.Advanced as Parser exposing ((|.), (|=))
 import Parser.Expression exposing (Context(..), Problem(..))
@@ -18,11 +18,23 @@ many p =
 manyHelp : Parser a -> List a -> Parser (Parser.Step (List a) (List a))
 manyHelp p vs =
     Parser.oneOf
-        [ Parser.succeed (\v -> Parser.Loop (v :: vs))
+        [ Parser.end UnHandledError |> Parser.map (\_ -> Parser.Done (List.reverse vs))
+        , Parser.succeed (\v -> Parser.Loop (v :: vs))
             |= p
         , Parser.succeed ()
             |> Parser.map (\_ -> Parser.Done (List.reverse vs))
         ]
+
+
+manyNonEmpty : Parser a -> Parser (List a)
+manyNonEmpty p =
+    p
+        |> Parser.andThen (\x -> manyWithInitialList [ x ] p)
+
+
+manyWithInitialList : List a -> Parser a -> Parser (List a)
+manyWithInitialList initialList p =
+    Parser.loop initialList (manyHelp p)
 
 
 {-| Running `optional p` means run p, but if it fails, succeed anyway

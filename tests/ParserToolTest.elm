@@ -2,6 +2,7 @@ module ParserToolTest exposing (suite)
 
 import Expect
 import Parser exposing ((|.), (|=), Parser, run)
+import Parser.Expression exposing (Problem(..))
 import Parser.Tool
 import Test exposing (describe, test)
 
@@ -30,6 +31,17 @@ suite =
                     ""
                         |> run (Parser.Tool.many int3)
                         |> Expect.equal (Ok [])
+            , test "manyNonEmpty" <|
+                \_ ->
+                    "i: 1, i: 2, i: 3"
+                        |> run (Parser.Tool.manyNonEmpty int3)
+                        |> Expect.equal (Ok [ 1, 2, 3 ])
+
+            --, test "manyNonEmpty, failure case" <|
+            --    \_ ->
+            --        ""
+            --            |> run (Parser.Tool.manyNonEmpty int3)
+            --            |> Expect.equal (Err [ { col = 1, problem = ExpectingSymbol "i: ", row = 1 } ])
             ]
         , describe "textPS" <|
             [ test "line" <|

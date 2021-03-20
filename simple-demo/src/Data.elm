@@ -65,7 +65,7 @@ add x y = x + y
 This is a long comment.
 It should not appear in the
 rendered text.
-\\end{comment}git 
+\\end{comment}git
 
 \\begin{defitem}[Bug]
 Update on other than "point" changes not working.
