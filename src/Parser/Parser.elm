@@ -611,7 +611,7 @@ argForNewCommand =
 
 macroArgWords : Parser Expression
 macroArgWords =
-    nonEmptyItemList (wordX ExpectingValidMacroArgWord inMacroArg)
+    ParserTool.manyNonEmpty (wordX ExpectingValidMacroArgWord inMacroArg)
         |> Parser.map (String.join " ")
         |> Parser.map (\s -> Text s Expression.dummySourceMap)
 
@@ -829,8 +829,7 @@ itemEnvironmentBody generation chunkOffset endWoord envType =
     Parser.succeed (\start expr finish src -> Environment envType [] (LXList expr) (Expression.makeSourceMap generation chunkOffset start finish src))
         |= Parser.getOffset
         |. Parser.spaces
-        -- |= itemList (Parser.oneOf [ item generation chunkOffset ])
-        |= itemList (Parser.oneOf [ item generation chunkOffset, Parser.lazy (\_ -> environment generation chunkOffset) ])
+        |= ParserTool.many (Parser.oneOf [ item generation chunkOffset, Parser.lazy (\_ -> environment generation chunkOffset) ])
         |. Parser.spaces
         |. Parser.symbol (Parser.Token endWoord (ExpectingEndWordInItemList endWoord))
         |. Parser.spaces
@@ -847,7 +846,7 @@ item generation lineNumber =
         |. Parser.symbol (Parser.Token "\\item" ExpectingEscapedItem)
         |. Parser.symbol (Parser.Token " " ExpectingSpaceAfterItem)
         |. Parser.spaces
-        |= itemList (Parser.oneOf [ textNP generation lineNumber [ '$', '\\' ] [ '$', '\\' ], inlineMath generation lineNumber, macro generation lineNumber ])
+        |= ParserTool.many (Parser.oneOf [ textNP generation lineNumber [ '$', '\\' ] [ '$', '\\' ], inlineMath generation lineNumber, macro generation lineNumber ])
         |. Parser.spaces
         |= Parser.getOffset
         |= Parser.getSource
@@ -895,36 +894,6 @@ loop s nextState =
 
         Done b ->
             b
-
-
-
--- ItemList
-
-
-nonEmptyItemList : Parser a -> Parser (List a)
-nonEmptyItemList itemParser =
-    itemParser
-        |> Parser.andThen (\x -> itemList_ [ x ] itemParser)
-
-
-itemList : Parser a -> Parser (List a)
-itemList itemParser =
-    itemList_ [] itemParser
-
-
-itemList_ : List a -> Parser a -> Parser (List a)
-itemList_ initialList itemParser =
-    Parser.loop initialList (itemListHelper itemParser)
-
-
-itemListHelper : Parser a -> List a -> Parser (Parser.Step (List a) (List a))
-itemListHelper itemParser revItems =
-    Parser.oneOf
-        [ Parser.succeed (\item_ -> Parser.Loop (item_ :: revItems))
-            |= itemParser
-        , Parser.succeed ()
-            |> Parser.map (\_ -> Parser.Done (List.reverse revItems))
-        ]
 
 
 {-| chomp to end of the marker and return the
