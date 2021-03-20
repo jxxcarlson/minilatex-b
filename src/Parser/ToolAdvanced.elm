@@ -1,4 +1,4 @@
-module Parser.ToolAdvanced exposing (many, manyNonEmpty, optional, second, textPS)
+module Parser.ToolAdvanced exposing (Step(..), loop, many, manyNonEmpty, optional, second, textPS)
 
 import Parser.Advanced as Parser exposing ((|.), (|=))
 import Parser.Expression exposing (Context(..), Problem(..))
@@ -70,3 +70,22 @@ textPS prefixTest stopChars =
         |. Parser.chompWhile (\c -> not (List.member c stopChars))
         |= Parser.getOffset
         |= Parser.getSource
+
+
+
+-- LOOP
+
+
+type Step state a
+    = Loop state
+    | Done a
+
+
+loop : state -> (state -> Step state a) -> a
+loop s nextState =
+    case nextState s of
+        Loop s_ ->
+            loop s_ nextState
+
+        Done b ->
+            b

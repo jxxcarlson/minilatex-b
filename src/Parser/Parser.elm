@@ -106,7 +106,7 @@ is a data structure which includes the parsed source text.
 -}
 parseLoop : Int -> Int -> String -> TextCursor
 parseLoop generation initialLineNumber str =
-    loop (TextCursor.init generation initialLineNumber str) nextCursor
+    ParserTool.loop (TextCursor.init generation initialLineNumber str) nextCursor
 
 
 {-| nextCursor operates by running the expression parser on
@@ -132,11 +132,11 @@ operated by parseLoop is updated:
     - `expr` is prepended to `tc.parsed`
 
 -}
-nextCursor : TextCursor -> Step TextCursor TextCursor
+nextCursor : TextCursor -> ParserTool.Step TextCursor TextCursor
 nextCursor tc =
     if tc.text == "" || tc.count > 10 then
         -- TODO: that usage of count needs to be removed after bug is fixed
-        Done { tc | parsed = List.reverse tc.parsed }
+        ParserTool.Done { tc | parsed = List.reverse tc.parsed }
 
     else
         case Parser.run (expression tc.generation tc.blockIndex) tc.text of
@@ -145,7 +145,7 @@ nextCursor tc =
                     sourceMap =
                         Expression.getSource expr
                 in
-                Loop
+                ParserTool.Loop
                     { tc
                         | count = tc.count + 1
                         , text = String.dropLeft sourceMap.length tc.text
@@ -155,7 +155,7 @@ nextCursor tc =
                     }
 
             Err e ->
-                Loop (handleError tc e)
+                ParserTool.Loop (handleError tc e)
 
 
 newExpr tc_ expr =
@@ -878,22 +878,6 @@ updateSourceMap e me =
 
 
 -- HELPERS
--- Loop
-
-
-type Step state a
-    = Loop state
-    | Done a
-
-
-loop : state -> (state -> Step state a) -> a
-loop s nextState =
-    case nextState s of
-        Loop s_ ->
-            loop s_ nextState
-
-        Done b ->
-            b
 
 
 {-| chomp to end of the marker and return the
