@@ -2,7 +2,7 @@ module Parser.Expression exposing
     ( Expression(..), incrementBlockOffset, incrementOffset, toString
     , SourceMap, dummySourceMap, getSelectionFromSourceMap, getSource, getSourceOfList, sourceMapIndex, sourceMapToString, setSourceMap
     , Problem(..), equivalentProblem, problemAsString
-    , Context(..), makeSourceMap
+    , Context(..), makeSourceMap, strip
     )
 
 {-| Module **Parser.Expression** defines various data structures used by the parser (module Parser.Parser).
@@ -44,6 +44,57 @@ type Expression
     | LXList (List Expression)
     | LXError String Problem SourceMap
     | LXInstruction Instr SourceMap
+
+
+type BareExpression
+    = Text_ String
+    | Comment_ String
+    | Item_ Int BareExpression
+    | InlineMath_ String
+    | DisplayMath_ String
+    | Macro_ String (Maybe BareExpression) (List BareExpression)
+    | Environment_ String (List BareExpression) BareExpression -- Environment name optArgs body
+    | NewCommand_ String Int BareExpression
+    | LXList_ (List BareExpression)
+    | LXError_ String Problem
+    | LXInstruction_ Instr
+
+
+strip : Expression -> BareExpression
+strip expr =
+    case expr of
+        Text s _ ->
+            Text_ s
+
+        Comment s _ ->
+            Comment_ s
+
+        Item k e _ ->
+            Item_ k (strip e)
+
+        InlineMath s _ ->
+            InlineMath_ s
+
+        DisplayMath s _ ->
+            DisplayMath_ s
+
+        Macro s me le _ ->
+            Macro_ s (Maybe.map strip me) (List.map strip le)
+
+        Environment s le e _ ->
+            Environment_ s (List.map strip le) (strip e)
+
+        NewCommand s k e _ ->
+            NewCommand_ s k (strip e)
+
+        LXList le ->
+            LXList_ (List.map strip le)
+
+        LXError s p _ ->
+            LXError_ s p
+
+        LXInstruction i _ ->
+            LXInstruction_ i
 
 
 type Instr

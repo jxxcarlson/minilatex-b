@@ -324,6 +324,17 @@ rawText gneration lineNumber stopChars =
             |. Parser.chompWhile (\c -> not (List.member c stopChars))
 
 
+wordX : Problem -> (Char -> Bool) -> Parser String
+wordX problem inWord =
+    Parser.succeed String.slice
+        |= Parser.getOffset
+        |. Parser.chompIf inWord problem
+        |. Parser.chompWhile inWord
+        |. Parser.spaces
+        |= Parser.getOffset
+        |= Parser.getSource
+
+
 {-| Use `inWord` to parse a word.
 
 import Parser
@@ -605,17 +616,6 @@ macroArgWords =
         |> Parser.map (\s -> Text s Expression.dummySourceMap)
 
 
-wordX : Problem -> (Char -> Bool) -> Parser String
-wordX problem inWord =
-    Parser.succeed String.slice
-        |= Parser.getOffset
-        |. Parser.chompIf inWord problem
-        |. Parser.chompWhile inWord
-        |. Parser.spaces
-        |= Parser.getOffset
-        |= Parser.getSource
-
-
 inMacroArg : Char -> Bool
 inMacroArg c =
     not (c == '\\' || c == '$' || c == '}' || c == ' ' || c == '\n')
@@ -829,8 +829,8 @@ itemEnvironmentBody generation chunkOffset endWoord envType =
     Parser.succeed (\start expr finish src -> Environment envType [] (LXList expr) (Expression.makeSourceMap generation chunkOffset start finish src))
         |= Parser.getOffset
         |. Parser.spaces
-        |= itemList (Parser.oneOf [ item generation chunkOffset ])
-        -- |= itemList (Parser.oneOf [ item generation chunkOffset, Parser.lazy (\_ -> environment generation chunkOffset) ])
+        -- |= itemList (Parser.oneOf [ item generation chunkOffset ])
+        |= itemList (Parser.oneOf [ item generation chunkOffset, Parser.lazy (\_ -> environment generation chunkOffset) ])
         |. Parser.spaces
         |. Parser.symbol (Parser.Token endWoord (ExpectingEndWordInItemList endWoord))
         |. Parser.spaces

@@ -226,11 +226,6 @@ $p$ such that $p \\equiv 1\\ mod\\ 4$.
 
 \\item \\italic{And so is this:} $a^2 + b^2 = c^2$
 
-\\end{itemize}
-
-
-
-\\begin{comment}
 \\begin{itemize}
 
 \\item Items can be nested
@@ -238,7 +233,20 @@ $p$ such that $p \\equiv 1\\ mod\\ 4$.
 \\item And you can do this: $ \\frac{1}{1 + \\frac{2}{3}} $
 
 \\end{itemize}
-\\end{comment}
+
+\\end{itemize}
+
+
+
+
+\\begin{itemize}
+
+\\item Items can be nested
+
+\\item And you can do this: $ \\frac{1}{1 + \\frac{2}{3}} $
+
+\\end{itemize}
+
 
 
 \\section{Tables}
