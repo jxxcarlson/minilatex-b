@@ -73,6 +73,10 @@ suite =
                     "\\begin{foo}\n$$\na^2 + b^2\n$$\n\\end{foo}"
                         |> run (expression 0 0)
                         |> Expect.equal (Ok (Environment "foo" [] (LXList [ DisplayMath "\na^2 + b^2\n" { blockOffset = 0, content = "\na^2 + b^2\n", generation = 0, length = 27, offset = 0 } ]) { blockOffset = 0, content = "\\begin{foo}\n$$\na^2 + b^2\n$$\n\\end{foo}", generation = 0, length = 37, offset = 0 }))
+            , test "item" <|
+                \_ -> "\\item foo" |> run (item 0 0) |> Expect.equal (Ok (Item 1 (LXList [ Text "foo" { blockOffset = 0, content = "foo", generation = 0, length = 3, offset = 6 } ]) { blockOffset = 0, content = "\\item foo", generation = 0, length = 9, offset = 0 }))
+            , test "itemize" <|
+                \_ -> "\\begin{itemize}\n\\item foo\n\\end{itemize}" |> run (expression 0 0) |> Expect.equal (Ok (Environment "itemize" [] (LXList [ Item 1 (LXList [ Text "foo\n" { blockOffset = 0, content = "foo\n", generation = 0, length = 4, offset = 22 } ]) { blockOffset = 0, content = "\\begin{itemize}\n\\item foo\n\\end{itemize}", generation = 0, length = 10, offset = 16 } ]) { blockOffset = 0, content = "\\begin{itemize}\n\\item foo\n\\end{itemize}", generation = 0, length = 39, offset = 0 }))
 
             -- fuzz runs the test 100 times with randomly-generated inputs!
             , fuzz string "restores the original string if you run it again" <|

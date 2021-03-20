@@ -2,7 +2,7 @@ module Parser.Parser exposing
     ( Parser
     , parseLoop, expression, expressionList, parseExpression, macro
     , getStringAtWithDefault, renderArg
-    , optionalArg, parse, renderToStringList
+    , item, optionalArg, parse, renderToStringList
     )
 
 {-| Function parserLoop takes as input an integer representing a "chunkNumber"
@@ -296,6 +296,10 @@ parse str =
         Err _ ->
             -- TODO: vvv very bad code.  Fix this! vvv
             [ LXError "Error parsing expression list" UnHandledError Expression.dummySourceMap ]
+
+
+
+-- TEXT
 
 
 textNP : Int -> Int -> List Char -> List Char -> Parser Expression
@@ -716,8 +720,8 @@ environmentDict : Dict.Dict String (Int -> Int -> String -> String -> Parser Exp
 environmentDict =
     Dict.fromList
         [ ( "enumerate", \generation chunkOffset endWoord envType -> itemEnvironmentBody generation chunkOffset endWoord envType )
+        , ( "itemize", \endWoord envType -> itemEnvironmentBody endWoord envType )
 
-        --, ( "itemize", \endWoord envType -> itemEnvironmentBody endWoord envType )
         --, ( "thebibliography", \endWoord envType -> biblioEnvironmentBody endWoord envType )
         --, ( "tabular", \endWoord envType -> tabularEnvironmentBody endWoord envType )
         , ( "passThrough", \generation chunkOffset endWoord envType -> passThroughBody generation chunkOffset endWoord envType )
@@ -837,13 +841,16 @@ itemEnvironmentBody generation chunkOffset endWoord envType =
 item : Int -> Int -> Parser Expression
 item generation lineNumber =
     ---  inContext "item" <|
-    Parser.succeed (\e -> Item 1 (LXList e) Expression.dummySourceMap)
+    Parser.succeed (\start e finish src -> Item 1 (LXList e) (Expression.makeSourceMap generation lineNumber start finish src))
+        |= Parser.getOffset
         |. Parser.spaces
         |. Parser.symbol (Parser.Token "\\item" ExpectingEscapedItem)
         |. Parser.symbol (Parser.Token " " ExpectingSpaceAfterItem)
         |. Parser.spaces
-        |= itemList (Parser.oneOf [ text_ generation lineNumber [ '$', '\\' ], inlineMath generation lineNumber, macro generation lineNumber ])
+        |= itemList (Parser.oneOf [ textNP generation lineNumber [ '$', '\\' ] [ '$', '\\' ], inlineMath generation lineNumber, macro generation lineNumber ])
         |. Parser.spaces
+        |= Parser.getOffset
+        |= Parser.getSource
 
 
 

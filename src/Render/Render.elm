@@ -209,8 +209,8 @@ renderEnvironmentDict =
         --, ( "eqnarray", \s l e -> renderEqnArray s l e )
         , ( "equation", \si s _ e -> equation si s e )
         , ( "indent", \si s l e -> indent si s e )
+        , ( "itemize", \si s l e -> renderItemize si s e )
 
-        --, ( "itemize", \s l e -> renderItemize s l e )
         --, ( "listing", \s l e -> renderListing s l e )
         --, ( "macros", \s l e -> renderMacros s l e )
         --, ( "maskforweb", \s l e -> renderCommentEnvironment s l e )
@@ -224,6 +224,12 @@ renderEnvironmentDict =
         , ( "textmacro", \si s l e -> Html.div [] [] )
         , ( "svg", \si s l e -> svg e )
         ]
+
+
+renderItemize : String -> LaTeXState -> Expression -> Html LaTeXMsg
+renderItemize selectedId latexState body =
+    -- TODO: fix space issue
+    Html.ul [ HA.style "margin-top" "0px" ] (render selectedId latexState [ body ])
 
 
 verbatim : String -> Expression -> Html LaTeXMsg
