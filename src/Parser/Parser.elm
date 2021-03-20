@@ -723,7 +723,7 @@ environmentDict =
         , ( "itemize", \endWoord envType -> itemEnvironmentBody endWoord envType )
 
         --, ( "thebibliography", \endWoord envType -> biblioEnvironmentBody endWoord envType )
-        --, ( "tabular", \endWoord envType -> tabularEnvironmentBody endWoord envType )
+        , ( "tabular", \endWoord envType -> tabularEnvironmentBody endWoord envType )
         , ( "passThrough", \generation chunkOffset endWoord envType -> passThroughBody generation chunkOffset endWoord envType )
         ]
 
@@ -850,6 +850,95 @@ item generation lineNumber =
         |. Parser.spaces
         |= Parser.getOffset
         |= Parser.getSource
+
+
+
+-- TABLES
+{- TABLES -}
+
+
+tabularEnvironmentBody : Int -> Int -> String -> String -> Parser Expression
+tabularEnvironmentBody generation lineNumber endWoord envType =
+    -- inContext "tabularEnvironmentBody" <|
+    Parser.succeed (\start args body finish src -> Environment envType args body (Expression.makeSourceMap generation lineNumber start finish src))
+        |= Parser.getOffset
+        |. Parser.spaces
+        |= ParserTool.many (arg generation lineNumber)
+        |= tableBody generation lineNumber
+        |. Parser.spaces
+        |. Parser.symbol (Parser.Token endWoord (ExpectingEndWord endWoord))
+        |. Parser.spaces
+        |= Parser.getOffset
+        |= Parser.getSource
+
+
+tableBody : Int -> Int -> Parser Expression
+tableBody generation lineNumber =
+    --  inContext "tableBody" <|
+    Parser.succeed (\star row finish src -> LXList row)
+        --|. repeat zeroOrMore arg
+        |= Parser.getOffset
+        |. Parser.spaces
+        |= ParserTool.manyNonEmpty (tableRow generation lineNumber)
+        |= Parser.getOffset
+        |= Parser.getSource
+
+
+tableRow : Int -> Int -> Parser Expression
+tableRow generation lineNumber =
+    --- inContext "tableRow" <|
+    Parser.succeed (\start ll finish src -> LXList ll)
+        |= Parser.getOffset
+        |. Parser.spaces
+        |= Parser.andThen (\c -> tableCellHelp generation lineNumber [ c ]) (tableCell generation lineNumber)
+        |. Parser.spaces
+        |. Parser.oneOf [ Parser.symbol (Parser.Token "\n" Expression.UnHandledError), Parser.symbol (Parser.Token "\\\\\n" UnHandledError) ]
+        |= Parser.getOffset
+        |= Parser.getSource
+
+
+
+-- ###
+
+
+tableCell : Int -> Int -> Parser Expression
+tableCell generation lineNumber =
+    -- inContext "tableCell" <|
+    Parser.succeed (\start e finish src -> e)
+        -- (Expression.makeSourceMap generation lineNumber start finish src))
+        |= Parser.getOffset
+        |= inlineMath generation lineNumber
+        --|= Parser.oneOf
+        --    [ -- displayMathBrackets
+        --      -- , macro ws
+        --      --, displayMathDollar
+        --      --,
+        --      inlineMath generation lineNumber
+        --
+        --    --, tableCellWords
+        --    ]
+        |= Parser.getOffset
+        |= Parser.getSource
+
+
+tableCellHelp : Int -> Int -> List Expression -> Parser (List Expression)
+tableCellHelp generation lineNumber revCells =
+    --  inContext "tableCellHelp" <|
+    Parser.oneOf
+        [ nextCell generation lineNumber
+            |> Parser.andThen (\c -> tableCellHelp generation lineNumber (c :: revCells))
+        , Parser.succeed (List.reverse revCells)
+        ]
+
+
+nextCell : Int -> Int -> Parser Expression
+nextCell generation lineNumber =
+    --  inContext "nextCell" <|
+    -- (delayedCommit spaces <|
+    Parser.succeed identity
+        |. Parser.symbol (Parser.Token "&" Expression.UnHandledError)
+        |. Parser.spaces
+        |= tableCell generation lineNumber
 
 
 
