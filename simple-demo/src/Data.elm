@@ -65,12 +65,7 @@ add x y = x + y
 This is a long comment.
 It should not appear in the
 rendered text.
-\\end{comment}
-
-
-\\begin{defitem}[Bug]
-Nested lists not working.
-\\end{defitem}
+\\end{comment}git 
 
 \\begin{defitem}[Bug]
 Update on other than "point" changes not working.
@@ -233,17 +228,6 @@ $p$ such that $p \\equiv 1\\ mod\\ 4$.
 \\item And you can do this: $ \\frac{1}{1 + \\frac{2}{3}} $
 
 \\end{itemize}
-
-\\end{itemize}
-
-
-
-
-\\begin{itemize}
-
-\\item Items can be nested
-
-\\item And you can do this: $ \\frac{1}{1 + \\frac{2}{3}} $
 
 \\end{itemize}
 
