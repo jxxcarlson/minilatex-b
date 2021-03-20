@@ -52,7 +52,7 @@ recognizes lines that start with an alphabetic character.
 -}
 textPS : (Char -> Bool) -> List Char -> Parser { start : Int, finish : Int, content : String }
 textPS prefixTest stopChars =
-    Parser.succeed (\start finish content -> { start = start, finish = finish, content = String.left (finish - start) content })
+    Parser.succeed (\start finish content -> { start = start, finish = finish, content = String.slice start finish content })
         |= Parser.getOffset
         |. Parser.chompIf (\c -> prefixTest c) UnHandledError
         |. Parser.chompWhile (\c -> not (List.member c stopChars))

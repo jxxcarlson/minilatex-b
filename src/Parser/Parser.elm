@@ -277,7 +277,7 @@ expression generation lineNumber =
         , environment generation lineNumber
         , displayMath generation lineNumber
         , inlineMath generation lineNumber
-        , text generation lineNumber
+        , text_ generation lineNumber [ '$', '\\' ]
         ]
 
 
@@ -298,11 +298,6 @@ parse str =
             [ LXError "Error parsing expression list" UnHandledError Expression.dummySourceMap ]
 
 
-text : Int -> Int -> Parser Expression
-text generation lineNumber =
-    text_ generation lineNumber [ '$', '\\' ]
-
-
 rawTextP_ : Int -> Int -> Char -> List Char -> Parser ( String, SourceMap )
 rawTextP_ generation lineNumber prefixChar stopChars =
     getChompedString generation lineNumber <|
@@ -311,6 +306,7 @@ rawTextP_ generation lineNumber prefixChar stopChars =
             |. Parser.chompWhile (\c -> not (List.member c stopChars))
 
 
+textNP : Int -> Int -> List Char -> List Char -> Parser Expression
 textNP generation lineNumber prefixChars stopChars =
     let
         makeSM =
@@ -778,6 +774,7 @@ innerParseEnvironment generation chunkOffset =
         |> Parser.map (\x -> LXList x)
 
 
+environmentText : Int -> Int -> Parser Expression
 environmentText generation chunkOffset =
     textNP generation chunkOffset [ '$', '\\' ] [ '$', '\\' ]
 
@@ -882,7 +879,7 @@ item generation lineNumber =
         |. Parser.symbol (Parser.Token "\\item" ExpectingEscapedItem)
         |. Parser.symbol (Parser.Token " " ExpectingSpaceAfterItem)
         |. Parser.spaces
-        |= itemList (Parser.oneOf [ text generation lineNumber, inlineMath generation lineNumber, macro generation lineNumber ])
+        |= itemList (Parser.oneOf [ text_ generation lineNumber [ '$', '\\' ], inlineMath generation lineNumber, macro generation lineNumber ])
         |. Parser.spaces
 
 

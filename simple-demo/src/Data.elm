@@ -212,23 +212,6 @@ $p$ such that $p \\equiv 1\\ mod\\ 4$.
 </svg>
 \\end{svg}
 
-\\section{Lists}
-
-\\begin{itemize}
-
-\\item This is \\strong{just} a test.
-
-\\item \\italic{And so is this:} $a^2 + b^2 = c^2$
-
-\\begin{itemize}
-
-\\item Items can be nested
-
-\\item And you can do this: $ \\frac{1}{1 + \\frac{2}{3}} $
-
-\\end{itemize}
-
-\\end{itemize}
 
 \\section{Tables}
 
@@ -368,23 +351,6 @@ This app is intended as a bare-bones demonstration of what one can do with MiniL
 There are several other apps in various stages of development which
 offer different or more sophisticated services:
 
-\\begin{itemize}
-
-\\item \\href{https://knode.io}{knode.io} is a web app for creating, editing, and distributing
-MiniLaTeX documents.  Try this link: \\href{https://knode.io/424}{QM class notes on knode.io}.
-Public documents can be read by anyone, but to create documents, you need to create an account
-on knode.io.
-
-\\item \\href{https://reader.minilatex.app}{reader.minilatex.app} is a read-only app for
-distributing MiniLaTeX documents on the web.  Good for class notes and the like.
-
-\\item \\italic{In development}: a desktop app for creating MiniLaTeX content. Documents
-are stored on your computer's hard disk and can also be stored in the cloud.
-Documents can also be posted to any website that implements the app's publishing
-protocol.  The desktop app supports two document formats: MiniLaTeX and MathMarkdown,
-a version of Markdown that can render math-mode LaTeX.
-
-\\end{itemize}
 
 For more information about these or related apps, please contact jxxcarlson at gmail.
 Bug reports and feature requests are best posted on
