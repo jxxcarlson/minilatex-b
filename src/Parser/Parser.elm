@@ -298,14 +298,6 @@ parse str =
             [ LXError "Error parsing expression list" UnHandledError Expression.dummySourceMap ]
 
 
-rawTextP_ : Int -> Int -> Char -> List Char -> Parser ( String, SourceMap )
-rawTextP_ generation lineNumber prefixChar stopChars =
-    getChompedString generation lineNumber <|
-        Parser.succeed ()
-            |. Parser.chompIf (\c -> c == prefixChar) (ExpectingPrefix prefixChar)
-            |. Parser.chompWhile (\c -> not (List.member c stopChars))
-
-
 textNP : Int -> Int -> List Char -> List Char -> Parser Expression
 textNP generation lineNumber prefixChars stopChars =
     let
@@ -314,35 +306,6 @@ textNP generation lineNumber prefixChars stopChars =
     in
     ParserTool.textPS (\c -> not (List.member c prefixChars)) stopChars
         |> Parser.map (\data -> Text data.content (makeSM data.start data.finish data.content))
-
-
-
---
---textNP1 : Int -> Int -> List Char -> List Char -> Parser Expression
---textNP1 generation lineNumber prefixChars stopChars =
---    let
---        sm : Int -> Int -> String -> Expression
---        sm start end src =
---            let
---                content =
---                    String.slice start end src
---
---                sm_ =
---                    { content = content
---                    , length = end - start
---                    , blockOffset = lineNumber
---                    , offset = start
---                    , generation = generation
---                    }
---            in
---            Text content sm_
---    in
---    Parser.succeed sm
---        |= Parser.getOffset
---        |. Parser.chompIf (\c -> not (List.member c prefixChars)) (ExpectingPrefixes prefixChars)
---        |. Parser.chompWhile (\c -> not (List.member c stopChars))
---        |= Parser.getOffset
---        |= Parser.getSource
 
 
 text_ : Int -> Int -> List Char -> Parser Expression
