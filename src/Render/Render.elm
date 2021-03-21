@@ -1,4 +1,7 @@
-module Render.Render exposing (render, highlightWithSourceMap)
+module Render.Render exposing
+    ( highlightWithSourceMap
+    , render
+    )
 
 {-| The **render** function transforms a LaTeXState and a List Expression to
 a value of type List (Html LaTeXMsg).
@@ -41,7 +44,7 @@ that is, the the index of the character which begins the string parsed to form t
 element. Note that a block parses to a List Expression, and so the element in question
 is just one member of such a list.
 
-@docs render, highlightWithSourceMap
+@docs highlightWithSourceMap
 
 -}
 
@@ -773,7 +776,8 @@ highlightSyntax lang_ source =
 
 macroDict =
     Dict.fromList
-        [ ( "strong", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-weight" "bold" ] )
+        [ ( "foo", \si state ms args sm -> Html.span [] [ Html.text "FOO" ] )
+        , ( "strong", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-weight" "bold" ] )
         , ( "textbf", \si state ms args sm -> rmas si ms state args sm [ HA.style "font-weight" "bold" ] )
         , ( "subheading", \si state ms args sm -> rmad si ms state args sm [ HA.style "font-weight" "bold" ] )
         , ( "remote", \si state ms args sm -> rmad si ms state args sm [ HA.style "color" "red", HA.style "white-space" "pre" ] )
