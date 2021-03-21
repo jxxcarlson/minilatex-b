@@ -83,6 +83,10 @@ init generation strList =
 
 nextState : BlockState -> Step BlockState BlockState
 nextState state_ =
+    let
+        _ =
+            Debug.log "STATE" state_
+    in
     case List.head state_.input of
         Nothing ->
             Done (flush state_)
@@ -145,7 +149,7 @@ nextState state_ =
                     Loop { state | blockType = Start, blockContents = [], output = List.reverse state.blockContents :: state.output }
 
                 ( MathBlock, LTMathBlock ) ->
-                    Loop (initWithBlockType Start currentLine state)
+                    Loop (addToBlockContents Start currentLine state |> pushBlock)
 
                 ( MathBlock, BeginEnvBlock blockType ) ->
                     Loop (initWithBlockType (EnvBlock blockType) currentLine state)
@@ -202,6 +206,11 @@ initWithBlockType blockType_ currentLine_ state =
 addToBlockContents : BlockType -> String -> BlockState -> BlockState
 addToBlockContents blockType_ currentLine_ state =
     { state | blockType = blockType_, blockContents = currentLine_ :: state.blockContents }
+
+
+pushBlock : BlockState -> BlockState
+pushBlock state =
+    { state | blockContents = [], output = state.blockContents :: state.output }
 
 
 pushBlockStack : BlockType -> String -> BlockState -> BlockState

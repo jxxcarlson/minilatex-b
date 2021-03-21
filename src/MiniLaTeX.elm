@@ -142,11 +142,13 @@ update generation selectedId input data =
         oldBlocks : List String
         oldBlocks =
             data.blocks
+                |> Debug.log "OLD BLOCKS"
 
         newBlocks : List String
         newBlocks =
             Block.compile generation input
                 |> List.map (String.join "\n")
+                |> Debug.log "NEW BLOCKS"
 
         blockDiffRecord =
             GenericDiffer.diff oldBlocks newBlocks
@@ -155,6 +157,9 @@ update generation selectedId input data =
         prefixLength =
             List.length blockDiffRecord.commonInitialSegment
 
+        deltaSourceLength =
+            List.length blockDiffRecord.deltaInSource
+
         deltaNewBlocks : List String
         deltaNewBlocks =
             blockDiffRecord.deltaInTarget
@@ -162,64 +167,57 @@ update generation selectedId input data =
 
         input_ =
             input
+
+        parsedBefore =
+            Differ.blocksBefore_ prefixLength data.parsedText
+
+        parsedBetween =
+            Differ.slice prefixLength (prefixLength + 1) data.parsedText
+
+        parsedAfter =
+            Differ.blockAfter_ (prefixLength + deltaSourceLength) data.parsedText
+
+        mSourceMap =
+            Maybe.map Parser.Expression.getSource (List.head parsedBetween |> Maybe.andThen List.head)
+
+        blockOffset_ =
+            Maybe.map .blockOffset mSourceMap
+
+        incrementTextCursor =
+            Parser.TextCursor.incrementBlockOffset (blockOffset_ |> Maybe.withDefault 0)
+
+        deltaParsed : List (List Expression)
+        deltaParsed =
+            Document.process generation (List.reverse deltaNewBlocks)
+                |> (\state_ -> { state_ | output = List.map incrementTextCursor state_.output })
+                |> Document.toParsed
+
+        parsedText =
+            parsedBefore ++ deltaParsed ++ parsedAfter
+
+        renderedTextBefore : List (Html LaTeXMsg)
+        renderedTextBefore =
+            List.take prefixLength data.renderedText
+
+        accumulatorState =
+            Accumulator.render selectedId data.laTeXState deltaParsed
+
+        deltaRenderedText : List (Html LaTeXMsg)
+        deltaRenderedText =
+            accumulatorState.html |> List.reverse |> List.map (\x -> Html.span docStyle x)
+
+        renderedTextAfter : List (Html LaTeXMsg)
+        renderedTextAfter =
+            List.drop (prefixLength + deltaSourceLength) data.renderedText
     in
-    case deltaNewBlocks |> List.head of
-        Nothing ->
-            -- TODO: this is a crude way to handle non-localized edits; let's make it better
-            init generation selectedId input
-
-        Just changedBlock ->
-            let
-                parsedBefore =
-                    Differ.blocksBefore_ prefixLength data.parsedText
-
-                parsedBetween =
-                    Differ.slice prefixLength (prefixLength + 1) data.parsedText
-
-                parsedAfter =
-                    Differ.blockAfter_ (prefixLength + 1) data.parsedText
-
-                mSourceMap =
-                    Maybe.map Parser.Expression.getSource (List.head parsedBetween |> Maybe.andThen List.head)
-
-                blockOffset_ =
-                    Maybe.map .blockOffset mSourceMap
-
-                incrementTextCursor =
-                    Parser.TextCursor.incrementBlockOffset (blockOffset_ |> Maybe.withDefault 0)
-
-                deltaParsed : List (List Expression)
-                deltaParsed =
-                    Document.process generation (String.lines changedBlock)
-                        |> (\state_ -> { state_ | output = List.map incrementTextCursor state_.output })
-                        |> Document.toParsed
-
-                parsedText =
-                    parsedBefore ++ deltaParsed ++ parsedAfter
-
-                renderedTextBefore : List (Html LaTeXMsg)
-                renderedTextBefore =
-                    List.take prefixLength data.renderedText
-
-                accumulatorState =
-                    Accumulator.render selectedId data.laTeXState deltaParsed
-
-                deltaRenderedText : List (Html LaTeXMsg)
-                deltaRenderedText =
-                    accumulatorState.html |> List.reverse |> List.map (\x -> Html.span docStyle x)
-
-                renderedTextAfter : List (Html LaTeXMsg)
-                renderedTextAfter =
-                    List.drop (prefixLength + 1) data.renderedText
-            in
-            { lines = input_
-            , blocks = newBlocks
-            , generations = getGenerations parsedText
-            , parsedText = parsedText
-            , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length input_) parsedText
-            , renderedText = renderedTextBefore ++ deltaRenderedText ++ renderedTextAfter
-            , laTeXState = data.laTeXState -- TODO: this is very crude: make it better!
-            }
+    { lines = input_
+    , blocks = newBlocks
+    , generations = getGenerations parsedText
+    , parsedText = parsedText
+    , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length input_) parsedText
+    , renderedText = renderedTextBefore ++ deltaRenderedText ++ renderedTextAfter
+    , laTeXState = data.laTeXState -- TODO: this is very crude: make it better!
+    }
 
 
 {-| Like update, but takes a string as input.
