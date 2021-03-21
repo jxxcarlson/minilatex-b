@@ -215,7 +215,8 @@ renderEnvironmentDict =
         --, ( "macros", \s l e -> renderMacros s l e )
         --, ( "maskforweb", \s l e -> renderCommentEnvironment s l e )
         --, ( "quotation", \s l e -> renderQuotation s l e )
-        --, ( "tabular", \s l e -> renderTabular s l e )
+        , ( "tabular", \si s l e -> renderTabular si s e )
+
         --, ( "thebibliography", \s l e -> renderTheBibliography s l e )
         --, ( "useforweb", \s l e -> renderUseForWeb s l e )
         , ( "verbatim", \si s l e -> verbatim si e )
@@ -224,6 +225,64 @@ renderEnvironmentDict =
         , ( "textmacro", \si s l e -> Html.div [] [] )
         , ( "svg", \si s l e -> svg e )
         ]
+
+
+
+-- TABULAR
+
+
+renderTabular : String -> LaTeXState -> Expression -> Html LaTeXMsg
+renderTabular selectedId latexState body =
+    Html.table
+        [ HA.style "border-spacing" "20px 10px"
+        , HA.style "margin-left" "-20px"
+        ]
+        [ renderTableBody selectedId latexState body ]
+
+
+renderCell : String -> LaTeXState -> Expression -> Html LaTeXMsg
+renderCell selectedId latexState cell =
+    Html.td [] (render selectedId latexState [ cell ])
+
+
+
+--case cell of
+--    LXString s ->
+--        Html.td [] [ Html.text s ]
+--
+--    InlineMath s ->
+--        Html.td [] [ inlineMathText latexState s ]
+--
+--    Macro s x y ->
+--        Html.td [] [ renderMacro source emptyLatexState s x y ]
+--
+--    -- ###
+--    _ ->
+--        Html.td [] []
+
+
+renderRow : String -> LaTeXState -> Expression -> Html LaTeXMsg
+renderRow selectedId latexState row =
+    case row of
+        LXList row_ ->
+            Html.tr [] (row_ |> List.map (renderCell selectedId latexState))
+
+        _ ->
+            Html.tr [] []
+
+
+renderTableBody : String -> LaTeXState -> Expression -> Html LaTeXMsg
+renderTableBody selectedId latexState body =
+    case body of
+        LXList body_ ->
+            Html.tbody [] (body_ |> List.map (renderRow selectedId latexState))
+
+        _ ->
+            Html.tbody [] []
+
+
+
+-- ITEMIZE
 
 
 renderItemize : String -> LaTeXState -> Expression -> Html LaTeXMsg
