@@ -25,31 +25,28 @@ and
    updateWithString : Int -> String -> String -> LaTeXData -> LaTeXData
 ```
 
-A value of type `LaTeXData` holds all the information
-needed for these computations:
+To present the rendered `LaTeX` in your application, use
 
 ```elm
-type alias LaTeXData =
-    { lines : List String
-    , blocks : List String
-    , generations : List Int
-    , parsedText : List (List Expression)
-    , sourceMapIndex : List (List Int)
-    , renderedText : List (Html LaTeXMsg)
-    , laTeXState : LaTeXState
-    }
+viewLaTeXData : LaTeXData -> Html LaTeXMsg
+```
+
+or 
+
+```elm
+viewLaTeXDataAsElement : LaTeXData -> Element LaTeXMsg
 ```
 ## Overview
 
-Consider the function
+Let us first understand the function `initWithString`.
+It operates by converting
 
-```elm
-MiniLaTeX.initWithString : Int -> String -> String -> LaTeXData
-initWithString generation selectedId input = ...
-```
 
-The task of rendering its input string takes place in stages. 
-First is to compute a `State`, which looks like this:
+
+
+The function `initWithString` renders its input string 
+in stages. First is to compute a `State`, which looks 
+like this:
 
 ```elm
 type alias State =
