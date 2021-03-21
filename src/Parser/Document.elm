@@ -335,9 +335,6 @@ flush state =
 
         laTeXState =
             Reduce.laTeXState tc.parsed state.laTeXState
-
-        _ =
-            Debug.log "TEXT M DICT" laTeXState.textMacroDictionary
     in
     { state | laTeXState = laTeXState, output = List.reverse (tc :: state.output) }
 
