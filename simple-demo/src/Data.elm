@@ -24,6 +24,8 @@ minilatexio =
 \\newcommand{\\reverseconcat}[3]{#3#2#1}
 \\end{textmacro}
 
+
+
 \\maketitle
 
 % EXAMPLE 1
@@ -31,6 +33,9 @@ minilatexio =
 \\tableofcontents
 
 \\section{Introduction}
+
+
+Macro of zero arguments: \\foo .
 
 
 MiniLatex is a subset of LaTeX that can be
@@ -74,6 +79,11 @@ Update on other than "point" changes not working.
 
 \\begin{defitem}[Bug]
 Highlight macro not working.
+\\end{defitem}
+
+
+\\begin{defitem}[Bug]
+Text mode macros inside other macros are not expended.
 \\end{defitem}
 
 \\begin{defitem}[Bug]
@@ -322,10 +332,12 @@ Text-mode macros are defined in a \\code{textmacro} environment:
 Then
 
 \\begin{verbatim}
-\\italic{My boss is \\boss.}
+My boss is \\boss.
 \\end{verbatim}
 
-produces \\italic{My boss is \\boss.}
+My boss is \\boss.
+
+
 Likewise, the text
 
 \\begin{verbatim}
