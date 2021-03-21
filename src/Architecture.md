@@ -38,6 +38,8 @@ viewLaTeXDataAsElement : LaTeXData -> Element LaTeXMsg
 ```
 ## Overview
 
+- Error recovery: Parser.Parser.handleError
+
 Let us first understand the function `initWithString`.
 It operates by converting
 
