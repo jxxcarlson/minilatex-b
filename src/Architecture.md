@@ -39,6 +39,30 @@ type alias LaTeXData =
     , laTeXState : LaTeXState
     }
 ```
+## Overview
+
+Consider the function
+
+```elm
+MiniLaTeX.initWithString : Int -> String -> String -> LaTeXData
+initWithString generation selectedId input = ...
+```
+
+The task of rendering its input string takes place in stages. 
+First is to compute a `State`, which looks like this:
+
+```elm
+type alias State =
+    { input : List String
+    , lineNumber : Int
+    , generation : Int
+    , blockType : BlockType
+    , blockContents : List String
+    , blockTypeStack : List BlockType
+    , output : List TextCursor
+    , laTeXState : LaTeXState
+    }
+```
 
 
 ## Parser
