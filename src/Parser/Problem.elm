@@ -52,7 +52,7 @@ problemWithInlineMath =
         LXList
             [ Macro "red"
                 Nothing
-                [ Text ("!! unmatched $ in" ++ String.fromChar '\u{00A0}') Expression.dummySourceMap
+                [ Text (String.fromChar '⚠' ++ " unmatched $ in" ++ String.fromChar '\u{00A0}') Expression.dummySourceMap
                 ]
                 Expression.dummySourceMap
             ]
@@ -68,7 +68,7 @@ problemWithDisplayMath =
         LXList
             [ Macro "red"
                 Nothing
-                [ Text ("!! unmatched $$ in" ++ String.fromChar '\u{00A0}') Expression.dummySourceMap
+                [ Text (String.fromChar '⚠' ++ " unmatched $$ in" ++ String.fromChar '\u{00A0}') Expression.dummySourceMap
                 ]
                 Expression.dummySourceMap
             ]
