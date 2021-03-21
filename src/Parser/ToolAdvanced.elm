@@ -22,10 +22,6 @@ manySeparatedBy sep p =
 
 manyHelp : Parser a -> List a -> Parser (Parser.Step (List a) (List a))
 manyHelp p vs =
-    let
-        _ =
-            Debug.log "length vs" (List.length vs)
-    in
     Parser.oneOf
         [ Parser.end EndOfInput |> Parser.map (\_ -> Parser.Done (List.reverse vs))
         , Parser.succeed (\v -> Parser.Loop (v :: vs))
