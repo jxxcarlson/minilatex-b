@@ -176,6 +176,8 @@ highlight expr_ sm =
     Macro "blue" Nothing [ expr_ ] sm
 
 
+{-| TODO: Document how this works and how it is extended.
+-}
 handleError : TextCursor -> List (Parser.DeadEnd Context Problem) -> TextCursor
 handleError tc_ e =
     let
