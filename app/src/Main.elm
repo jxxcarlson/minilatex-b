@@ -140,7 +140,7 @@ Still more stuff
 
 parse : Int -> String -> State
 parse generation input =
-    Document.process generation input
+    Document.process generation (String.lines input)
 
 
 parsedTextToString : List (List Expression) -> List String

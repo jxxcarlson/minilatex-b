@@ -42,12 +42,12 @@ type alias BlockState =
        : List (List String)
 
 -}
-compile : Int -> String -> List (List String)
+compile : Int -> List String -> List (List String)
 compile generation input =
     (process generation input).output
 
 
-process : Int -> String -> BlockState
+process : Int -> List String -> BlockState
 process generation =
     runProcess generation
 
@@ -64,14 +64,14 @@ chunks of text, parses these using Parser.Parser.parseLoop,
 and prepends them to a list of TextCursor.
 
 -}
-runProcess : Int -> String -> BlockState
+runProcess : Int -> List String -> BlockState
 runProcess generation str =
     loop (init generation str) nextState
 
 
-init : Int -> String -> BlockState
-init generation str =
-    { input = String.lines str
+init : Int -> List String -> BlockState
+init generation strList =
+    { input = strList
     , lineNumber = 0
     , generation = generation
     , blockType = Start

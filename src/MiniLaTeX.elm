@@ -1,34 +1,33 @@
 module MiniLaTeX exposing
-    ( compile, viewLaTeXData, viewLaTeXDataAsElement
-    , LaTeXData, initWithString, updateWithString
+    ( LaTeXData
+    , compile, init, update
+    , compileFromString, initWithString, updateWithString
+    , viewLaTeXData, viewLaTeXDataAsElement
     )
 
-{-| For simple applications, use
-
-    MiniLaTeX.compile document
-
-This function takes a string representing your MiniLaTeX
-document as input and produces Html for your web app.
-For more details, see the app `./simple-demo`.\`
-
-For applications that use interactive editing, use _LaTeXData_
-and the functions _initWithString_ and _updateWithString_.
-
-The function initWithString will set up a LaTeXData value.
-It carries all the information needed for
-efficient interactive editing. Once this is done,
-the field _renderedText_ holds the rendered document. Successive
-edits to it are made using updateWithString.
+{-| The functions _init_ and _update_ produce a value of type
+_LaTeXData_. Use _viewLaTeXData_ or _viewLaTeXDataAsElement_ to
+view this data structure in your app.
 
 
-## Render
+## Types
 
-@docs compile, viewLaTeXData, viewLaTeXDataAsElement
+@docs LaTeXData
 
 
-## LaTeXData
+## API for document as a list of strings
 
-@docs LaTeXData, initWithString, updateWithString
+@docs compile, init, update
+
+
+## API for document as a string
+
+@docs compileFromString, initWithString, updateWithString
+
+
+## View
+
+@docs viewLaTeXData, viewLaTeXDataAsElement
 
 -}
 
@@ -62,27 +61,28 @@ type alias LaTeXData =
 
 {-| Initialize LaTeXData using
 
-    initWithString generation selectedId input
+    init generation selectedId input
 
   - _generation_: an integer that changes on each edit;
     needed for optimization and proper rendering by
-    virtual DOM
+    virtual DOM. Your app must provide this number
+    and increment it as needed.
 
   - _selectedId_: a string which identifies an element
     in the rendered text that the user wants highlighted
 
-  - _input_: the source text
+  - _input_: the source text as a list of lines
 
 -}
-initWithString : Int -> String -> String -> LaTeXData
-initWithString generation selectedId input =
+init : Int -> String -> List String -> LaTeXData
+init generation selectedId input =
     let
         state : Document.State
         state =
             Document.process generation input
 
         lines_ =
-            String.lines input
+            input
 
         parsedText : List (List Expression)
         parsedText =
@@ -105,31 +105,39 @@ initWithString generation selectedId input =
     }
 
 
-{-| Use `compile` for short documents or documents in a non-interactive-editing context.
-
-    compile document
-
-Otherwise, use initWithString, updateWithString, and LaTeXData
-
+{-| Like `init`, but takes a string as input for the source text
 -}
-compile : String -> List (Html LaTeXMsg)
+initWithString : Int -> String -> String -> LaTeXData
+initWithString generation selectedId input =
+    init generation selectedId (String.lines input)
+
+
+{-| -}
+compile : List String -> List (Html LaTeXMsg)
 compile document =
+    (init 0 "nada" document).renderedText
+
+
+{-| Like `compile`, but takes a string as input.
+-}
+compileFromString : String -> List (Html LaTeXMsg)
+compileFromString document =
     (initWithString 0 "nada" document).renderedText
 
 
 {-| This function efficiently modifies the LaTeXState by identifying
 the block of text that has changed, parsing and rendering that text,
-and inserting the resulting parse data and rendered text in their
+then inserting the resulting parse data and rendered text in their
 respective lists which are in turn fields of LaTeXState.
 
-    updateWithString generation selectedId input data
+    update generation selectedId input data
 
-The arguments are as with initWithString with one addition,
+The arguments are as with init with one addition,
 `data`, which is the current LaTeXData value.
 
 -}
-updateWithString : Int -> String -> String -> LaTeXData -> LaTeXData
-updateWithString generation selectedId input data =
+update : Int -> String -> List String -> LaTeXData -> LaTeXData
+update generation selectedId input data =
     let
         oldBlocks : List String
         oldBlocks =
@@ -151,12 +159,12 @@ updateWithString generation selectedId input data =
             blockDiffRecord.deltaInTarget
 
         input_ =
-            String.lines input
+            input
     in
     case deltNewBlocks |> List.head of
         Nothing ->
             -- TODO: this is a crude way to handle non-localized edits; let's make it better
-            initWithString generation selectedId input
+            init generation selectedId input
 
         Just changedBlock ->
             let
@@ -180,7 +188,7 @@ updateWithString generation selectedId input data =
 
                 deltaParsed : List (List Expression)
                 deltaParsed =
-                    Document.process generation changedBlock
+                    Document.process generation (String.lines changedBlock)
                         |> (\state_ -> { state_ | output = List.map incrementTextCursor state_.output })
                         |> Document.toParsed
 
@@ -210,6 +218,13 @@ updateWithString generation selectedId input data =
             , renderedText = renderedTextBefore ++ deltaRenderedText ++ renderedTextAfter
             , laTeXState = data.laTeXState -- TODO: this is very crude: make it better!
             }
+
+
+{-| Like update, but takes a string as input.
+-}
+updateWithString : Int -> String -> String -> LaTeXData -> LaTeXData
+updateWithString generation selectedId input data =
+    update generation selectedId (String.lines input) data
 
 
 render : String -> LaTeXState -> List (List Expression) -> List (Html LaTeXMsg)

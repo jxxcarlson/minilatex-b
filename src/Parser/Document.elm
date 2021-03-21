@@ -74,7 +74,7 @@ type LineType
 
 {-| Compute the syntax tree and LaTeXState of a string of source text.
 -}
-process : Int -> String -> State
+process : Int -> List String -> State
 process generation =
     runProcess generation
 
@@ -91,9 +91,9 @@ chunks of text, parses these using Parser.Parser.parseLoop,
 and prepends them to a list of TextCursor.
 
 -}
-runProcess : Int -> String -> State
-runProcess generation str =
-    loop (init generation str) nextState
+runProcess : Int -> List String -> State
+runProcess generation strList =
+    loop (init generation strList) nextState
 
 
 {-| Return the AST from the State.
@@ -111,9 +111,9 @@ toText state =
     state.output |> List.map .block
 
 
-init : Int -> String -> State
-init generation str =
-    { input = String.lines str
+init : Int -> List String -> State
+init generation strList =
+    { input = strList
     , lineNumber = 0
     , generation = generation
     , blockType = Start
