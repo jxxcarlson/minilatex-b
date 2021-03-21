@@ -150,18 +150,20 @@ update generation selectedId input data =
 
         blockDiffRecord =
             GenericDiffer.diff oldBlocks newBlocks
+                |> Debug.log "DIFF"
 
         prefixLength =
             List.length blockDiffRecord.commonInitialSegment
 
-        deltNewBlocks : List String
-        deltNewBlocks =
+        deltaNewBlocks : List String
+        deltaNewBlocks =
             blockDiffRecord.deltaInTarget
+                |> Debug.log "DELTA"
 
         input_ =
             input
     in
-    case deltNewBlocks |> List.head of
+    case deltaNewBlocks |> List.head of
         Nothing ->
             -- TODO: this is a crude way to handle non-localized edits; let's make it better
             init generation selectedId input
