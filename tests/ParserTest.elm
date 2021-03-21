@@ -78,6 +78,8 @@ suite =
             , test "itemize" <|
                 \_ -> "\\begin{itemize}\n\\item foo\n\\end{itemize}" |> run (expression 0 0) |> Expect.equal (Ok (Environment "itemize" [] (LXList [ Item 1 (LXList [ Text "foo\n" { blockOffset = 0, content = "foo\n", generation = 0, length = 4, offset = 22 } ]) { blockOffset = 0, content = "\\begin{itemize}\n\\item foo\n\\end{itemize}", generation = 0, length = 10, offset = 16 } ]) { blockOffset = 0, content = "\\begin{itemize}\n\\item foo\n\\end{itemize}", generation = 0, length = 39, offset = 0 }))
 
+            --, test "tableCell" <|
+            --    \_ -> "\\strong{stuff}" |> run (tableCell 0 0) |> Result.map Parser.Expression.strip |> Expect.equal (Ok (LXList_ [ Macro_ "strong" Nothing [ Text_ "stuff" ] ]))
             -- fuzz runs the test 100 times with randomly-generated inputs!
             , fuzz string "restores the original string if you run it again" <|
                 \randomlyGeneratedString ->

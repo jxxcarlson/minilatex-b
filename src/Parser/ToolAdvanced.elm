@@ -1,4 +1,4 @@
-module Parser.ToolAdvanced exposing (Step(..), loop, many, manyNonEmpty, optional, second, textPS)
+module Parser.ToolAdvanced exposing (Step(..), first, loop, many, manyNonEmpty, manySeparatedBy, optional, second, textPS)
 
 import Parser.Advanced as Parser exposing ((|.), (|=))
 import Parser.Expression exposing (Context(..), Problem(..))
@@ -15,10 +15,19 @@ many p =
     Parser.loop [] (manyHelp p)
 
 
+manySeparatedBy : Parser () -> Parser a -> Parser (List a)
+manySeparatedBy sep p =
+    manyNonEmpty_ p (second sep p)
+
+
 manyHelp : Parser a -> List a -> Parser (Parser.Step (List a) (List a))
 manyHelp p vs =
+    let
+        _ =
+            Debug.log "length vs" (List.length vs)
+    in
     Parser.oneOf
-        [ Parser.end UnHandledError |> Parser.map (\_ -> Parser.Done (List.reverse vs))
+        [ Parser.end EndOfInput |> Parser.map (\_ -> Parser.Done (List.reverse vs))
         , Parser.succeed (\v -> Parser.Loop (v :: vs))
             |= p
         , Parser.succeed ()
@@ -32,6 +41,12 @@ manyNonEmpty p =
         |> Parser.andThen (\x -> manyWithInitialList [ x ] p)
 
 
+manyNonEmpty_ : Parser a -> Parser a -> Parser (List a)
+manyNonEmpty_ p q =
+    p
+        |> Parser.andThen (\x -> manyWithInitialList [ x ] q)
+
+
 manyWithInitialList : List a -> Parser a -> Parser (List a)
 manyWithInitialList initialList p =
     Parser.loop initialList (manyHelp p)
@@ -42,6 +57,14 @@ manyWithInitialList initialList p =
 optional : Parser () -> Parser ()
 optional p =
     Parser.oneOf [ p, Parser.succeed () ]
+
+
+{-| running `first p q` means run p, then run q
+and return the result of running p.
+-}
+first : Parser a -> Parser b -> Parser a
+first p q =
+    p |> Parser.andThen (\x -> q |> Parser.map (\_ -> x))
 
 
 {-| running `second p q` means run p, then run q

@@ -36,6 +36,12 @@ suite =
                     "i: 1, i: 2, i: 3"
                         |> run (Parser.Tool.manyNonEmpty int3)
                         |> Expect.equal (Ok [ 1, 2, 3 ])
+            , test "first" <|
+                \_ -> "1 2" |> run (Parser.Tool.first int2 int2) |> Expect.equal (Ok 1)
+            , test "second" <|
+                \_ -> "1 2" |> run (Parser.Tool.second int2 int2) |> Expect.equal (Ok 2)
+            , test "manySeparatedBy" <|
+                \_ -> "1, 2, 3" |> run (Parser.Tool.manySeparatedBy comma Parser.int) |> Expect.equal (Ok [ 1, 2, 3 ])
 
             --, test "manyNonEmpty, failure case" <|
             --    \_ ->
@@ -51,6 +57,11 @@ suite =
                         |> Expect.equal (Ok { start = 0, finish = 14, content = "One two three!" })
             ]
         ]
+
+
+comma : Parser ()
+comma =
+    Parser.Tool.first (Parser.symbol ",") Parser.spaces
 
 
 int2 : Parser Int

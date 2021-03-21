@@ -2,7 +2,7 @@ module Parser.Expression exposing
     ( Expression(..), incrementBlockOffset, incrementOffset, toString
     , SourceMap, dummySourceMap, getSelectionFromSourceMap, getSource, getSourceOfList, sourceMapIndex, sourceMapToString, setSourceMap
     , Problem(..), equivalentProblem, problemAsString
-    , Context(..), makeSourceMap, strip
+    , BareExpression(..), Context(..), makeSourceMap, strip
     )
 
 {-| Module **Parser.Expression** defines various data structures used by the parser (module Parser.Parser).
@@ -162,7 +162,7 @@ type Problem
     | ExpectingInt
     | InvalidInt
     | ExpectingValidMacroArgWord
-    | ExpectingPrefix Char
+    | ExpectingChar Char
     | ExpectingSpace
     | RejectMacroReservedWord
     | ExpectingBegin
@@ -176,7 +176,7 @@ type Problem
 equivalentProblem : Problem -> Problem -> Bool
 equivalentProblem p1 p2 =
     case ( p1, p2 ) of
-        ( ExpectingPrefix _, ExpectingPrefix _ ) ->
+        ( ExpectingChar _, ExpectingChar _ ) ->
             True
 
         ( ExpectingEndWord _, ExpectingEndWord _ ) ->
@@ -559,7 +559,7 @@ problemAsString prob =
         ExpectingRightBrace ->
             "Missing: }"
 
-        ExpectingPrefix c ->
+        ExpectingChar c ->
             "Expecting prefix " ++ String.fromChar c ++ " (15)"
 
         ExpectingSpace ->

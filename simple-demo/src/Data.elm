@@ -235,14 +235,14 @@ $p$ such that $p \\equiv 1\\ mod\\ 4$.
 
 \\section{Tables}
 
-\\begin{indent}
 \\begin{tabular}{ l l l l }
-Hydrogen & H & 1 & 1.008 \\
-Helium & He & 2 & 4.003 \\
-Lithium& Li & 3 & 6.94 \\
-Beryllium& Be& 4& 9.012 \\
+Hydrogen & H  \\\\
+Helium & He \\\\
+Lithium& Li  \\\\
+Beryllium& Be 
 \\end{tabular}
-\\end{indent}
+
+
 
 \\section{Math-mode macros}
 

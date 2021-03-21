@@ -1,9 +1,4 @@
-module Parser.Parser exposing
-    ( Parser
-    , parseLoop, expression, expressionList, parseExpression, macro
-    , getStringAtWithDefault, renderArg
-    , item, optionalArg, parse, renderToStringList
-    )
+module Parser.Parser exposing (..)
 
 {-| Function parserLoop takes as input an integer representing a "chunkNumber"
 and as string representing a chunk of text. It produces as output a TextCursor:
@@ -62,6 +57,15 @@ TO ADD: COMMENTS ON THE STACK
 
 -}
 
+{-
+
+   ( Parser
+   , parseLoop, expression, expressionList, parseExpression, macro
+   , getStringAtWithDefault, renderArg
+   , item, optionalArg, parse, renderToStringList
+   )
+
+-}
 ----| Table Contents
 ----| PARSELOOP
 ----| EXPRESSION PARSER
@@ -879,9 +883,15 @@ tableBody generation lineNumber =
         --|. repeat zeroOrMore arg
         |= Parser.getOffset
         |. Parser.spaces
-        |= ParserTool.manyNonEmpty (tableRow generation lineNumber)
+        -- |= ParserTool.manyNonEmpty (tableRow generation lineNumber)
+        |= ParserTool.manySeparatedBy endOfTableLine (tableRow generation lineNumber)
         |= Parser.getOffset
         |= Parser.getSource
+
+
+endOfTableLine : Parser ()
+endOfTableLine =
+    ParserTool.first (Parser.symbol (Parser.Token "\\\\" (Expression.ExpectingChar '\\'))) Parser.spaces
 
 
 tableRow : Int -> Int -> Parser Expression
@@ -890,11 +900,16 @@ tableRow generation lineNumber =
     Parser.succeed (\start ll finish src -> LXList ll)
         |= Parser.getOffset
         |. Parser.spaces
-        |= Parser.andThen (\c -> tableCellHelp generation lineNumber [ c ]) (tableCell generation lineNumber)
+        |= ParserTool.manySeparatedBy ampersand (tableCell generation lineNumber)
         |. Parser.spaces
-        |. Parser.oneOf [ Parser.symbol (Parser.Token "\n" Expression.UnHandledError), Parser.symbol (Parser.Token "\\\\\n" UnHandledError) ]
+        -- |. Parser.oneOf [ Parser.symbol (Parser.Token "\n" (Expression.ExpectingChar '\n')), Parser.symbol (Parser.Token "\\\\\n" (Expression.ExpectingChar '\\')) ]
         |= Parser.getOffset
         |= Parser.getSource
+
+
+ampersand : Parser ()
+ampersand =
+    ParserTool.first (Parser.symbol (Parser.Token "&" (Expression.ExpectingChar '&'))) Parser.spaces
 
 
 
@@ -905,20 +920,35 @@ tableCell : Int -> Int -> Parser Expression
 tableCell generation lineNumber =
     -- inContext "tableCell" <|
     Parser.succeed (\start e finish src -> e)
-        -- (Expression.makeSourceMap generation lineNumber start finish src))
         |= Parser.getOffset
-        |= inlineMath generation lineNumber
-        --|= Parser.oneOf
-        --    [ -- displayMathBrackets
-        --      -- , macro ws
-        --      --, displayMathDollar
-        --      --,
-        --      inlineMath generation lineNumber
-        --
-        --    --, tableCellWords
-        --    ]
+        |= (innerTableCell generation lineNumber |> Parser.map LXList)
         |= Parser.getOffset
         |= Parser.getSource
+
+
+innerTableCell generation lineNumber =
+    ParserTool.many
+        (Parser.oneOf
+            -- TODO: the clause below needs to handle lists of what is listed below
+            [ tableCellWords generation lineNumber
+            , displayMath generation lineNumber
+            , inlineMath generation lineNumber
+
+            -- , macro generation lineNumber
+            ]
+        )
+
+
+tableCellWords : Int -> Int -> Parser Expression
+tableCellWords generation lineNumber =
+    -- ParserTool.manyNonEmpty (word ExpectingValidTableCell inTableCellWord)
+    ParserTool.textPS beginTableCellWord [ '\n', '$', '&', '\\' ]
+        |> Parser.map (\data -> Text data.content (Expression.makeSourceMap generation lineNumber data.start data.finish data.content))
+
+
+beginTableCellWord : Char -> Bool
+beginTableCellWord c =
+    not (c == '\\' || c == '$' || c == '&' || c == '\n')
 
 
 tableCellHelp : Int -> Int -> List Expression -> Parser (List Expression)
