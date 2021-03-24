@@ -139,44 +139,49 @@ The arguments are as with init with one addition,
 update : Int -> String -> List String -> LaTeXData -> LaTeXData
 update generation selectedId input data =
     let
+        -- COMPUTE DIFF OF BLOCKS
         oldBlocks : List String
         oldBlocks =
             data.blocks
-                |> Debug.log "OLD BLOCKS"
 
+        -- |> Debug.log "OLD BLOCKS"
         newBlocks : List String
         newBlocks =
             Block.compile generation input
                 |> List.map (String.join "\n")
-                |> Debug.log "NEW BLOCKS"
 
+        -- |> Debug.log "NEW BLOCKS"
         blockDiffRecord =
             GenericDiffer.diff oldBlocks newBlocks
-                |> Debug.log "DIFF"
 
+        -- |> Debug.log "DIFF"
+        deltaNewBlocks : List String
+        deltaNewBlocks =
+            blockDiffRecord.deltaInTarget
+
+        -- |> Debug.log "DELTA"
+        -- COMPUTE DIFF OF PARSED TEXT
         prefixLength =
             List.length blockDiffRecord.commonInitialSegment
 
         deltaSourceLength =
             List.length blockDiffRecord.deltaInSource
 
-        deltaNewBlocks : List String
-        deltaNewBlocks =
-            blockDiffRecord.deltaInTarget
-                |> Debug.log "DELTA"
-
-        input_ =
-            input
-
         parsedBefore =
             Differ.blocksBefore_ prefixLength data.parsedText
 
+        --_ =
+        --    parsedBefore |> List.map (List.map Parser.Expression.strip) |> Debug.log "PARSED BEFORE"
         parsedBetween =
             Differ.slice prefixLength (prefixLength + 1) data.parsedText
 
+        --_ =
+        --    parsedBetween |> List.map (List.map Parser.Expression.strip) |> Debug.log "PARSED BETWEEN"
         parsedAfter =
             Differ.blockAfter_ (prefixLength + deltaSourceLength) data.parsedText
 
+        --_ =
+        --    parsedAfter |> List.map (List.map Parser.Expression.strip) |> Debug.log "PARSED AFTER"
         mSourceMap =
             Maybe.map Parser.Expression.getSource (List.head parsedBetween |> Maybe.andThen List.head)
 
@@ -188,13 +193,19 @@ update generation selectedId input data =
 
         deltaParsed : List (List Expression)
         deltaParsed =
-            Document.process generation (List.reverse deltaNewBlocks)
-                |> (\state_ -> { state_ | output = List.map incrementTextCursor state_.output })
-                |> Document.toParsed
+            if deltaNewBlocks == [] then
+                []
+
+            else
+                Document.process generation (List.reverse deltaNewBlocks)
+                    -- |> Debug.log "DELTA STATE"
+                    |> (\state_ -> { state_ | output = List.map incrementTextCursor state_.output })
+                    |> Document.toParsed
 
         parsedText =
             parsedBefore ++ deltaParsed ++ parsedAfter
 
+        -- COMPUTE DIFF OF RENDERED TEXT
         renderedTextBefore : List (Html LaTeXMsg)
         renderedTextBefore =
             List.take prefixLength data.renderedText
@@ -209,12 +220,15 @@ update generation selectedId input data =
         renderedTextAfter : List (Html LaTeXMsg)
         renderedTextAfter =
             List.drop (prefixLength + deltaSourceLength) data.renderedText
+
+        renderedText =
+            render selectedId data.laTeXState parsedText
     in
-    { lines = input_
+    { lines = input
     , blocks = newBlocks
     , generations = getGenerations parsedText
     , parsedText = parsedText
-    , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length input_) parsedText
+    , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length input) parsedText
     , renderedText = renderedTextBefore ++ deltaRenderedText ++ renderedTextAfter
     , laTeXState = data.laTeXState -- TODO: this is very crude: make it better!
     }
