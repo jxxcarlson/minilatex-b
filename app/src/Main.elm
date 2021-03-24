@@ -108,7 +108,48 @@ type alias Flags =
     {}
 
 
+initialTextQ =
+    """
+TEST
+
+\\begin{theorem}
+There are infinitely many primes.
+\\end{theorem}
+
+This is a test
+"""
+
+
 initialText =
+    """
+This is a test.
+And so is this.
+
+Pythagoras said: $a^2 + b^2 = c^2$
+
+An integral:
+
+$$
+\\int_0^1 x^n dx
+$$
+
+An infinite sum:
+
+$$
+\\sum_0^n \\frac{1}{n} = \\infty
+$$
+
+A theorem:
+
+\\begin{theorem}
+There are infinitely many primes.
+\\end{theorem}
+
+This is a test.
+"""
+
+
+initialTextq =
     """
 
 
@@ -431,11 +472,34 @@ parsedTextDisplay_ model =
         (renderParseResult model)
 
 
+
+-- rpr : { a | laTeXData : { b | parsedText : List (List Expression) } } -> List (List String)
+
+
+listToElement : Int -> List String -> Element msg
+listToElement k data =
+    List.map (\x -> Element.el [] (Element.text x)) data
+        |> (\x -> column [ Element.paddingEach { top = 0, bottom = 24, left = 0, right = 0 } ] (Element.text (String.fromInt k) :: x))
+
+
+listListToListElement : List (List String) -> List (Element msg)
+listListToListElement data =
+    List.indexedMap listToElement data
+
+
+rpr : Model -> List (Element msg)
+rpr model =
+    model.laTeXData.parsedText
+        |> List.map (List.map (Parser.Expression.strip >> Debug.toString))
+        |> listListToListElement
+
+
 renderParseResult : Model -> List (Element Msg)
 renderParseResult model =
     case model.footerViewMode of
         ShowParsedText ->
-            model.laTeXData.parsedText |> parsedTextToString |> renderParsedText
+            -- model.laTeXData.parsedText |> parsedTextToString |> renderParsedText
+            rpr model
 
         ShowBlocks ->
             model.laTeXData.blocks
