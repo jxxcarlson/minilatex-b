@@ -13,8 +13,8 @@ import Parser.Expression exposing (Expression)
 the text, accumulating the parsed bites in the list `parsed: List Expression`.
 The `offset` represents the position of beginning of the current `text` in the
 original text. It is used to properly construct Expressions, which contain
-as component a SourceMap, which locates the bite of text in the original input
-text. .
+as a component a SourceMap, which locates the bite of text in the original input
+text.
 -}
 type alias TextCursor =
     { text : String
