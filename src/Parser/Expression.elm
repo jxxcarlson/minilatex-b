@@ -2,7 +2,7 @@ module Parser.Expression exposing
     ( Expression(..), incrementBlockOffset, incrementOffset, toString
     , SourceMap, dummySourceMap, getSelectionFromSourceMap, getSource, getSourceOfList, sourceMapIndex, sourceMapToString, setSourceMap
     , Problem(..), equivalentProblem, problemAsString
-    , BareExpression(..), Context(..), makeSourceMap, strip
+    , BareExpression(..), Context(..), makeSourceMap, strip, stripList2
     )
 
 {-| Module **Parser.Expression** defines various data structures used by the parser (module Parser.Parser).
@@ -58,6 +58,11 @@ type BareExpression
     | LXList_ (List BareExpression)
     | LXError_ String Problem
     | LXInstruction_ Instr
+
+
+stripList2 : List (List Expression) -> List (List BareExpression)
+stripList2 list =
+    List.map (List.map strip) list
 
 
 strip : Expression -> BareExpression
