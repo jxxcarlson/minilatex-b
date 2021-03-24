@@ -83,10 +83,10 @@ init generation strList =
 
 nextState : BlockState -> Step BlockState BlockState
 nextState state_ =
-    let
-        _ =
-            Debug.log "STATE" state_
-    in
+    --let
+    --    _ =
+    --        Debug.log "STATE" state_
+    --in
     case List.head state_.input of
         Nothing ->
             Done (flush state_)
