@@ -5,11 +5,16 @@ import Expect
 import Test exposing (describe, fuzz, test)
 
 
-suite =
-    describe "The Parser.Block module"
-        [ test "compile for formula and multi-line text" <|
-            \_ ->
-                ex1
-                    |> String.lines
-                    |> compile 0
-        ]
+foo =
+    1
+
+
+
+--suite =
+--    describe "The Parser.Block module"
+--        [ test "compile for formula and multi-line text" <|
+--            \_ ->
+--                ex1
+--                    |> String.lines
+--                    |> compile 0
+--        ]
