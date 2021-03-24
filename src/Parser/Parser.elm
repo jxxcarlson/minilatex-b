@@ -182,10 +182,15 @@ handleError : TextCursor -> List (Parser.DeadEnd Context Problem) -> TextCursor
 handleError tc_ e =
     let
         mFirstError =
-            e |> List.head
+            e
+                |> List.head
+                |> Debug.log "HANDLE ERROR"
+
+        _ =
+            Debug.log "TEXT (HE)" tc_.text
 
         problem =
-            mFirstError |> Maybe.map .problem |> Maybe.withDefault UnHandledError
+            mFirstError |> Maybe.map .problem |> Maybe.withDefault UnHandledError |> Debug.log "THE ERROR"
 
         errorColumn =
             mFirstError |> Maybe.map .col |> Maybe.withDefault 0
@@ -200,15 +205,40 @@ handleError tc_ e =
         lxError =
             LXError errorText problem { content = errorText, blockOffset = tc_.blockIndex, length = errorColumn, offset = tc_.offset + errorColumn, generation = tc_.generation }
     in
-    { text = makeNewText tc_ errorColumn mRecoveryData
-    , block = "?? TO DO"
-    , blockIndex = tc_.blockIndex
-    , parsed = newParsed tc_ lxError mRecoveryData
-    , stack = newStack tc_ errorText mRecoveryData
-    , offset = newOffset tc_ errorColumn mRecoveryData
-    , count = 0
-    , generation = tc_.generation
-    }
+    if problem == ExpectingEndWord "\\end{theorem}" then
+        let
+            textLines =
+                String.lines tc_.text
+
+            errorRow =
+                Maybe.map .row mFirstError |> Maybe.withDefault 0
+
+            errorLines =
+                List.take (errorRow - 1) textLines ++ [ "\\end{theorem}" ]
+
+            newTextLines =
+                "\\red{^^ I fixed the theorem environment for you (unmatched begin-end pair); please correct it.}" :: "\\bigskip" :: List.drop errorRow textLines
+        in
+        { text = String.join "\n" newTextLines
+        , block = "?? TO DO"
+        , blockIndex = tc_.blockIndex
+        , parsed = parse (String.join "\n" errorLines)
+        , stack = [] --newStack tc_ errorText mRecoveryData
+        , offset = newOffset tc_ errorColumn mRecoveryData |> Debug.log "OFFSET"
+        , count = tc_.count
+        , generation = tc_.generation
+        }
+
+    else
+        { text = makeNewText tc_ errorColumn mRecoveryData
+        , block = "?? TO DO"
+        , blockIndex = tc_.blockIndex
+        , parsed = newParsed tc_ lxError mRecoveryData
+        , stack = newStack tc_ errorText mRecoveryData
+        , offset = newOffset tc_ errorColumn mRecoveryData
+        , count = tc_.count
+        , generation = tc_.generation
+        }
 
 
 newOffset tc_ errorColumn_ mRecoveryData_ =
@@ -241,7 +271,11 @@ makeNewText tc_ errorColumn_ mRecoveryData =
 newStack tc_ errorText_ mRecoveryData =
     case mRecoveryData of
         Just _ ->
-            "highlight" :: tc_.stack
+            if List.head tc_.stack == Just "highlight" then
+                tc_.stack
+
+            else
+                "highlight" :: tc_.stack
 
         Nothing ->
             errorText_ :: "highlight" :: tc_.stack
