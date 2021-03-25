@@ -75,11 +75,16 @@ runProcess generation str =
 
 edit : BlockState -> BlockState
 edit blockState =
-    if blockState.blockTypeStack /= [] then
-        Debug.log "BLOCK ERROR" blockState
+    case List.head blockState.blockTypeStack of
+        Nothing ->
+            Debug.log "BLOCKS OK, FINAL STATE" blockState
 
-    else
-        Debug.log "BLOCKS OK" blockState
+        Just blockError ->
+            let
+                _ =
+                    Debug.log "BLOCK ERROR" blockError
+            in
+            Debug.log "FINAL STATE" blockState
 
 
 init : Int -> List String -> BlockState
