@@ -213,6 +213,7 @@ update generation selectedId input data =
         renderedTextBefore =
             List.take prefixLength data.renderedText
 
+        accumulatorState : Accumulator.ReducerData
         accumulatorState =
             Accumulator.render selectedId data.laTeXState deltaParsed
 
@@ -224,8 +225,10 @@ update generation selectedId input data =
         renderedTextAfter =
             List.drop (prefixLength + deltaSourceLength) data.renderedText
 
+        -- TODO: USE THE SIMPLIFICATION BELOW FOR NOW.  Then all errors must come from
+        -- TODO (1) compiling the blocks (2) diffing, or (3) differential parsing
         renderedText =
-            render selectedId data.laTeXState parsedText
+            Accumulator.render selectedId data.laTeXState parsedText |> .html |> List.reverse |> List.map (\x -> Html.span docStyle x)
 
         -- (5) RECORD UPDATED LATEX DATA
     in
@@ -234,7 +237,7 @@ update generation selectedId input data =
     , generations = getGenerations parsedText
     , parsedText = parsedText
     , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length input) parsedText
-    , renderedText = renderedTextBefore ++ deltaRenderedText ++ renderedTextAfter
+    , renderedText = renderedText -- renderedTextBefore ++ deltaRenderedText ++ renderedTextAfter
     , laTeXState = data.laTeXState -- TODO: this is very crude: make it better!
     }
 
