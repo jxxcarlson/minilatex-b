@@ -70,6 +70,16 @@ and prepends them to a list of TextCursor.
 runProcess : Int -> List String -> BlockState
 runProcess generation str =
     loop (init generation str) nextState
+        |> edit
+
+
+edit : BlockState -> BlockState
+edit blockState =
+    if blockState.blockTypeStack /= [] then
+        Debug.log "BLOCK ERROR" blockState
+
+    else
+        Debug.log "BLOCKS OK" blockState
 
 
 init : Int -> List String -> BlockState
