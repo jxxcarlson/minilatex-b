@@ -21,7 +21,6 @@ differTestFunction desc text1 text2 expectedDiffRecord =
 
         blockDiffRecord =
             diff blocks1 blocks2
-                |> Debug.log "DIFF"
     in
     test desc <|
         \_ -> Expect.equal blockDiffRecord expectedDiffRecord

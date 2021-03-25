@@ -144,25 +144,20 @@ update generation selectedId input data =
         oldBlocks =
             data.blocks
 
-        -- |> Debug.log "OLD BLOCKS"
         newBlocks : List String
         newBlocks =
             Block.compile generation input
                 |> List.map (String.join "\n")
 
-        -- |> Debug.log "NEW BLOCKS"
         -- (2) COMPUTE DIFF OF BLOCKS
         blockDiffRecord : GenericDiffer.DiffRecord String
         blockDiffRecord =
             GenericDiffer.diff oldBlocks newBlocks
-                |> Debug.log "DIFF"
 
-        -- |> Debug.log "DIFF"
         deltaNewBlocks : List String
         deltaNewBlocks =
             blockDiffRecord.deltaInTarget
 
-        -- |> Debug.log "DELTA"
         -- (3) COMPUTE DIFF OF PARSED TEXT
         prefixLength =
             List.length blockDiffRecord.commonInitialSegment
@@ -173,18 +168,12 @@ update generation selectedId input data =
         parsedBefore =
             Differ.blocksBefore_ prefixLength data.parsedText
 
-        --_ =
-        --    parsedBefore |> List.map (List.map Parser.Expression.strip) |> Debug.log "PARSED BEFORE"
         parsedBetween =
             Differ.slice prefixLength (prefixLength + 1) data.parsedText
 
-        --_ =
-        --    parsedBetween |> List.map (List.map Parser.Expression.strip) |> Debug.log "PARSED BETWEEN"
         parsedAfter =
             Differ.blockAfter_ (prefixLength + deltaSourceLength) data.parsedText
 
-        --_ =
-        --    parsedAfter |> List.map (List.map Parser.Expression.strip) |> Debug.log "PARSED AFTER"
         mSourceMap =
             Maybe.map Parser.Expression.getSource (List.head parsedBetween |> Maybe.andThen List.head)
 
@@ -201,7 +190,6 @@ update generation selectedId input data =
 
             else
                 Document.process generation (List.reverse deltaNewBlocks)
-                    -- |> Debug.log "DELTA STATE"
                     |> (\state_ -> { state_ | output = List.map incrementTextCursor state_.output })
                     |> Document.toParsed
 

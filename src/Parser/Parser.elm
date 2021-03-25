@@ -184,13 +184,9 @@ handleError tc_ e =
         mFirstError =
             e
                 |> List.head
-                |> Debug.log "HANDLE ERROR"
-
-        _ =
-            Debug.log "TEXT (HE)" tc_.text
 
         problem =
-            mFirstError |> Maybe.map .problem |> Maybe.withDefault UnHandledError |> Debug.log "THE ERROR"
+            mFirstError |> Maybe.map .problem |> Maybe.withDefault UnHandledError
 
         errorColumn =
             mFirstError |> Maybe.map .col |> Maybe.withDefault 0
@@ -224,7 +220,7 @@ handleError tc_ e =
         , blockIndex = tc_.blockIndex
         , parsed = parse (String.join "\n" errorLines)
         , stack = [] --newStack tc_ errorText mRecoveryData
-        , offset = newOffset tc_ errorColumn mRecoveryData |> Debug.log "OFFSET"
+        , offset = newOffset tc_ errorColumn mRecoveryData
         , count = tc_.count
         , generation = tc_.generation
         }

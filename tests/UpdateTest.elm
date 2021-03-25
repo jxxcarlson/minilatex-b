@@ -25,10 +25,10 @@ testUpdateFunction desc text1 text2 =
             MiniLaTeX.init 1 "nada" lines2
 
         parsed2 =
-            data2.parsedText |> Parser.Expression.stripList2 |> Debug.log "ACTUAL"
+            data2.parsedText |> Parser.Expression.stripList2
 
         expectedParsed2 =
-            expectedData2.parsedText |> Parser.Expression.stripList2 |> Debug.log "EXPECTED"
+            expectedData2.parsedText |> Parser.Expression.stripList2
     in
     test desc <|
         \_ -> Expect.equal parsed2 expectedParsed2
