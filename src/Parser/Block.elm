@@ -86,10 +86,6 @@ init generation strList =
 
 nextState : BlockState -> Step BlockState BlockState
 nextState state_ =
-    --let
-    --    _ =
-    --        Debug.log "STATE" state_
-    --in
     case List.head state_.input of
         Nothing ->
             Done (flush state_)
@@ -244,7 +240,7 @@ popBlockStack blockType_ currentLine_ state =
         { state
             | blockType = Start
             , blockTypeStack = []
-            , blockContents = currentLine_ :: state.blockContents
+            , blockContents = []
             , output = List.reverse block :: state.output
             , lineNumber = state.lineNumber + (2 + List.length state.blockContents) -- TODO: think about this.  Is it correct?
         }

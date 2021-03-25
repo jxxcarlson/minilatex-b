@@ -125,15 +125,20 @@ suite =
                 [ [ "A", "B", "C" ]
                 , [ "X", "Y", "Z" ]
                 ]
-
-            --, testCompile "balanced display math, no blank lines"
-            --    "$$\nx^2\n$$\none two\n"
-            --    [ [ "$$", "x^2", "$$" ]
-            --    , [ "one two" ]
-            --    ]
-            --, testCompile "simple display math block"
-            --    "$$\nx^2\n$$"
-            --    [ [ "$$", "x^2", "$$" ]
-            --    ]
+            , testCompile "balanced display math, no blank lines"
+                "$$\nx^2\n$$\none two\n"
+                [ [ "$$", "x^2", "$$" ]
+                , [ "one two" ]
+                ]
+            , testCompile "simple display math block"
+                "$$\nx^2\n$$"
+                [ [ "$$", "x^2", "$$" ]
+                ]
+            , testCompile "simple environment"
+                "\\begin{theorem}\nMany primes!\n\\end{theorem}"
+                [ [ "\\begin{theorem}", "Many primes!", "\\end{theorem}" ] ]
+            , testCompile "nested environment"
+                "\\begin{indent}\n\\begin{theorem}\nMany primes!\n\\end{theorem}\n\\end{indent}"
+                [ [ "\\begin{indent}", "\\begin{theorem}", "Many primes!", "\\end{theorem}", "\\end{indent}" ] ]
             ]
         ]
