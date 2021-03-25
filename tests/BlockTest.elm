@@ -58,39 +58,82 @@ exItemized =
 """
 
 
+testCompile : String -> String -> List (List String) -> Test.Test
+testCompile desc text expectedBlocks =
+    test desc <|
+        \_ ->
+            Expect.equal (compile 0 (String.lines text)) expectedBlocks
+
+
 suite =
     describe "The Parser.Block module"
-        [ Test.skip <|
-            describe "dddd"
-                [ test "compile for formula and multi-line text" <|
-                    \_ ->
-                        ex1
-                            |> String.lines
-                            |> compile 0
-                            |> Expect.equal [ [ "Pythagoras said that" ], [ "$$a^2 + b^2 = c^2$$" ], [ "one", "two", "three" ], [] ]
-                , test "environment" <|
-                    \_ ->
-                        ex2
-                            |> String.lines
-                            |> compile 0
-                            |> Expect.equal [ [ "\\begin{foo}", "a", "b", "c", "\\end{foo}" ], [ "one", "two", "three" ], [] ]
-                , test "environment with blank lines" <|
-                    \_ ->
-                        ex3
-                            |> String.lines
-                            |> compile 0
-                            |> Expect.equal [ [ "\\begin{foo}", "a", "", "b", "", "c", "\\end{foo}" ], [] ]
-                , test "itemized environment" <|
-                    \_ ->
-                        exItemized
-                            |> String.lines
-                            |> compile 0
-                            |> Expect.equal [ [ "\\begin{itemize}", "", "\\item Eggs", "", "\\item Milk", "", "\\item Butter", "", "\\end{itemize}" ], [] ]
-                , test "math block and text" <|
-                    \_ ->
-                        "$$\nx^2\n$$\n\none two\n"
-                            |> String.lines
-                            |> compile 0
-                            |> Expect.equal [ [ "$$", "x^2", "$$" ], [ "one two" ], [] ]
+        [ describe "Block.compile"
+            [ testCompile "compile for formula and multi-line text"
+                ex1
+                [ [ "Pythagoras said that" ]
+                , [ "$$a^2 + b^2 = c^2$$" ]
+                , [ "one", "two", "three" ]
                 ]
+            , testCompile "environment"
+                ex2
+                [ [ "\\begin{foo}", "a", "b", "c", "\\end{foo}" ]
+                , [ "one", "two", "three" ]
+                ]
+            , testCompile "environment with blank lines"
+                ex3
+                [ [ "\\begin{foo}"
+                  , "a"
+                  , ""
+                  , "b"
+                  , ""
+                  , "c"
+                  , "\\end{foo}"
+                  ]
+                ]
+            , testCompile "itemized environment"
+                exItemized
+                [ [ "\\begin{itemize}"
+                  , ""
+                  , "\\item Eggs"
+                  , ""
+                  , "\\item Milk"
+                  , ""
+                  , "\\item Butter"
+                  , ""
+                  , "\\end{itemize}"
+                  ]
+                ]
+            , testCompile "math block and text separated by blank line"
+                "$$\nx^2\n$$\n\none two\n"
+                [ [ "$$", "x^2", "$$" ]
+                , [ "one two" ]
+                ]
+            , testCompile
+                "unbalanced display math, no blank lines"
+                "$$\nx^2\n$\none two\n"
+                [ [ "$$", "x^2", "$" ]
+                , [ "one two" ]
+                ]
+            , testCompile "unbalanced display math (2), no blank lines"
+                "$$\nx^2\n$\none two\n$$\ny^2\n$"
+                [ [ "$$", "x^2", "$" ]
+                , [ "one two" ]
+                , [ "$$", "y^2", "$" ]
+                ]
+            , testCompile "Paragraphs"
+                "A\nB\nC\n\nX\nY\nZ"
+                [ [ "A", "B", "C" ]
+                , [ "X", "Y", "Z" ]
+                ]
+
+            --, testCompile "balanced display math, no blank lines"
+            --    "$$\nx^2\n$$\none two\n"
+            --    [ [ "$$", "x^2", "$$" ]
+            --    , [ "one two" ]
+            --    ]
+            --, testCompile "simple display math block"
+            --    "$$\nx^2\n$$"
+            --    [ [ "$$", "x^2", "$$" ]
+            --    ]
+            ]
         ]
