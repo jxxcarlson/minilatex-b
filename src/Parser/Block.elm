@@ -1,6 +1,6 @@
 module Parser.Block exposing
     ( compile
-    , mathBlockParser, process
+    , closestMatch, mathBlockParser, process
     )
 
 {-| Parser.Block.compile takes an integer representing a "generation number"
@@ -13,6 +13,8 @@ pairs for a LaTeX environement.
 
 -}
 
+import Levenshtein
+import List.Extra
 import Parser as P exposing ((|.), (|=))
 import Parser.Document exposing (Block, BlockType(..), LineType(..))
 
@@ -80,11 +82,46 @@ edit blockState =
             Debug.log "BLOCKS OK, FINAL STATE" blockState
 
         Just blockError ->
-            let
-                _ =
-                    Debug.log "BLOCK ERROR" blockError
-            in
-            Debug.log "FINAL STATE" blockState
+            case blockError of
+                EnvBlock str ->
+                    let
+                        target =
+                            "\\end{" ++ str ++ "}" |> Debug.log "TARGET"
+
+                        m =
+                            closestMatch target blockState.blockContents |> Debug.log "MATCH"
+
+                        itemToReplace =
+                            m |> Maybe.map .content |> Maybe.withDefault ""
+
+                        index_ =
+                            Maybe.map .index m |> Maybe.withDefault 0
+
+                        blocksToReprocess =
+                            List.take index_ blockState.blockContents |> Debug.log "BLOCKS TO REPROCESS"
+
+                        rewrittenBlock =
+                            List.Extra.setIf (\item -> item == itemToReplace) target (List.drop index_ blockState.blockContents) |> List.reverse |> Debug.log "REWRITTEN BLOCK"
+
+                        outputLength =
+                            List.length blockState.output
+
+                        truncatedOutput =
+                            List.take (outputLength - List.length blockState.blockContents) blockState.output ++ [ rewrittenBlock ] |> Debug.log "REWRITTEN OUTPUT"
+
+                        trailingState =
+                            runProcess blockState.generation blocksToReprocess
+                    in
+                    { trailingState | output = truncatedOutput ++ trailingState.output }
+
+                _ ->
+                    blockState
+
+
+closestMatch : String -> List String -> Maybe { distance : Int, index : Int, content : String }
+closestMatch str list =
+    List.indexedMap (\k s -> { distance = Levenshtein.distance str s, index = k, content = s }) list
+        |> List.Extra.minimumBy (\r -> r.distance)
 
 
 init : Int -> List String -> BlockState
