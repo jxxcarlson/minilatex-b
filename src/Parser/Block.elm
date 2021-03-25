@@ -1,4 +1,7 @@
-module Parser.Block exposing (compile)
+module Parser.Block exposing
+    ( compile
+    , mathBlockParser, process
+    )
 
 {-| Parser.Block.compile takes an integer representing a "generation number"
 and a string representing MiniLaTeX text and groups it into blocks of lines,
@@ -100,7 +103,7 @@ nextState state_ =
                 ( Start, LTBlank ) ->
                     Loop (start state)
 
-                ( Start, LTMathBlock ) ->
+                ( Start, LTMathBlock _ ) ->
                     Loop (initBlock MathBlock currentLine state)
 
                 ( Start, BeginEnvBlock blockType ) ->
@@ -116,7 +119,7 @@ nextState state_ =
                 ( ErrorBlock, LTBlank ) ->
                     Loop { state | blockType = Start, blockContents = [] }
 
-                ( ErrorBlock, LTMathBlock ) ->
+                ( ErrorBlock, LTMathBlock _ ) ->
                     Loop (initWithBlockType MathBlock currentLine state)
 
                 ( ErrorBlock, BeginEnvBlock blockType ) ->
@@ -132,7 +135,7 @@ nextState state_ =
                 ( TextBlock, LTBlank ) ->
                     Loop { state | blockType = Start, blockContents = [], output = List.reverse state.blockContents :: state.output }
 
-                ( TextBlock, LTMathBlock ) ->
+                ( TextBlock, LTMathBlock _ ) ->
                     Loop (initWithBlockType MathBlock currentLine state)
 
                 ( TextBlock, BeginEnvBlock blockType ) ->
@@ -148,8 +151,8 @@ nextState state_ =
                 ( MathBlock, LTBlank ) ->
                     Loop { state | blockType = Start, blockContents = [], output = List.reverse state.blockContents :: state.output }
 
-                ( MathBlock, LTMathBlock ) ->
-                    Loop (addToBlockContents Start currentLine state |> pushBlock)
+                ( MathBlock, LTMathBlock _ ) ->
+                    Loop (addToBlockContents Start currentLine state |> pushBlockReversed)
 
                 ( MathBlock, BeginEnvBlock blockType ) ->
                     Loop (initWithBlockType (EnvBlock blockType) currentLine state)
@@ -164,7 +167,7 @@ nextState state_ =
                 ( EnvBlock et, LTBlank ) ->
                     Loop (addToBlockContents (EnvBlock et) currentLine state)
 
-                ( EnvBlock et, LTMathBlock ) ->
+                ( EnvBlock et, LTMathBlock _ ) ->
                     Loop (addToBlockContents (EnvBlock et) currentLine state)
 
                 ( EnvBlock _, BeginEnvBlock blockType ) ->
@@ -213,6 +216,11 @@ pushBlock state =
     { state | blockContents = [], output = state.blockContents :: state.output }
 
 
+pushBlockReversed : BlockState -> BlockState
+pushBlockReversed state =
+    { state | blockContents = [], output = List.reverse state.blockContents :: state.output }
+
+
 pushBlockStack : BlockType -> String -> BlockState -> BlockState
 pushBlockStack blockType_ currentLine_ state =
     { state
@@ -255,7 +263,11 @@ flush state =
         block =
             List.reverse state.blockContents
     in
-    { state | output = List.reverse (block :: state.output) }
+    if block == [] then
+        { state | output = List.reverse state.output }
+
+    else
+        { state | output = List.reverse (block :: state.output) }
 
 
 countLines : List String -> Int
@@ -324,7 +336,14 @@ endEnvLineParser =
 mathBlockParser : P.Parser LineType
 mathBlockParser =
     P.succeed LTMathBlock
-        |. P.symbol "$$"
+        |= P.oneOf
+            [ P.symbol "$$" |> P.map (\() -> "$$")
+            , P.symbol "$" |> P.map (\() -> "$")
+            , P.symbol "\\[" |> P.map (\() -> "\\[")
+            , P.symbol "\\]" |> P.map (\() -> "\\]")
+            , P.symbol "\\(" |> P.map (\() -> "\\(")
+            , P.symbol "\\)" |> P.map (\() -> "\\)")
+            ]
 
 
 textBlockParser : P.Parser LineType
