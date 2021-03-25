@@ -67,7 +67,7 @@ type BlockType
 type LineType
     = LTBlank
     | LTTextBlock
-    | LTMathBlock
+    | LTMathBlock String
     | BeginEnvBlock String
     | EndEnvBlock String
 
@@ -139,7 +139,7 @@ nextState state_ =
                 ( Start, LTBlank ) ->
                     Loop (start state)
 
-                ( Start, LTMathBlock ) ->
+                ( Start, LTMathBlock _ ) ->
                     Loop (initBlock MathBlock currentLine state)
 
                 ( Start, BeginEnvBlock blockType ) ->
@@ -155,7 +155,7 @@ nextState state_ =
                 ( ErrorBlock, LTBlank ) ->
                     Loop { state | blockType = Start, blockContents = [] }
 
-                ( ErrorBlock, LTMathBlock ) ->
+                ( ErrorBlock, LTMathBlock _ ) ->
                     Loop (initWithBlockType MathBlock currentLine state)
 
                 ( ErrorBlock, BeginEnvBlock blockType ) ->
@@ -181,7 +181,7 @@ nextState state_ =
                     in
                     Loop { state | blockType = Start, blockContents = [], laTeXState = laTeXState, output = output, lineNumber = state.lineNumber + countLines state.blockContents }
 
-                ( TextBlock, LTMathBlock ) ->
+                ( TextBlock, LTMathBlock _ ) ->
                     Loop (initWithBlockType MathBlock currentLine state)
 
                 ( TextBlock, BeginEnvBlock blockType ) ->
@@ -207,7 +207,7 @@ nextState state_ =
                     in
                     Loop { state | blockType = Start, blockContents = [], laTeXState = laTeXState, output = output, lineNumber = state.lineNumber + countLines state.blockContents }
 
-                ( MathBlock, LTMathBlock ) ->
+                ( MathBlock, LTMathBlock _ ) ->
                     Loop (initWithBlockType Start currentLine state)
 
                 ( MathBlock, BeginEnvBlock blockType ) ->
@@ -223,7 +223,7 @@ nextState state_ =
                 ( EnvBlock _, LTBlank ) ->
                     Loop state
 
-                ( EnvBlock et, LTMathBlock ) ->
+                ( EnvBlock et, LTMathBlock _ ) ->
                     Loop (addToBlockContents (EnvBlock et) currentLine state)
 
                 ( EnvBlock _, BeginEnvBlock blockType ) ->
@@ -398,7 +398,14 @@ endEnvLineParser =
 mathBlockParser : P.Parser LineType
 mathBlockParser =
     P.succeed LTMathBlock
-        |. P.symbol "$$"
+        |= P.oneOf
+            [ P.symbol "$$" |> P.map (\() -> "$$")
+            , P.symbol "$" |> P.map (\() -> "$")
+            , P.symbol "\\[" |> P.map (\() -> "\\[")
+            , P.symbol "\\]" |> P.map (\() -> "\\]")
+            , P.symbol "\\(" |> P.map (\() -> "\\(")
+            , P.symbol "\\)" |> P.map (\() -> "\\)")
+            ]
 
 
 textBlockParser : P.Parser LineType
