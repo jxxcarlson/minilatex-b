@@ -151,8 +151,10 @@ update generation selectedId input data =
                 |> List.map (String.join "\n")
 
         -- |> Debug.log "NEW BLOCKS"
+        blockDiffRecord : GenericDiffer.DiffRecord String
         blockDiffRecord =
             GenericDiffer.diff oldBlocks newBlocks
+                |> Debug.log "DIFF"
 
         -- |> Debug.log "DIFF"
         deltaNewBlocks : List String
