@@ -139,7 +139,7 @@ The arguments are as with init with one addition,
 update : Int -> String -> List String -> LaTeXData -> LaTeXData
 update generation selectedId input data =
     let
-        -- COMPUTE DIFF OF BLOCKS
+        -- (1) COMPUTE NEW BLOCKS
         oldBlocks : List String
         oldBlocks =
             data.blocks
@@ -151,6 +151,7 @@ update generation selectedId input data =
                 |> List.map (String.join "\n")
 
         -- |> Debug.log "NEW BLOCKS"
+        -- (2) COMPUTE DIFF OF BLOCKS
         blockDiffRecord : GenericDiffer.DiffRecord String
         blockDiffRecord =
             GenericDiffer.diff oldBlocks newBlocks
@@ -162,7 +163,7 @@ update generation selectedId input data =
             blockDiffRecord.deltaInTarget
 
         -- |> Debug.log "DELTA"
-        -- COMPUTE DIFF OF PARSED TEXT
+        -- (3) COMPUTE DIFF OF PARSED TEXT
         prefixLength =
             List.length blockDiffRecord.commonInitialSegment
 
@@ -207,7 +208,7 @@ update generation selectedId input data =
         parsedText =
             parsedBefore ++ deltaParsed ++ parsedAfter
 
-        -- COMPUTE DIFF OF RENDERED TEXT
+        -- (4) COMPUTE DIFF OF RENDERED TEXT
         renderedTextBefore : List (Html LaTeXMsg)
         renderedTextBefore =
             List.take prefixLength data.renderedText
@@ -225,6 +226,8 @@ update generation selectedId input data =
 
         renderedText =
             render selectedId data.laTeXState parsedText
+
+        -- (5) RECORD UPDATED LATEX DATA
     in
     { lines = input
     , blocks = newBlocks
