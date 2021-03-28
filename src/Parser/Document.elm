@@ -172,18 +172,7 @@ nextState state_ =
                     -- Then end of a text block has been reached. Create a string representing
                     -- this block, parse it using Parser.parseLoop to produce a TextCursor, and
                     -- add it to state.output.  Finally, update the laTeXState using Render.Reduce.latexState
-                    let
-                        newTC : TextCursor
-                        newTC =
-                            Parser.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse state.blockContents))
-
-                        output =
-                            newTC :: state.output
-
-                        laTeXState =
-                            Reduce.laTeXState newTC.parsed state.laTeXState
-                    in
-                    Loop { state | blockType = Start, blockContents = [], laTeXState = laTeXState, output = output, lineNumber = state.lineNumber + countLines state.blockContents }
+                    Loop (pushBlock state)
 
                 ( TextBlock, LTMathBlock _ ) ->
                     Loop (initWithBlockType MathBlock currentLine state)
@@ -200,17 +189,7 @@ nextState state_ =
                 --
                 ( MathBlock, LTBlank ) ->
                     -- end of MathBlock reached. Update as above.
-                    let
-                        newTC =
-                            Parser.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse state.blockContents))
-
-                        output =
-                            newTC :: state.output
-
-                        laTeXState =
-                            Reduce.laTeXState newTC.parsed state.laTeXState
-                    in
-                    Loop { state | blockType = Start, blockContents = [], laTeXState = laTeXState, output = output, lineNumber = state.lineNumber + countLines state.blockContents }
+                    Loop (pushBlock state)
 
                 ( MathBlock, LTMathBlock _ ) ->
                     Loop (initWithBlockType Start currentLine state)
@@ -289,6 +268,22 @@ pushBlockStack blockType_ currentLine_ state =
     }
 
 
+pushBlock : State -> State
+pushBlock state =
+    let
+        tc : TextCursor
+        tc =
+            Parser.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse state.blockContents))
+    in
+    { state
+        | blockType = Start
+        , blockContents = []
+        , laTeXState = Reduce.laTeXState tc.parsed state.laTeXState
+        , output = tc :: state.output
+        , lineNumber = state.lineNumber + countLines state.blockContents
+    }
+
+
 popBlockStack : BlockType -> String -> State -> State
 popBlockStack blockType_ currentLine_ state =
     let
@@ -305,16 +300,13 @@ popBlockStack blockType_ currentLine_ state =
 
             tc =
                 { tc_ | text = input_ }
-
-            laTeXState =
-                Reduce.laTeXState tc.parsed state.laTeXState
         in
         { state
             | blockType = Start
             , blockTypeStack = []
             , blockContents = currentLine_ :: state.blockContents
             , output = tc :: state.output
-            , laTeXState = laTeXState
+            , laTeXState = Reduce.laTeXState tc.parsed state.laTeXState
             , lineNumber = state.lineNumber + (2 + List.length state.blockContents) -- TODO: think about this.  Is it correct?
         }
 

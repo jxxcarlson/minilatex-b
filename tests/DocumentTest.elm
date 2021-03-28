@@ -76,10 +76,10 @@ suite =
                 "\\begin{textmacro}\n\\newcommand{\\foo}{FOO}\n\\end{textmacro}\n"
                 -- TODO: make this work without trailing newline above (??)
                 [ [ Environment_ "textmacro" [] (Text_ "\\newcommand{\\foo}{FOO}") ], [] ]
+            , documentInitTestFunction
+                "Math macro definition"
+                "\\begin{mathmacro}\n\\newcommand{\\bt}[1]{\\bf{#1}}\n\\end{mathmacro}\n"
+                -- TODO: make this work without trailing newline above (??)
+                [ [ Environment_ "mathmacro" [] (Text_ "\\newcommand{\\bt}[1]{\\bf{#1}}") ], [] ]
             ]
-        , documentInitTestFunction
-            "Math macro definition"
-            "\\begin{mathmacro}\n\\newcommand{\\bt}[1]{\\bf{#1}}\n\\end{mathmacro}\n"
-            -- TODO: make this work without trailing newline above (??)
-            [ [ Environment_ "mathmacro" [] (Text_ "\\newcommand{\\bt}[1]{\\bf{#1}}") ], [] ]
         ]

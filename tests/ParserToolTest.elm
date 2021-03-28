@@ -8,55 +8,59 @@ import Test exposing (describe, test)
 
 
 suite =
-    describe "The ParserTool module"
-        [ Test.skip <|
-            describe "many"
-                -- Nest as many descriptions as you like.
-                [ test "many int2" <|
-                    \_ ->
-                        "1 2 3"
-                            |> run (Parser.Tool.many int2)
-                            |> Expect.equal (Ok [ 1, 2, 3 ])
-                , test "many int3" <|
-                    \_ ->
-                        "i: 1, i: 2, i: 3"
-                            |> run (Parser.Tool.many int3)
-                            |> Expect.equal (Ok [ 1, 2, 3 ])
-                , test "many int4" <|
-                    \_ ->
-                        "i: 1, i: 2, i: 3"
-                            |> run (Parser.Tool.many int3)
-                            |> Expect.equal (Ok [ 1, 2, 3 ])
-                , test "many int4 with empty input" <|
-                    \_ ->
-                        ""
-                            |> run (Parser.Tool.many int3)
-                            |> Expect.equal (Ok [])
-                , test "manyNonEmpty" <|
-                    \_ ->
-                        "i: 1, i: 2, i: 3"
-                            |> run (Parser.Tool.manyNonEmpty int3)
-                            |> Expect.equal (Ok [ 1, 2, 3 ])
-                , test "first" <|
-                    \_ -> "1 2" |> run (Parser.Tool.first int2 int2) |> Expect.equal (Ok 1)
-                , test "second" <|
-                    \_ -> "1 2" |> run (Parser.Tool.second int2 int2) |> Expect.equal (Ok 2)
-                , test "manySeparatedBy" <|
-                    \_ -> "1, 2, 3" |> run (Parser.Tool.manySeparatedBy comma Parser.int) |> Expect.equal (Ok [ 1, 2, 3 ])
+    describe "Nothing"
+        [ test "zero" <| \_ -> Expect.equal 2 2
+        ]
 
-                --, test "manyNonEmpty, failure case" <|
-                --    \_ ->
-                --        ""
-                --            |> run (Parser.Tool.manyNonEmpty int3)
-                --            |> Expect.equal (Err [ { col = 1, problem = ExpectingSymbol "i: ", row = 1 } ])
-                ]
+
+suite1 =
+    describe "The ParserTool module"
+        [ describe "many"
+            -- Nest as many descriptions as you like.
+            [ test "many int2" <|
+                \_ ->
+                    "1 2 3"
+                        |> run (Parser.Tool.many int2)
+                        |> Expect.equal (Ok [ 1, 2, 3 ])
+            , test "many int3" <|
+                \_ ->
+                    "i: 1, i: 2, i: 3"
+                        |> run (Parser.Tool.many int3)
+                        |> Expect.equal (Ok [ 1, 2, 3 ])
+            , test "many int4" <|
+                \_ ->
+                    "i: 1, i: 2, i: 3"
+                        |> run (Parser.Tool.many int3)
+                        |> Expect.equal (Ok [ 1, 2, 3 ])
+            , test "many int4 with empty input" <|
+                \_ ->
+                    ""
+                        |> run (Parser.Tool.many int3)
+                        |> Expect.equal (Ok [])
+            , test "manyNonEmpty" <|
+                \_ ->
+                    "i: 1, i: 2, i: 3"
+                        |> run (Parser.Tool.manyNonEmpty int3)
+                        |> Expect.equal (Ok [ 1, 2, 3 ])
+            , test "first" <|
+                \_ -> "1 2" |> run (Parser.Tool.first int2 int2) |> Expect.equal (Ok 1)
+            , test "second" <|
+                \_ -> "1 2" |> run (Parser.Tool.second int2 int2) |> Expect.equal (Ok 2)
+            , test "manySeparatedBy" <|
+                \_ -> "1, 2, 3" |> run (Parser.Tool.manySeparatedBy comma Parser.int) |> Expect.equal (Ok [ 1, 2, 3 ])
+
+            --, test "manyNonEmpty, failure case" <|
+            --    \_ ->
+            --        ""
+            --            |> run (Parser.Tool.manyNonEmpty int3)
+            --            |> Expect.equal (Err [ { col = 1, problem = ExpectingSymbol "i: ", row = 1 } ])
+            ]
         , describe "textPS" <|
-            [ Test.skip <|
-                test "line" <|
-                    \_ ->
-                        "One two three!\nHo ho ho!"
-                            |> run (Parser.Tool.textPS (\c -> Char.isAlpha c) [ '\n' ])
-                            |> Expect.equal (Ok { start = 0, finish = 14, content = "One two three!" })
+            [ test "line" <|
+                \_ ->
+                    "One two three!\nHo ho ho!"
+                        |> run (Parser.Tool.textPS (\c -> Char.isAlpha c) [ '\n' ])
+                        |> Expect.equal (Ok { start = 0, finish = 14, content = "One two three!" })
             ]
         ]
 
