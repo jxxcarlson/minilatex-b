@@ -169,7 +169,11 @@ nextState state_ =
 
                 --
                 ( TextBlock, LTBlank ) ->
+                    -- Then end of a text block has been reached. Create a string representing
+                    -- this block, parse it using Parser.parseLoop to produce a TextCursor, and
+                    -- add it to state.output.  Finally, update the laTeXState using Render.Reduce.latexState
                     let
+                        newTC : TextCursor
                         newTC =
                             Parser.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse state.blockContents))
 
@@ -195,6 +199,7 @@ nextState state_ =
 
                 --
                 ( MathBlock, LTBlank ) ->
+                    -- end of MathBlock reached. Update as above.
                     let
                         newTC =
                             Parser.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse state.blockContents))

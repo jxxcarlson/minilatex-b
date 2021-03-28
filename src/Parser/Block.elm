@@ -75,16 +75,22 @@ runProcess generation str =
         |> edit
 
 
+{-| Attempt to recover from error in which the final blockTypeStack is nonempty
+-}
 edit : BlockState -> BlockState
 edit blockState =
     case List.head blockState.blockTypeStack of
         Nothing ->
-            Debug.log "BLOCKS OK, FINAL STATE" blockState
+            blockState
+                |> Debug.log "BLOCKS OK, FINAL STATE"
 
         Just blockError ->
             case blockError of
                 EnvBlock str ->
                     let
+                        _ =
+                            Debug.log "STATE" blockState
+
                         target =
                             "\\end{" ++ str ++ "}" |> Debug.log "TARGET"
 
@@ -103,6 +109,9 @@ edit blockState =
                         rewrittenBlock =
                             List.Extra.setIf (\item -> item == itemToReplace) target (List.drop index_ blockState.blockContents) |> List.reverse |> Debug.log "REWRITTEN BLOCK"
 
+                        _ =
+                            Debug.log "OUTPUT" blockState.output
+
                         outputLength =
                             List.length blockState.output
 
@@ -111,8 +120,20 @@ edit blockState =
 
                         trailingState =
                             runProcess blockState.generation blocksToReprocess
+
+                        indexOfBlockContents =
+                            List.Extra.elemIndex (List.reverse blockState.blockContents) blockState.output
+                                |> Debug.log "index of block contents"
+
+                        prefix =
+                            case List.Extra.elemIndex (List.reverse blockState.blockContents) blockState.output of
+                                Nothing ->
+                                    []
+
+                                Just idx ->
+                                    List.take idx blockState.output
                     in
-                    { trailingState | output = truncatedOutput ++ trailingState.output }
+                    { trailingState | output = prefix ++ truncatedOutput ++ trailingState.output }
 
                 _ ->
                     blockState

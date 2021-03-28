@@ -46,6 +46,38 @@ type Expression
     | LXInstruction Instr SourceMap
 
 
+{-| Identifies the source text corresponding to part of the AST
+
+SourceMap identifies the part of source text from which an Expression proper
+was derived and contains a copy of that source text.
+
+    - The blockOffset identifies the block of text within
+      the full text.  Note that the text is divided into
+      blocks : Line String by Parser.Block.compile
+
+    - The offset identifies the source text in the string obtained
+      by joining the lines of the block with "\n".
+
+    - The length field of the SourceMap is added to update the offset field of the
+      TextCursor. In this way, the offset and length identify the source text within
+      a block of text, while
+
+    - The actual snippet of source text (block.content) is used in error reporting.
+
+The accuracy of the computation of the length of the text in each round of
+parsing is important. The input text is truncated by that amount; in the
+next round the truncated text is parsed.
+
+-}
+type alias SourceMap =
+    { blockOffset : Int
+    , length : Int
+    , offset : Int
+    , content : String
+    , generation : Int
+    }
+
+
 type BareExpression
     = Text_ String
     | Comment_ String
@@ -115,17 +147,6 @@ instructionToString i =
 
         IHighlight ->
             "Highlight"
-
-
-{-| Identifies the source text corresponding to part of the AST
--}
-type alias SourceMap =
-    { blockOffset : Int
-    , length : Int
-    , offset : Int
-    , content : String
-    , generation : Int
-    }
 
 
 makeSourceMap : Int -> Int -> Int -> Int -> String -> SourceMap

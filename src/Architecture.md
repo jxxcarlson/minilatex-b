@@ -2,6 +2,9 @@
 
 _This document is a work-in-progress._
 
+
+## API
+
 The MiniLaTeX package provides two top-level modules, `MiniLaTeX` and 
 `LaTeXMsg`.  The function
 
@@ -36,7 +39,38 @@ or
 ```elm
 viewLaTeXDataAsElement : LaTeXData -> Element LaTeXMsg
 ```
+
+
 ## Overview
+
+Let's look at the pipeline of computations in the two main 
+functions of the API, _MiniLaTeX.init_ and _MiniLaTeX.update_.
+
+
+### MiniLaTeX.init
+
+
+The first step is to read the document text and break it into a sequence
+of logical blocks.  Such blocks are
+
+### MiniLaTeX.update
+
+The first step is to read the document text and break it into a sequence
+of logical blocks.  Such blocks are 
+
+    - an ordinary paragraph, that is, an unbroken sequence of non-blank lines
+      bordered by at least one blank line
+
+    - a display math element, $$ ... $$, where the elements $$ consist of 
+      a single line beginning at the left margin, or the same with delimiters
+      \[ and \]
+
+    - an outer begin-end pair, \begin{foo}...\end{foo}, where the elements
+      \begin{foo} and \end{foo} consist of a single line beginnning at the
+      left margin.i  These blocks are problematic.
+
+
+## Stuff
 
 - Error recovery: Parser.Parser.handleError
 

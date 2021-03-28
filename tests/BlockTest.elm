@@ -66,6 +66,12 @@ testCompile desc text expectedBlocks =
 
 
 suite =
+    describe "Nothing"
+        [ test "zero" <| \_ -> Expect.equal 2 2
+        ]
+
+
+suite2 =
     describe "The Parser.Block module"
         [ describe "Block.compile"
             [ --testCompile "compile for formula and multi-line text"
