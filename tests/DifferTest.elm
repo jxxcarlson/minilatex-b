@@ -46,14 +46,14 @@ suite1 =
                 }
             , differTestFunction
                 "Error in math display"
-                "The teacher said:$$\nx^2\n$\nfoo bar baz"
-                "The teacher said:$$\nx^2\n$$\nfoo bar baz"
-                { commonInitialSegment = []
-                , commonTerminalSegment = []
-                , deltaInSource = [ "The teacher said:$$\nx^2\n$\nfoo bar baz" ]
+                "The teacher said:\n\n$$\nx^2\n$\n\nfoo bar baz"
+                "The teacher said:\n\n$$\nx^2\n$$\n\nfoo bar baz"
+                { commonInitialSegment = [ "The teacher said:" ]
+                , commonTerminalSegment = [ "foo bar baz" ]
+                , deltaInSource = [ "$$\nx^2\n$" ]
 
                 -- TODO: the below is INCORRECT
-                , deltaInTarget = [ "x^2\nThe teacher said:$$", "$$\nfoo bar baz" ]
+                , deltaInTarget = [ "$$\nx^2\n$$" ]
                 }
             , differTestFunction
                 "Error in math display,but math display as separate paragraph"

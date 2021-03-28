@@ -82,21 +82,22 @@ edit blockState =
     case List.head blockState.blockTypeStack of
         Nothing ->
             blockState
-                |> Debug.log "BLOCKS OK, FINAL STATE"
 
+        -- |> Debug.log "BLOCKS OK, FINAL STATE"
         Just blockError ->
             case blockError of
                 EnvBlock str ->
                     let
-                        _ =
-                            Debug.log "STATE" blockState
-
+                        --_ =
+                        --    Debug.log "STATE" blockState
                         target =
-                            "\\end{" ++ str ++ "}" |> Debug.log "TARGET"
+                            "\\end{" ++ str ++ "}"
 
+                        -- |> Debug.log "TARGET"
                         m =
-                            closestMatch target blockState.blockContents |> Debug.log "MATCH"
+                            closestMatch target blockState.blockContents
 
+                        -- |> Debug.log "MATCH"
                         itemToReplace =
                             m |> Maybe.map .content |> Maybe.withDefault ""
 
@@ -104,27 +105,29 @@ edit blockState =
                             Maybe.map .index m |> Maybe.withDefault 0
 
                         blocksToReprocess =
-                            List.take index_ blockState.blockContents |> Debug.log "BLOCKS TO REPROCESS"
+                            List.take index_ blockState.blockContents
 
+                        -- |> Debug.log "BLOCKS TO REPROCESS"
                         rewrittenBlock =
-                            List.Extra.setIf (\item -> item == itemToReplace) target (List.drop index_ blockState.blockContents) |> List.reverse |> Debug.log "REWRITTEN BLOCK"
+                            List.Extra.setIf (\item -> item == itemToReplace) target (List.drop index_ blockState.blockContents) |> List.reverse
 
-                        _ =
-                            Debug.log "OUTPUT" blockState.output
-
+                        -- |> Debug.log "REWRITTEN BLOCK"
+                        --_ =
+                        --    Debug.log "OUTPUT" blockState.output
                         outputLength =
                             List.length blockState.output
 
                         truncatedOutput =
-                            List.take (outputLength - List.length blockState.blockContents) blockState.output ++ [ rewrittenBlock ] |> Debug.log "REWRITTEN OUTPUT"
+                            List.take (outputLength - List.length blockState.blockContents) blockState.output ++ [ rewrittenBlock ]
 
+                        --|> Debug.log "REWRITTEN OUTPUT"
                         trailingState =
                             runProcess blockState.generation blocksToReprocess
 
                         indexOfBlockContents =
                             List.Extra.elemIndex (List.reverse blockState.blockContents) blockState.output
-                                |> Debug.log "index of block contents"
 
+                        -- |> Debug.log "index of block contents"
                         prefix =
                             case List.Extra.elemIndex (List.reverse blockState.blockContents) blockState.output of
                                 Nothing ->
