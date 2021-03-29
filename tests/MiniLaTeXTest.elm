@@ -16,13 +16,13 @@ testUpdateFunction desc text1 text2 =
             text2 |> String.lines
 
         data1 =
-            MiniLaTeX.init 0 "nada" lines1
+            MiniLaTeX.init 0 "nada" (text1 |> String.lines)
 
         data2 =
-            MiniLaTeX.update 1 "nada" lines2 data1
+            MiniLaTeX.update 1 "nada" (text2 |> String.lines) data1
 
         expectedData2 =
-            MiniLaTeX.init 1 "nada" lines2
+            MiniLaTeX.init 1 "nada" (text2 |> String.lines)
 
         parsed2 =
             data2.parsedText |> Parser.Expression.stripList2
@@ -31,7 +31,7 @@ testUpdateFunction desc text1 text2 =
             expectedData2.parsedText |> Parser.Expression.stripList2
     in
     test desc <|
-        \_ -> Expect.equal parsed2 expectedParsed2
+        \_ -> Expect.equal (Debug.log "ACTUAL" parsed2) (Debug.log "EXPECTED" expectedParsed2)
 
 
 suite =
@@ -79,9 +79,10 @@ suite =
                 -- TODO: resolve trailing [] problem in parsed text
                 "\\italic{foo bar baz\n"
                 "\\italic{foo} bar baz\n"
-            , testUpdateFunction "error in theorem > theorem"
-                -- TODO: resolve trailing [] problem in parsed text
-                "\\begin{theorem}\nMany primes!\n\\end{theorem\n"
-                "\n\n\\begin{theorem}\nMany primes!\n\\end{theorem}\n"
+            , Test.only <|
+                testUpdateFunction "error in theorem > theorem"
+                    -- TODO: resolve trailing [] problem in parsed text
+                    "\\begin{theorem}\nMany primes!!!!\n\\end{theorem\n"
+                    "\\begin{theorem}\nMany primes!@@!\n\\end{theorem}\n"
             ]
         ]

@@ -153,6 +153,7 @@ update generation selectedId input data =
         blockDiffRecord : GenericDiffer.DiffRecord String
         blockDiffRecord =
             GenericDiffer.diff oldBlocks newBlocks
+                |> Debug.log "DIFF"
 
         deltaNewBlocks : List String
         deltaNewBlocks =
@@ -165,12 +166,14 @@ update generation selectedId input data =
         deltaSourceLength =
             List.length blockDiffRecord.deltaInSource
 
+        parsedBefore : List (List Expression)
         parsedBefore =
             Differ.blocksBefore_ prefixLength data.parsedText
 
         parsedBetween =
             Differ.slice prefixLength (prefixLength + 1) data.parsedText
 
+        parsedAfter : List (List Expression)
         parsedAfter =
             Differ.blockAfter_ (prefixLength + deltaSourceLength) data.parsedText
 
@@ -193,8 +196,31 @@ update generation selectedId input data =
                     |> (\state_ -> { state_ | output = List.map incrementTextCursor state_.output })
                     |> Document.toParsed
 
+        fix : List (List a) -> List (List a)
+        fix list =
+            if list == [ [] ] then
+                []
+
+            else
+                list
+
+        _ =
+            parsedBefore |> Parser.Expression.stripList2 |> Debug.log "PARSED BEFORE"
+
+        _ =
+            deltaParsed |> Parser.Expression.stripList2 |> Debug.log "DELTA PARSED"
+
+        _ =
+            parsedAfter |> Parser.Expression.stripList2 |> Debug.log "PARSED AFTER"
+
         parsedText =
-            parsedBefore ++ deltaParsed ++ parsedAfter
+            fix parsedBefore ++ fix deltaParsed ++ fix parsedAfter
+
+        _ =
+            parsedText |> Parser.Expression.stripList2 |> Debug.log "PARSED TEXT"
+
+        _ =
+            data.parsedText |> Parser.Expression.stripList2 |> Debug.log "ORIGINAL PARSED TEXT"
 
         -- (4) COMPUTE DIFF OF RENDERED TEXT
         renderedTextBefore : List (Html LaTeXMsg)
