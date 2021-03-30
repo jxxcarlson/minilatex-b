@@ -23,13 +23,13 @@ exItemized =
 """
 
 
-suite =
+suite0 =
     describe "Nothing"
         [ test "zero" <| \_ -> Expect.equal 2 2
         ]
 
 
-suite1 =
+suite =
     describe "The Parser module"
         [ describe "expressionList"
             -- Nest as many descriptions as you like.

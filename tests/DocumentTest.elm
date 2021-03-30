@@ -1,4 +1,4 @@
-module DocumentTest exposing (..)
+module DocumentTest exposing (suite)
 
 import Expect
 import Parser.Block as Block

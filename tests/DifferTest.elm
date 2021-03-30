@@ -1,4 +1,4 @@
-module DifferTest exposing (..)
+module DifferTest exposing (suite)
 
 import Compiler.GenericDiffer exposing (DiffRecord, diff)
 import Expect
@@ -26,13 +26,13 @@ differTestFunction desc text1 text2 expectedDiffRecord =
         \_ -> Expect.equal blockDiffRecord expectedDiffRecord
 
 
-suite =
+suite0 =
     describe "Nothing"
         [ test "zero" <| \_ -> Expect.equal 2 2
         ]
 
 
-suite1 =
+suite =
     describe "Yada"
         [ describe "The GenericDiffer module"
             [ differTestFunction

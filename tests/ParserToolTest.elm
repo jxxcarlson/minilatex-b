@@ -7,13 +7,13 @@ import Parser.Tool
 import Test exposing (describe, test)
 
 
-suite =
+suite0 =
     describe "Nothing"
         [ test "zero" <| \_ -> Expect.equal 2 2
         ]
 
 
-suite1 =
+suite =
     describe "The ParserTool module"
         [ describe "many"
             -- Nest as many descriptions as you like.

@@ -65,13 +65,13 @@ testCompile desc text expectedBlocks =
             Expect.equal (compile 0 (String.lines text)) expectedBlocks
 
 
-suite =
+suite0 =
     describe "Nothing"
         [ test "zero" <| \_ -> Expect.equal 2 2
         ]
 
 
-suite1 =
+suite =
     describe "The Parser.Block module"
         [ describe "Block.compile"
             [ testCompile "compile for formula and multi-line text"
@@ -148,9 +148,9 @@ suite1 =
                 [ [ "\\begin{indent}", "\\begin{theorem}", "Many primes!", "\\end{theorem}", "\\end{indent}" ] ]
             , testCompile "simple environment with unclosed begin-end pair"
                 "\\begin{theorem}\nMany primes!\n\\end{theorem"
-                [ [ "\\begin{theorem}", "Many primes!", "\\end{theorem" ] ]
+                [ [ "\\begin{theorem}", "Many primes!", "\\end{theorem}" ] ]
             , testCompile "simple environment with unclosed begin-end pair and following text"
                 "\\begin{theorem}\nMany primes!\n\\end{theorem\n\nfoo, bar"
-                [ [ "\\begin{theorem}", "Many primes!", "\\end{theorem", "", "foo, bar" ] ]
+                [ [ "\\begin{theorem}", "Many primes!", "\\end{theorem}"], [ "foo, bar" ] ]
             ]
         ]

@@ -317,17 +317,13 @@ popBlockStack blockType_ currentLine_ state =
             , blockContents = currentLine_ :: state.blockContents
         }
 
-debug desc state = Debug.log (desc ++ " (BT, in, out)") (state.blockType, state.input, state.output |> List.map .parsed |> Parser.Expression.stripList2)
-
 flush : State -> State
 flush state =
     let
-        --_ = debug "1: " state
         input =
             String.join "\n" (List.reverse state.blockContents)
-            -- |> Debug.log "LAST INPUT"
 
-        -- If the remaining input is nontrivial, process it and update the state
+        -- If the remaining input is nontrivial (/= ""), process it and update the state
         newState = if input == ""
            then
              state
@@ -346,7 +342,6 @@ flush state =
              { state | laTeXState = laTeXState, output = List.reverse (tc :: state.output) }
 
 
-        --_ = debug "2: " newState
     in
     newState
 
