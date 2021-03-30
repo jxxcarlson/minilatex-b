@@ -31,7 +31,7 @@ testUpdateFunction desc text1 text2 =
             expectedData2.parsedText |> Parser.Expression.stripList2
     in
     test desc <|
-        \_ -> Expect.equal (Debug.log "ACTUAL" parsed2) (Debug.log "EXPECTED" expectedParsed2)
+        \_ -> Expect.equal parsed2 expectedParsed2
 
 
 suite =
@@ -79,7 +79,7 @@ suite =
                 -- TODO: resolve trailing [] problem in parsed text
                 "\\italic{foo bar baz\n"
                 "\\italic{foo} bar baz\n"
-            , Test.only <|
+            ,
                 testUpdateFunction "error in theorem > theorem"
                     -- TODO: resolve trailing [] problem in parsed text
                     "\\begin{theorem}\nMany primes!!!!\n\\end{theorem\n"

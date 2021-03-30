@@ -153,7 +153,6 @@ update generation selectedId input data =
         blockDiffRecord : GenericDiffer.DiffRecord String
         blockDiffRecord =
             GenericDiffer.diff oldBlocks newBlocks
-                |> Debug.log "DIFF"
 
         deltaNewBlocks : List String
         deltaNewBlocks =
@@ -204,23 +203,9 @@ update generation selectedId input data =
             else
                 list
 
-        _ =
-            parsedBefore |> Parser.Expression.stripList2 |> Debug.log "PARSED BEFORE"
-
-        _ =
-            deltaParsed |> Parser.Expression.stripList2 |> Debug.log "DELTA PARSED"
-
-        _ =
-            parsedAfter |> Parser.Expression.stripList2 |> Debug.log "PARSED AFTER"
-
         parsedText =
             fix parsedBefore ++ fix deltaParsed ++ fix parsedAfter
 
-        _ =
-            parsedText |> Parser.Expression.stripList2 |> Debug.log "PARSED TEXT"
-
-        _ =
-            data.parsedText |> Parser.Expression.stripList2 |> Debug.log "ORIGINAL PARSED TEXT"
 
         -- (4) COMPUTE DIFF OF RENDERED TEXT
         renderedTextBefore : List (Html LaTeXMsg)

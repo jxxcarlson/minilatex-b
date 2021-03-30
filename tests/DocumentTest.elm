@@ -54,13 +54,11 @@ suite =
                 [ [ Text_ "Start" ], [ Environment_ "indent" [] (LXList_ [ Environment_ "theorem" [] (LXList_ [ Text_ "Many primes!\n" ]), Text_ "\n" ]) ], [ Text_ "Wow!" ] ]
             , documentInitTestFunction
                 "List"
-                "\\begin{itemize}\n\\item One\\item Two\n\\end{itemize}\n"
-                -- TODO: make this work without trailing newline above (??)
-                [ [ Environment_ "itemize" [] (LXList_ [ Item_ 1 (LXList_ [ Text_ "One" ]), Item_ 1 (LXList_ [ Text_ "Two\n" ]) ]) ], [] ]
+                "\\begin{itemize}\n\\item One\\item Two\n\\end{itemize}\n\n"
+                [ [ Environment_ "itemize" [] (LXList_ [ Item_ 1 (LXList_ [ Text_ "One" ]), Item_ 1 (LXList_ [ Text_ "Two\n" ]) ]) ] ]
             , documentInitTestFunction
                 "Table"
-                "\\begin{tabular}{l l}A & 1 \\\\\nB & 2\n\\end{tabular}\n"
-                -- TODO: make this work without trailing newline above (??)
+                "\\begin{tabular}{l l}A & 1 \\\\\nB & 2\n\\end{tabular}\n\n"
                 [ [ Environment_ "tabular"
                         [ Text_ "l l" ]
                         (LXList_
@@ -69,17 +67,14 @@ suite =
                             ]
                         )
                   ]
-                , []
                 ]
             , documentInitTestFunction
                 "Text macro definition"
                 "\\begin{textmacro}\n\\newcommand{\\foo}{FOO}\n\\end{textmacro}\n"
-                -- TODO: make this work without trailing newline above (??)
-                [ [ Environment_ "textmacro" [] (Text_ "\\newcommand{\\foo}{FOO}") ], [] ]
+                [ [ Environment_ "textmacro" [] (Text_ "\\newcommand{\\foo}{FOO}") ] ]
             , documentInitTestFunction
                 "Math macro definition"
                 "\\begin{mathmacro}\n\\newcommand{\\bt}[1]{\\bf{#1}}\n\\end{mathmacro}\n"
-                -- TODO: make this work without trailing newline above (??)
-                [ [ Environment_ "mathmacro" [] (Text_ "\\newcommand{\\bt}[1]{\\bf{#1}}") ], [] ]
+                [ [ Environment_ "mathmacro" [] (Text_ "\\newcommand{\\bt}[1]{\\bf{#1}}") ] ]
             ]
         ]

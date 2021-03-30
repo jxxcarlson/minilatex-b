@@ -317,23 +317,38 @@ popBlockStack blockType_ currentLine_ state =
             , blockContents = currentLine_ :: state.blockContents
         }
 
+debug desc state = Debug.log (desc ++ " (BT, in, out)") (state.blockType, state.input, state.output |> List.map .parsed |> Parser.Expression.stripList2)
 
 flush : State -> State
 flush state =
     let
+        --_ = debug "1: " state
         input =
             String.join "\n" (List.reverse state.blockContents)
+            -- |> Debug.log "LAST INPUT"
 
-        tc_ =
-            Parser.parseLoop state.generation state.lineNumber input
+        -- If the remaining input is nontrivial, process it and update the state
+        newState = if input == ""
+           then
+             state
+           else
+             let
+                 tc_ : TextCursor
+                 tc_ =  Parser.parseLoop state.generation state.lineNumber input
 
-        tc =
-            { tc_ | text = input }
+                 tc =
+                     { tc_ | text = input }
 
-        laTeXState =
-            Reduce.laTeXState tc.parsed state.laTeXState
+                 laTeXState =
+                     Reduce.laTeXState tc.parsed state.laTeXState
+
+             in
+             { state | laTeXState = laTeXState, output = List.reverse (tc :: state.output) }
+
+
+        --_ = debug "2: " newState
     in
-    { state | laTeXState = laTeXState, output = List.reverse (tc :: state.output) }
+    newState
 
 
 countLines : List String -> Int
