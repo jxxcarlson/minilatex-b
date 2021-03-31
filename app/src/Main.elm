@@ -102,6 +102,7 @@ type Msg
     | LaTeXMsg LaTeXMsg
     | InputCommand String
     | RunCommand
+    | Rerender
 
 
 type alias Flags =
@@ -259,6 +260,17 @@ update msg model =
             , Cmd.none
             )
 
+        Rerender ->
+            let
+                laTeXData =
+                    MiniLaTeX.initWithString (model.counter + 1) model.selectedId model.input
+            in
+            ( { model
+                |  laTeXData = laTeXData
+                , counter = model.counter + 1
+              }
+            , Cmd.none
+            )
         CycleLHViewMode ->
             let
                 lhViewMode =
@@ -372,7 +384,7 @@ mainColumn model =
             , clipX
             , clipY
             ]
-            [ row [ spacing 8 ] [ inputCommand model, runCommandButton ]
+            [ row [ spacing 8 ] [ inputCommand model, runCommandButton, rerenderButton ]
             , row [ spacing 12 ] [ lhView model, rhView model ]
             , parsedTextDisplay model
             ]
@@ -584,6 +596,12 @@ lhViewModeButton model =
             }
         ]
 
+rerenderButton : Element Msg
+rerenderButton =
+    Input.button buttonStyle
+        { onPress = Just Rerender
+        , label = el [] (Element.text "Rerender")
+        }
 
 runCommandButton : Element Msg
 runCommandButton =

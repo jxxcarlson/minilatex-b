@@ -23,7 +23,7 @@ documentInitTestFunction desc text expectedParsed =
 
 suite =
     describe "module Parser.Document"
-        [ describe "Document.init"
+        [ describe "Document.init, happy path"
             [ documentInitTestFunction
                 "One line of text"
                 "hello"
@@ -77,4 +77,33 @@ suite =
                 "\\begin{mathmacro}\n\\newcommand{\\bt}[1]{\\bf{#1}}\n\\end{mathmacro}\n"
                 [ [ Environment_ "mathmacro" [] (Text_ "\\newcommand{\\bt}[1]{\\bf{#1}}") ] ]
             ]
-        ]
+            ,  describe "Document.init, error path" [
+
+                   documentInitTestFunction
+                              -- This example shows (1) good error message (2) how errors in one block do not propagate to subsequent blocks
+                              "Macro with error"
+                              "\\strong{Example: $a^2 + b^2 = c^2$\n\nmore stuff ..."
+                              [[LXList_ [Macro_ "red" Nothing [Text_ "!! missing right brace in \\"]]
+                                ,Macro_ "blue" Nothing [Text_ "strong{Example: "]
+                                ,Macro_ "blue" Nothing [InlineMath_ "a^2 + b^2 = c^2"]]
+                                ,[Text_ "more stuff ..."]]
+
+                   , documentInitTestFunction
+                              -- This example shows (1) good error message (2) how errors in one block do not propagate to subsequent blocks
+                              "Error in inline math (unclosed $)"
+                              "Pythagoras: $a^2 + b^2 = c^2 (wow!) \n\nmore stuff ..."
+                              [[Text_ "Pythagoras: "
+                                ,LXList_ [Macro_ "red" Nothing [Text_ "⚠ unmatched $ in "]]
+                                ,Macro_ "blue" Nothing [Text_ "a^2 + b^2 = c^2 (wow!) "]]
+                                ,[Text_ "more stuff ..."]]
+
+                   , documentInitTestFunction
+                              -- This example shows (1) good error message (2) how errors in one block do not propagate to subsequent blocks
+                              "Error in theorem environment (unmatched begin-end)"
+                              "\\begin{theorem}\nSo many primes!\n\\end{theore\n\nmore stuff ..."
+                              [[Environment_ "theorem" [] (LXList_ [Text_ "So many primes!\n"])
+                                 ,Macro_ "red" Nothing [Text_ "^^ I fixed the theorem environment for you (unmatched begin-end pair); please correct it."]
+                                 ,Text_ "\n",Macro_ "bigskip" Nothing []]]
+               ]
+            ]
+

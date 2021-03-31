@@ -7,7 +7,7 @@ module Parser.Block exposing
 and a string representing MiniLaTeX text and groups it into blocks of lines,
 each block representing a "logical paragraph": either a true paragraph, that is,
 non-blank lines surrounded by at least one blank line, or outer begin-end
-pairs for a LaTeX environement.
+pairs for a LaTeX environment.
 
 @docs compile
 

@@ -7,7 +7,7 @@ module Main exposing (main)
 -}
 
 import Browser
-import Data
+import Data.MiniLaTeXIO exposing(sourceText)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
@@ -189,7 +189,7 @@ titleBar str =
 viewSourceText : Model -> Element Msg
 viewSourceText model =
     column [ width (px 500), height (px windowHeight), scrollbarY, Font.size model.fontSize, Background.color (Element.rgb255 240 240 240) ]
-        [ el [ paddingXY 20 20 ] (Element.text Data.minilatexio) ]
+        [ el [ paddingXY 20 20 ] (Element.text sourceText) ]
 
 
 viewRenderedText : Model -> Element Msg
@@ -203,7 +203,7 @@ viewRenderedText model =
         , bgColor model.viewMode
         , padding 20
         ]
-        (MiniLaTeX.compileFromString Data.minilatexio
+        (MiniLaTeX.compileFromString sourceText
             |> List.map (Html.map LaTeXMsg >> Element.html)
         )
 
