@@ -120,8 +120,18 @@ There are infinitely many primes.
 This is a test
 """
 
+initialText = """
+This is a test.
+And so is this
 
-initialText =
+Pythagoras said:
+
+$$
+a^2 + b^2 = c^2
+$$
+"""
+
+initialTextX =
     """
 This is a test.
 And so is this.
@@ -242,20 +252,21 @@ update msg model =
         InputText str ->
             let
                 laTeXData =
-                    MiniLaTeX.updateWithString (model.counter + 1) model.selectedId str model.laTeXData
+                   -- MiniLaTeX.updateWithString (model.counter + 1) model.selectedId str model.laTeXData
+                    MiniLaTeX.initWithString (model.counter + 1) model.selectedId str
 
-                dr =
-                    Compiler.GenericDiffer.diff (model.input |> String.lines)
-                        (str |> String.lines)
-
-                message =
-                    "Chunk range: " ++ Debug.toString (Compiler.Differ.rangeOfBlocks dr model.laTeXData.sourceMapIndex)
+                --dr =
+                --    Compiler.GenericDiffer.diff (model.input |> String.lines)
+                --        (str |> String.lines)
+                --
+                --message =
+                --    "Chunk range: " ++ Debug.toString (Compiler.Differ.rangeOfBlocks dr model.laTeXData.sourceMapIndex)
             in
             ( { model
                 | input = str
                 , laTeXData = laTeXData
                 , counter = model.counter + 1
-                , message = message
+                --  , message = message
               }
             , Cmd.none
             )
@@ -379,7 +390,7 @@ mainColumn model =
         [ column
             [ spacing 36
             , width (px (appWidth + 40))
-            , height (px 700)
+            , height (px 1200)
             , paddingXY 20 0
             , clipX
             , clipY
@@ -476,7 +487,7 @@ parsedTextDisplay_ model =
         , Background.color (Element.rgb 1.0 1.0 1.0)
         , paddingXY 8 12
         , width (px (2 * panelWidth + 10))
-        , height (px 150)
+        , height (px 600)
         , Element.htmlAttribute (HA.style "line-height" "1.5")
         , scrollbarY
         , scrollbarX

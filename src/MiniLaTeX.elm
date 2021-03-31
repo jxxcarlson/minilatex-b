@@ -112,17 +112,21 @@ initWithString generation selectedId input =
     init generation selectedId (String.lines input)
 
 
-{-| -}
-compile : List String -> List (Html LaTeXMsg)
-compile document =
-    (init 0 "nada" document).renderedText
+{-| Compile a MiniLaTeX document to Html.  The input is
+a list of strings representing the document.
+The output is a list of Html LaTeXMsg. The element
+with the given id is highlighted.
+ -}
+compile : String -> List String -> List (Html LaTeXMsg)
+compile id document =
+    (init 0 id document).renderedText
 
 
 {-| Like `compile`, but takes a string as input.
 -}
-compileFromString : String -> List (Html LaTeXMsg)
-compileFromString document =
-    (initWithString 0 "nada" document).renderedText
+compileFromString : String -> String -> List (Html LaTeXMsg)
+compileFromString id document =
+    (initWithString 0 id document).renderedText
 
 
 {-| This function efficiently modifies the LaTeXState by identifying
@@ -130,7 +134,7 @@ the block of text that has changed, parsing and rendering that text,
 then inserting the resulting parse data and rendered text in their
 respective lists which are in turn fields of LaTeXState.
 
-    update generation selectedId input data
+    update ge neration selectedId input data
 
 The arguments are as with init with one addition,
 `data`, which is the current LaTeXData value.
@@ -248,8 +252,8 @@ updateWithString generation selectedId input data =
     update generation selectedId (String.lines input) data
 
 
-render : String -> LaTeXState -> List (List Expression) -> List (Html LaTeXMsg)
-render selectedId laTeXSTate parsed =
+renderStringWithLaTeXState : String -> LaTeXState -> List (List Expression) -> List (Html LaTeXMsg)
+renderStringWithLaTeXState selectedId laTeXSTate parsed =
     parsed
         |> List.map (Render.render selectedId laTeXSTate >> Html.div docStyle)
 
