@@ -1,6 +1,7 @@
 module Parser.Document exposing
     ( process, toParsed, toText
     , State, Block, BlockType(..), LineType(..)
+    , parse
     )
 
 {-| The main function in this module is process, which takes as input
@@ -70,6 +71,14 @@ type LineType
     | LTMathBlock String
     | BeginEnvBlock String
     | EndEnvBlock String
+
+
+parse : Int -> String -> List (List Expression)
+parse generation str =
+    str
+        |> String.lines
+        |> process generation
+        |> toParsed
 
 
 {-| Compute the syntax tree and LaTeXState of a string of source text.
@@ -317,6 +326,7 @@ popBlockStack blockType_ currentLine_ state =
             , blockContents = currentLine_ :: state.blockContents
         }
 
+
 flush : State -> State
 flush state =
     let
@@ -324,24 +334,23 @@ flush state =
             String.join "\n" (List.reverse state.blockContents)
 
         -- If the remaining input is nontrivial (/= ""), process it and update the state
-        newState = if input == ""
-           then
-             state
-           else
-             let
-                 tc_ : TextCursor
-                 tc_ =  Parser.parseLoop state.generation state.lineNumber input
+        newState =
+            if input == "" then
+                state
 
-                 tc =
-                     { tc_ | text = input }
+            else
+                let
+                    tc_ : TextCursor
+                    tc_ =
+                        Parser.parseLoop state.generation state.lineNumber input
 
-                 laTeXState =
-                     Reduce.laTeXState tc.parsed state.laTeXState
+                    tc =
+                        { tc_ | text = input }
 
-             in
-             { state | laTeXState = laTeXState, output = List.reverse (tc :: state.output) }
-
-
+                    laTeXState =
+                        Reduce.laTeXState tc.parsed state.laTeXState
+                in
+                { state | laTeXState = laTeXState, output = List.reverse (tc :: state.output) }
     in
     newState
 

@@ -112,11 +112,11 @@ initWithString generation selectedId input =
     init generation selectedId (String.lines input)
 
 
-{-| Compile a MiniLaTeX document to Html.  The input is
+{-| Compile a MiniLaTeX document to Html. The input is
 a list of strings representing the document.
 The output is a list of Html LaTeXMsg. The element
 with the given id is highlighted.
- -}
+-}
 compile : String -> List String -> List (Html LaTeXMsg)
 compile id document =
     (init 0 id document).renderedText
@@ -209,7 +209,6 @@ update generation selectedId input data =
 
         parsedText =
             fix parsedBefore ++ fix deltaParsed ++ fix parsedAfter
-
 
         -- (4) COMPUTE DIFF OF RENDERED TEXT
         renderedTextBefore : List (Html LaTeXMsg)

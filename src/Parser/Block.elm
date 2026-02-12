@@ -87,7 +87,6 @@ edit blockState =
             case blockError of
                 EnvBlock str ->
                     let
-
                         target =
                             "\\end{" ++ str ++ "}"
 
@@ -105,7 +104,6 @@ edit blockState =
 
                         rewrittenBlock =
                             List.Extra.setIf (\item -> item == itemToReplace) target (List.drop index_ blockState.blockContents) |> List.reverse
-
 
                         outputLength =
                             List.length blockState.output
