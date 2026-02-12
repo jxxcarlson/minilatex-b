@@ -6,9 +6,11 @@ import MiniLaTeX
 import Parser.Expression as PE exposing (Expression(..), SourceMap)
 import Scripta.Types
 
+
 convertFromString : String -> List Scripta.Types.ExpressionBlock
-convertFromString  str =
-    str |> MiniLaTeX.parse  0  |> convert
+convertFromString str =
+    str |> MiniLaTeX.parse 0 |> convert
+
 
 convert : List (List Expression) -> List Scripta.Types.ExpressionBlock
 convert ast =
@@ -261,9 +263,22 @@ isPassThroughEnv name =
 
 passThroughEnvList : List String
 passThroughEnvList =
-    [ "equation", "eqnarray", "verbatim", "colored", "CD"
-    , "mathmacro", "textmacro", "listing", "verse"
-    , "align", "matrix", "pmatrix", "bmatrix", "Bmatrix", "vmatrix", "Vmatrix"
+    [ "equation"
+    , "eqnarray"
+    , "verbatim"
+    , "colored"
+    , "CD"
+    , "mathmacro"
+    , "textmacro"
+    , "listing"
+    , "verse"
+    , "align"
+    , "matrix"
+    , "pmatrix"
+    , "bmatrix"
+    , "Bmatrix"
+    , "vmatrix"
+    , "Vmatrix"
     ]
 
 

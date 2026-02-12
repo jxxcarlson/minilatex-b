@@ -1,7 +1,8 @@
 module Scripta.Types exposing (..)
 
 import Dict exposing (Dict)
-import Either exposing(Either)
+import Either exposing (Either)
+
 
 {-| GenericBlock: a parameterized block, i.e., a type constructor
 
@@ -25,6 +26,7 @@ type Heading
     = Paragraph
     | Ordinary String -- block name
     | Verbatim String -- block name
+
 
 {-| A block whose content is a list of expressions.
 -}
@@ -73,4 +75,3 @@ type alias ExprMeta =
 
 type alias NullStyle =
     {}
-

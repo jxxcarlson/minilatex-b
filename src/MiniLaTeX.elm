@@ -48,6 +48,8 @@ import Render.LaTeXState exposing (LaTeXState)
 import Render.Render
 
 
+
+
 parse : Int -> String -> List (List Expression)
 parse generation str =
     str
