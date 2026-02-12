@@ -31,20 +31,20 @@ view this data structure in your app.
 
 -}
 
-import Compiler.Differ as Differ
-import Compiler.GenericDiffer as GenericDiffer
+import Compiler.Differ
+import Compiler.GenericDiffer
 import Element exposing (Element)
 import Html exposing (Html)
 import Html.Attributes as HA
 import Html.Keyed
 import LaTeXMsg exposing (LaTeXMsg(..))
-import Parser.Block as Block
-import Parser.Document as Document
+import Parser.Block
+import Parser.Document
 import Parser.Expression exposing (Expression)
 import Parser.TextCursor
-import Render.Accumulator as Accumulator
+import Render.Accumulator
 import Render.LaTeXState exposing (LaTeXState)
-import Render.Render as Render
+import Render.Render
 
 
 {-| -}
@@ -77,26 +77,26 @@ type alias LaTeXData =
 init : Int -> String -> List String -> LaTeXData
 init generation selectedId input =
     let
-        state : Document.State
+        state : Parser.Document.State
         state =
-            Document.process generation input
+            Parser.Document.process generation input
 
         lines_ =
             input
 
         parsedText : List (List Expression)
         parsedText =
-            Document.toParsed state |> List.reverse
+            Parser.Document.toParsed state |> List.reverse
 
         accumulatorState =
-            Accumulator.render selectedId state.laTeXState parsedText
+            Render.Accumulator.render selectedId state.laTeXState parsedText
 
         rt : List (Html LaTeXMsg)
         rt =
             accumulatorState.html |> List.reverse |> List.map (\x -> Html.span docStyle x)
     in
     { lines = lines_
-    , blocks = Document.toText state
+    , blocks = Parser.Document.toText state
     , generations = getGenerations parsedText
     , parsedText = parsedText
     , sourceMapIndex = Parser.Expression.sourceMapIndex (List.length lines_) parsedText
@@ -150,13 +150,13 @@ update generation selectedId input data =
 
         newBlocks : List String
         newBlocks =
-            Block.compile generation input
+            Parser.Block.compile generation input
                 |> List.map (String.join "\n")
 
         -- (2) COMPUTE DIFF OF BLOCKS
-        blockDiffRecord : GenericDiffer.DiffRecord String
+        blockDiffRecord : Compiler.GenericDiffer.DiffRecord String
         blockDiffRecord =
-            GenericDiffer.diff oldBlocks newBlocks
+            Compiler.GenericDiffer.diff oldBlocks newBlocks
 
         deltaNewBlocks : List String
         deltaNewBlocks =
@@ -171,14 +171,14 @@ update generation selectedId input data =
 
         parsedBefore : List (List Expression)
         parsedBefore =
-            Differ.blocksBefore_ prefixLength data.parsedText
+            Compiler.Differ.blocksBefore_ prefixLength data.parsedText
 
         parsedBetween =
-            Differ.slice prefixLength (prefixLength + 1) data.parsedText
+            Compiler.Differ.slice prefixLength (prefixLength + 1) data.parsedText
 
         parsedAfter : List (List Expression)
         parsedAfter =
-            Differ.blockAfter_ (prefixLength + deltaSourceLength) data.parsedText
+            Compiler.Differ.blockAfter_ (prefixLength + deltaSourceLength) data.parsedText
 
         mSourceMap =
             Maybe.map Parser.Expression.getSource (List.head parsedBetween |> Maybe.andThen List.head)
@@ -195,9 +195,9 @@ update generation selectedId input data =
                 []
 
             else
-                Document.process generation (List.reverse deltaNewBlocks)
+                Parser.Document.process generation (List.reverse deltaNewBlocks)
                     |> (\state_ -> { state_ | output = List.map incrementTextCursor state_.output })
-                    |> Document.toParsed
+                    |> Parser.Document.toParsed
 
         fix : List (List a) -> List (List a)
         fix list =
@@ -216,9 +216,9 @@ update generation selectedId input data =
         renderedTextBefore =
             List.take prefixLength data.renderedText
 
-        accumulatorState : Accumulator.ReducerData
+        accumulatorState : Render.Accumulator.ReducerData
         accumulatorState =
-            Accumulator.render selectedId data.laTeXState deltaParsed
+            Render.Accumulator.render selectedId data.laTeXState deltaParsed
 
         deltaRenderedText : List (Html LaTeXMsg)
         deltaRenderedText =
@@ -231,7 +231,7 @@ update generation selectedId input data =
         -- TODO: USE THE SIMPLIFICATION BELOW FOR NOW.  Then all errors must come from
         -- TODO (1) compiling the blocks (2) diffing, or (3) differential parsing
         renderedText =
-            Accumulator.render selectedId data.laTeXState parsedText |> .html |> List.reverse |> List.map (\x -> Html.span docStyle x)
+            Render.Accumulator.render selectedId data.laTeXState parsedText |> .html |> List.reverse |> List.map (\x -> Html.span docStyle x)
 
         -- (5) RECORD UPDATED LATEX DATA
     in
@@ -255,7 +255,7 @@ updateWithString generation selectedId input data =
 renderStringWithLaTeXState : String -> LaTeXState -> List (List Expression) -> List (Html LaTeXMsg)
 renderStringWithLaTeXState selectedId laTeXSTate parsed =
     parsed
-        |> List.map (Render.render selectedId laTeXSTate >> Html.div docStyle)
+        |> List.map (Render.Render.render selectedId laTeXSTate >> Html.div docStyle)
 
 
 {-| Render a LaTeXData value to `Html LaTeXMsg` given style information.

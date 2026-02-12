@@ -491,7 +491,7 @@ equation selectedId latexState body =
 displayMathTextWithLabel_ : String -> LaTeXState -> SourceMap -> String -> String -> Html LaTeXMsg
 displayMathTextWithLabel_ selectedId latexState sm str label =
     Html.div
-        []
+        [ HA.style "width" "100%" ]
         [ Html.div ([ HA.style "float" "right", HA.style "margin-top" "3px" ] ++ active sm selectedId)
             [ Html.text label ]
         , Html.div (active sm selectedId)

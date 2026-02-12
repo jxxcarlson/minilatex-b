@@ -203,8 +203,8 @@ viewRenderedText model =
         , bgColor model.viewMode
         , padding 20
         ]
-        (MiniLaTeX.compileFromString sourceText
-            |> List.map (Html.map LaTeXMsg >> Element.html)
+        (MiniLaTeX.compileFromString "demo" sourceText
+            |> List.map (\h -> el [ width fill ] (Element.html (Html.map LaTeXMsg h)))
         )
 
 
