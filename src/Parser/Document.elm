@@ -304,7 +304,7 @@ popBlockStack blockType_ currentLine_ state =
         { state
             | blockType = Start
             , blockTypeStack = []
-            , blockContents = currentLine_ :: state.blockContents
+            , blockContents = []
             , output = tc :: state.output
             , laTeXState = Reduce.laTeXState tc.parsed state.laTeXState
             , lineNumber = state.lineNumber + (2 + List.length state.blockContents) -- TODO: think about this.  Is it correct?
