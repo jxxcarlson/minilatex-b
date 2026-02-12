@@ -56,3 +56,13 @@ module for more on this.  Also the code in `./simple-demo`.
 For more information on how this package operates,
 see the included `./src/Architecture.md`
 
+## Build and Run Simple-Demo
+
+ To build and run simple-demo:                                                                                                                            
+                                                                            
+  ### 1. Build                                                                                                                                               
+  cd simple-demo && elm make src/Main.elm --output=public/Main.js                                                                                          
+                                                                                                                                                           
+  #### 2. Serve                                                                
+  cd public && python3 -m http.server 8080
+
