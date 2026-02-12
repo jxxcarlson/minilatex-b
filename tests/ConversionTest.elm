@@ -12,7 +12,7 @@ suite =
             \_ ->
                 let
                     input = "This is a test"
-                    output = Scripta.ToString.toScripta input
+                    output = Scripta.ToString.convertFromString input
                 in
                 Expect.equal input output
         ]
