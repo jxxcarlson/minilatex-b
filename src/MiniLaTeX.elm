@@ -3,6 +3,7 @@ module MiniLaTeX exposing
     , compile, init, update
     , compileFromString, initWithString, updateWithString
     , viewLaTeXData, viewLaTeXDataAsElement
+    , parse
     )
 
 {-| The functions _init_ and _update_ produce a value of type
