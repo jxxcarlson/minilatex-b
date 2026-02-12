@@ -7,7 +7,7 @@ module Main exposing (main)
 -}
 
 import Browser
-import Data.MiniLaTeXIO exposing(sourceText)
+import Data.MiniLaTeXIO
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
@@ -27,7 +27,8 @@ main =
 
 
 type alias Model =
-    { input : String
+    { sourceText: String
+    , input : String
     , output : String
     , viewMode : ViewMode
     , fontSize : Int
@@ -90,6 +91,7 @@ init : Flags -> ( Model, Cmd Msg )
 init flags =
     ( { input = "App started"
       , output = "App started"
+      , sourceText = Data.MiniLaTeXIO.sourceText
       , viewMode = Light
       , fontSize = 14
       }
@@ -189,7 +191,7 @@ titleBar str =
 viewSourceText : Model -> Element Msg
 viewSourceText model =
     column [ width (px 500), height (px windowHeight), scrollbarY, Font.size model.fontSize, Background.color (Element.rgb255 240 240 240) ]
-        [ el [ paddingXY 20 20 ] (Element.text sourceText) ]
+        [ el [ paddingXY 20 20 ] (Element.text model.sourceText) ]
 
 
 viewRenderedText : Model -> Element Msg
@@ -203,7 +205,7 @@ viewRenderedText model =
         , bgColor model.viewMode
         , padding 20
         ]
-        (MiniLaTeX.compileFromString "demo" sourceText
+        (MiniLaTeX.compileFromString "demo" model.sourceText
             |> List.map (\h -> el [ width fill ] (Element.html (Html.map LaTeXMsg h)))
         )
 
