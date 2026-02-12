@@ -14,8 +14,8 @@ import Dict
 import List.Extra
 import Maybe.Extra
 import Parser.Advanced
+import Parser.Core as Parser
 import Parser.Expression exposing (Expression(..))
-import Parser.Parser as Parser
 import Render.LaTeXState
     exposing
         ( Counters

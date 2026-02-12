@@ -47,6 +47,14 @@ import Render.LaTeXState exposing (LaTeXState)
 import Render.Render
 
 
+parse : Int -> String -> List (List Expression)
+parse generation str =
+    str
+        |> String.lines
+        |> Parser.Document.process generation
+        |> Parser.Document.toParsed
+
+
 {-| -}
 type alias LaTeXData =
     { lines : List String

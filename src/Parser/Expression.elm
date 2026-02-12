@@ -30,6 +30,33 @@ was derived. This is useful in interactive editing apps.
 import List.Extra
 
 
+
+{-
+
+   ## In more detail:
+
+   Parser.Expression defines the core data types and utilities for the AST. It has three concerns:
+
+     1. The AST (Expression) — 11 variants covering text, inline/display math, macros (\cmd[opt]{arg}), environments (\begin{env}...\end{env}),
+     \newcommand, \item, comments, errors, and instructions. Every variant except LXList carries a SourceMap.
+
+     2. SourceMap — a record (blockOffset, offset, length, content, generation) that locates each AST node back to its position in the source text.
+     Functions operate on it at two levels:
+     - Pure SourceMap: makeSourceMap, dummySourceMap, sourceMapToString, sourceMapIndex, getSelectionFromSourceMap
+     - Expression → SourceMap: getSource, getSourceOfList, setSourceMap, incrementOffset, incrementBlockOffset
+
+     3. Supporting types:
+     - Problem — 25+ parse error variants with problemAsString for human-readable messages and equivalentProblem for comparison
+     - BareExpression — a SourceMap-stripped mirror of Expression, with strip/stripList2 for test comparisons
+     - Context — parser context tags (inline math, macro name, arg, etc.) used by Parser.Advanced
+     - Instr — instruction variants (INoOp, IHighlight)
+
+     The module also provides toString for converting an Expression back to its LaTeX string representation.
+
+
+-}
+
+
 {-| The type of the MiniLaTeX AST
 -}
 type Expression

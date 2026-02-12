@@ -1,7 +1,6 @@
 module Parser.Document exposing
     ( process, toParsed, toText
     , State, Block, BlockType(..), LineType(..)
-    , parse
     )
 
 {-| The main function in this module is process, which takes as input
@@ -30,8 +29,8 @@ then the block offset is 100, the offset of "a" is 0, the offest of "b" is 2, an
 -}
 
 import Parser as P exposing ((|.), (|=))
+import Parser.Core
 import Parser.Expression exposing (Expression)
-import Parser.Parser as Parser
 import Parser.TextCursor exposing (TextCursor)
 import Render.LaTeXState as LaTeXState exposing (LaTeXState)
 import Render.Reduce as Reduce
@@ -71,14 +70,6 @@ type LineType
     | LTMathBlock String
     | BeginEnvBlock String
     | EndEnvBlock String
-
-
-parse : Int -> String -> List (List Expression)
-parse generation str =
-    str
-        |> String.lines
-        |> process generation
-        |> toParsed
 
 
 {-| Compute the syntax tree and LaTeXState of a string of source text.
@@ -249,7 +240,7 @@ initWithBlockType : BlockType -> String -> State -> State
 initWithBlockType blockType_ currentLine_ state =
     let
         newTC =
-            Parser.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse (currentLine_ :: state.blockContents)))
+            Parser.Core.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse (currentLine_ :: state.blockContents)))
 
         laTeXState =
             Reduce.laTeXState newTC.parsed state.laTeXState
@@ -282,7 +273,7 @@ pushBlock state =
     let
         tc : TextCursor
         tc =
-            Parser.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse state.blockContents))
+            Parser.Core.parseLoop state.generation state.lineNumber (String.join "\n" (List.reverse state.blockContents))
     in
     { state
         | blockType = Start
@@ -305,7 +296,7 @@ popBlockStack blockType_ currentLine_ state =
                 String.join "\n" (List.reverse (currentLine_ :: state.blockContents))
 
             tc_ =
-                Parser.parseLoop state.generation state.lineNumber input_
+                Parser.Core.parseLoop state.generation state.lineNumber input_
 
             tc =
                 { tc_ | text = input_ }
@@ -342,7 +333,7 @@ flush state =
                 let
                     tc_ : TextCursor
                     tc_ =
-                        Parser.parseLoop state.generation state.lineNumber input
+                        Parser.Core.parseLoop state.generation state.lineNumber input
 
                     tc =
                         { tc_ | text = input }

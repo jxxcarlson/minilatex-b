@@ -18,8 +18,8 @@ Text-mode macros are defined in a `textmacro` environment:
 -}
 
 import Dict
+import Parser.Core
 import Parser.Expression exposing (Expression(..))
-import Parser.Parser
 import Render.LaTeXState exposing (LaTeXState)
 
 
@@ -141,7 +141,7 @@ renderArg k macro =
 
 renderArg_ : Int -> List Expression -> String
 renderArg_ k expressions =
-    Parser.Parser.getStringAtWithDefault k "ARG" (Parser.Parser.renderToStringList expressions)
+    Parser.Core.getStringAtWithDefault k "ARG" (Parser.Core.renderToStringList expressions)
 
 
 
@@ -154,7 +154,7 @@ called by Render.Reduce.envReducer
 -}
 setMacroDictionary : String -> LaTeXState -> LaTeXState
 setMacroDictionary str latexState =
-    setDictionaryAux (Parser.Parser.parse str) latexState
+    setDictionaryAux (Parser.Core.parse str) latexState
 
 
 setDictionaryAux : List Expression -> LaTeXState -> LaTeXState

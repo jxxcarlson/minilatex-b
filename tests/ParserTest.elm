@@ -4,7 +4,7 @@ import Expect
 import Fuzz exposing (string)
 import Parser.Advanced as Parser exposing (run)
 import Parser.Expression exposing (..)
-import Parser.Parser exposing (..)
+import Parser.Core exposing (..)
 import Parser.TestHelper exposing (parseAndRecompose, roundTripCheck, squeezeSpace)
 import Test exposing (describe, fuzz, test)
 

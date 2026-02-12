@@ -1,4 +1,4 @@
-module Parser.Parser exposing
+module Parser.Core exposing
     ( parseLoop, expression, expressionList, macro
     , getStringAtWithDefault, renderArg
     , item, parse, renderToStringList
@@ -88,6 +88,39 @@ TO ADD: COMMENTS ON THE STACK
 ----|
 ----| ( parseLoop, getErrors)
 --
+{-
+
+
+   Parser.Core is the core expression parser. It has three layers:
+
+    1. Parse loop (parseLoop, nextCursor)
+    The main entry point. Takes a generation number, line number, and a block of source text; returns a TextCursor. It works by repeatedly running
+    the expression parser on the remaining text, consuming a chunk each round (sized by the SourceMap.length of the parsed expression), prepending
+    the result to TextCursor.parsed, and advancing the offset — until the text is exhausted.
+
+    2. Expression parsers (built on Parser.Advanced)
+    expression dispatches to one of seven sub-parsers via Parser.oneOf:
+    - comment — % ...
+    - newcommand — \newcommand{name}[nargs]{body}
+    - macro — \name[optArg]{arg1}{arg2}...
+    - environment — \begin{env}...\end{env}, with special handling via environmentDict for passthrough envs (equation, align, verbatim, etc.),
+    itemize/enumerate, and tabular
+    - displayMath — $$ ... $$
+    - inlineMath — $ ... $
+    - text_ — everything else (words not starting with $ or \)
+
+    Each parser computes a SourceMap by capturing Parser.getOffset before and after chomping, enabling source-location tracking.
+
+    3. Error recovery (handleError)
+    When parsing fails, it inspects the Problem, consults Parser.Problem.getRecoveryData for a substitute expression and text truncation, and pushes
+    "highlight" onto the TextCursor.stack so subsequent expressions are wrapped in a \blue{...} macro to visually flag the error region.
+
+    Helper functions exposed for the rendering layer:
+    - renderArg — render the first argument of a macro to a string
+    - renderToStringList — convert a list of expressions to strings via Expression.toString
+    - getStringAtWithDefault — safe index into a string list
+
+-}
 
 import Dict
 import List.Extra

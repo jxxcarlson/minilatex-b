@@ -55,9 +55,9 @@ import Html.Events exposing (onClick)
 import Json.Encode
 import LaTeXMsg exposing (LaTeXMsg(..))
 import Parser exposing (DeadEnd, Problem(..))
+import Parser.Core as Parser
 import Parser.Expression exposing (Expression(..), SourceMap)
 import Parser.Helpers
-import Parser.Parser as Parser
 import Regex
 import Render.Image
 import Render.LaTeXState as LaTeXState exposing (LaTeXState)
