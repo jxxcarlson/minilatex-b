@@ -3,11 +3,11 @@ module Scripta.ToString exposing (..)
 import Scripta.FromLaTeX
 import Scripta.Types
 
-convertFromString : String -> String
-convertFromString str =
-    str |> Scripta.FromLaTeX.convertFromString |> convertFromAST
+fromString : String -> String
+fromString str =
+    str |> Scripta.FromLaTeX.convertFromString |> fromAST
 
 
-convertFromAST : List Scripta.Types.ExpressionBlock -> String
-convertFromAST ast =
+fromAST : List Scripta.Types.ExpressionBlock -> String
+fromAST ast =
     "NOT IMPLEMENTED"
