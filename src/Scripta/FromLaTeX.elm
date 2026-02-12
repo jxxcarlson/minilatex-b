@@ -1,12 +1,16 @@
-module Scripta.FromLaTeX exposing (convert)
+module Scripta.FromLaTeX exposing (convert, convertFromString)
 
 import Dict
 import Either exposing (Either(..))
+import MiniLaTeX
 import Parser.Expression as PE exposing (Expression(..), SourceMap)
-import Scripta.Types as ST
+import Scripta.Types
 
+convertFromString : String -> List Scripta.Types.ExpressionBlock
+convertFromString  str =
+    str |> MiniLaTeX.parse  0  |> convert
 
-convert : List (List Expression) -> List ST.ExpressionBlock
+convert : List (List Expression) -> List Scripta.Types.ExpressionBlock
 convert ast =
     List.indexedMap convertBlock ast
         |> List.filterMap identity
@@ -16,7 +20,7 @@ convert ast =
 -- BLOCK CONVERSION
 
 
-convertBlock : Int -> List Expression -> Maybe ST.ExpressionBlock
+convertBlock : Int -> List Expression -> Maybe Scripta.Types.ExpressionBlock
 convertBlock blockIndex exprs =
     let
         filtered =
@@ -28,7 +32,7 @@ convertBlock blockIndex exprs =
 
         [ DisplayMath str sm ] ->
             Just
-                { heading = ST.Verbatim "math"
+                { heading = Scripta.Types.Verbatim "math"
                 , indent = 0
                 , args = []
                 , properties = Dict.empty
@@ -41,7 +45,7 @@ convertBlock blockIndex exprs =
         [ Environment name optArgs body sm ] ->
             if isPassThroughEnv name then
                 Just
-                    { heading = ST.Verbatim (passThroughToVerbatimName name)
+                    { heading = Scripta.Types.Verbatim (passThroughToVerbatimName name)
                     , indent = 0
                     , args = optArgsToStrings optArgs
                     , properties = Dict.empty
@@ -53,7 +57,7 @@ convertBlock blockIndex exprs =
 
             else
                 Just
-                    { heading = ST.Ordinary name
+                    { heading = Scripta.Types.Ordinary name
                     , indent = 0
                     , args = optArgsToStrings optArgs
                     , properties = Dict.empty
@@ -83,7 +87,7 @@ convertBlock blockIndex exprs =
 
         [ Macro "maketitle" _ _ sm ] ->
             Just
-                { heading = ST.Ordinary "maketitle"
+                { heading = Scripta.Types.Ordinary "maketitle"
                 , indent = 0
                 , args = []
                 , properties = Dict.empty
@@ -95,7 +99,7 @@ convertBlock blockIndex exprs =
 
         _ ->
             Just
-                { heading = ST.Paragraph
+                { heading = Scripta.Types.Paragraph
                 , indent = 0
                 , args = []
                 , properties = Dict.empty
@@ -106,9 +110,9 @@ convertBlock blockIndex exprs =
                 }
 
 
-sectionBlock : Int -> String -> List Expression -> List Expression -> ST.ExpressionBlock
+sectionBlock : Int -> String -> List Expression -> List Expression -> Scripta.Types.ExpressionBlock
 sectionBlock blockIndex level args allExprs =
-    { heading = ST.Ordinary "section"
+    { heading = Scripta.Types.Ordinary "section"
     , indent = 0
     , args = [ level ]
     , properties = Dict.empty
@@ -119,9 +123,9 @@ sectionBlock blockIndex level args allExprs =
     }
 
 
-macroBlock : Int -> String -> List String -> List Expression -> List Expression -> ST.ExpressionBlock
+macroBlock : Int -> String -> List String -> List Expression -> List Expression -> Scripta.Types.ExpressionBlock
 macroBlock blockIndex name extraArgs args allExprs =
-    { heading = ST.Ordinary name
+    { heading = Scripta.Types.Ordinary name
     , indent = 0
     , args = extraArgs
     , properties = Dict.empty
@@ -136,35 +140,35 @@ macroBlock blockIndex name extraArgs args allExprs =
 -- EXPRESSION CONVERSION
 
 
-convertExpr : Int -> Expression -> Maybe ST.Expression
+convertExpr : Int -> Expression -> Maybe Scripta.Types.Expression
 convertExpr index expr =
     case expr of
         Text str sm ->
-            Just (ST.Text str (toExprMeta index sm))
+            Just (Scripta.Types.Text str (toExprMeta index sm))
 
         InlineMath str sm ->
-            Just (ST.VFun "$" str (toExprMeta index sm))
+            Just (Scripta.Types.VFun "$" str (toExprMeta index sm))
 
         DisplayMath str sm ->
-            Just (ST.VFun "$$" str (toExprMeta index sm))
+            Just (Scripta.Types.VFun "$$" str (toExprMeta index sm))
 
         Macro name Nothing args sm ->
-            Just (ST.Fun name (convertExprList args) (toExprMeta index sm))
+            Just (Scripta.Types.Fun name (convertExprList args) (toExprMeta index sm))
 
         Macro name (Just opt) args sm ->
-            Just (ST.Fun name (convertExprList (opt :: args)) (toExprMeta index sm))
+            Just (Scripta.Types.Fun name (convertExprList (opt :: args)) (toExprMeta index sm))
 
         Item _ body sm ->
-            Just (ST.Fun "item" (convertExprList [ body ]) (toExprMeta index sm))
+            Just (Scripta.Types.Fun "item" (convertExprList [ body ]) (toExprMeta index sm))
 
         Environment name _ body sm ->
-            Just (ST.Fun name (convertBody body) (toExprMeta index sm))
+            Just (Scripta.Types.Fun name (convertBody body) (toExprMeta index sm))
 
         LXList exprs ->
-            Just (ST.ExprList 0 (convertExprList exprs) dummyExprMeta)
+            Just (Scripta.Types.ExprList 0 (convertExprList exprs) dummyExprMeta)
 
         LXError str prob sm ->
-            Just (ST.Text ("Error: " ++ PE.problemAsString prob) (toExprMeta index sm))
+            Just (Scripta.Types.Text ("Error: " ++ PE.problemAsString prob) (toExprMeta index sm))
 
         Comment _ _ ->
             Nothing
@@ -176,13 +180,13 @@ convertExpr index expr =
             Nothing
 
 
-convertExprList : List Expression -> List ST.Expression
+convertExprList : List Expression -> List Scripta.Types.Expression
 convertExprList exprs =
     List.indexedMap convertExpr exprs
         |> List.filterMap identity
 
 
-convertBody : Expression -> List ST.Expression
+convertBody : Expression -> List Scripta.Types.Expression
 convertBody body =
     case body of
         LXList exprs ->
@@ -196,7 +200,7 @@ convertBody body =
 -- METADATA
 
 
-toExprMeta : Int -> SourceMap -> ST.ExprMeta
+toExprMeta : Int -> SourceMap -> Scripta.Types.ExprMeta
 toExprMeta index sm =
     { begin = sm.offset
     , end = sm.offset + sm.length
@@ -205,12 +209,12 @@ toExprMeta index sm =
     }
 
 
-dummyExprMeta : ST.ExprMeta
+dummyExprMeta : Scripta.Types.ExprMeta
 dummyExprMeta =
     { begin = 0, end = 0, index = 0, id = "0:0-0" }
 
 
-toBlockMeta : Int -> List Expression -> ST.BlockMeta
+toBlockMeta : Int -> List Expression -> Scripta.Types.BlockMeta
 toBlockMeta blockIndex exprs =
     let
         sm =
