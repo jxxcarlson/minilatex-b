@@ -31,6 +31,8 @@ suite =
           , ioTest "Bock order" twoBlocksIN twoBlocksOUT
           , ioTest "Inline math" "$x^2$"  "[math x^2]"
           , ioTest "Inline math (2)" "\\(x^2\\)"  "[math x^2]"
+          , ioTest "Inline math (3)" "\\(T = b^{-1}\\)" "[math T = b^{-1}]"
+          , ioTest "Inline math (4)" "\\(T = \\beta^{-1}\\)" "[math T = \\beta^{-1}]"
           , ioTest "Equation environment" (env "equation" "x^2") (block "equation" "x^2")
           , ioTest "Labeled equation environment" labeledEquationIN labeledEquationOUT
           , ioTest "Display math" "$$x^2$$" """| math\nx^2"""
