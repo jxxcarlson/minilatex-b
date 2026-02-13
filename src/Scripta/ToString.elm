@@ -27,6 +27,23 @@ blockToString block =
         Verbatim name ->
             "| " ++ name ++ "\n" ++ leftBodyString block.body
 
+        Ordinary "itemize" ->
+            case block.body of
+                Right exprs ->
+                    let
+                        itemToString expr =
+                            case expr of
+                                Fun "item" args _ ->
+                                    Just ("- " ++ (exprListToString args |> String.trim))
+
+                                _ ->
+                                    Nothing
+                    in
+                    "\n" ++ (List.filterMap itemToString exprs |> String.join "\n\n") ++ "\n"
+
+                Left str ->
+                    str
+
         Ordinary name ->
             let
                 content =

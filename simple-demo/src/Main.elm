@@ -12,9 +12,14 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
+import File exposing (File)
+import File.Download
+import File.Select
 import Html exposing (Html)
+import Task
 import LaTeXMsg exposing (LaTeXMsg(..))
 import MiniLaTeX
+import Scripta.ToString
 
 
 main =
@@ -44,6 +49,10 @@ type Msg
     = LaTeXMsg LaTeXMsg
     | SetViewMode ViewMode
     | ChangeFontSize Direction
+    | ExportScripta
+    | ImportTeX
+    | TeXFileSelected File
+    | TeXContentLoaded String
 
 
 type Direction
@@ -120,6 +129,18 @@ update msg model =
                 Down ->
                     ( { model | fontSize = model.fontSize - 1 }, Cmd.none )
 
+        ExportScripta ->
+            ( model, File.Download.string "converted.scripta" "text/plain" (Scripta.ToString.fromString model.sourceText) )
+
+        ImportTeX ->
+            ( model, File.Select.file [ ".tex" ] TeXFileSelected )
+
+        TeXFileSelected file ->
+            ( model, Task.perform TeXContentLoaded (File.toString file) )
+
+        TeXContentLoaded content ->
+            ( { model | sourceText = content }, Cmd.none )
+
 
 
 --
@@ -171,6 +192,8 @@ footer model =
         , lightModeButtom model.viewMode
         , darkModeButtom model.viewMode
         , row [ spacing 8 ] [ el [] (text "Font Size"), el [] (text <| String.fromInt model.fontSize), increaseFontSizeButton, decreaseFontSizeButton ]
+        , importTeXButton
+        , exportScriptaButton
         ]
 
 
@@ -261,6 +284,20 @@ decreaseFontSizeButton =
     Input.button (buttonStyle False)
         { onPress = Just (ChangeFontSize Down)
         , label = el [] (text (String.fromChar '↓'))
+        }
+
+
+importTeXButton =
+    Input.button (buttonStyle False)
+        { onPress = Just ImportTeX
+        , label = el [] (text "Import TeX")
+        }
+
+
+exportScriptaButton =
+    Input.button (buttonStyle False)
+        { onPress = Just ExportScripta
+        , label = el [] (text "Export Scripta")
         }
 
 

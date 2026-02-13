@@ -25,4 +25,26 @@ suite =
           , ioTest "Env test (lemma)" """\\begin{lemma}\nThere are infinitely many primes\n\\end{lemma}"""
                         """| lemma\nThere are infinitely many primes\n"""
           , ioTest "complexParagraph" """This is a \\bold{test}""" """This is a [bold test]"""
+          , ioTest "itemized list" itemizedListIN itemizedListOUT
         ]
+
+
+itemizedListIN = """
+\\begin{itemize}
+
+\\item One
+
+\\item Two
+
+\\item Three
+
+\\end{itemize}
+"""
+
+itemizedListOUT = """
+- One
+
+- Two
+
+- Three
+"""
