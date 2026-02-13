@@ -75,6 +75,16 @@ blockToString block =
                 Left str ->
                     str
 
+        Ordinary "image" ->
+            let
+                propsStr =
+                    List.map (\p -> "| " ++ p) block.args |> String.join "\n"
+
+                content =
+                    bodyToString block.body |> String.trim
+            in
+            "| image\n" ++ propsStr ++ "\n" ++ content
+
         Ordinary name ->
             let
                 content =

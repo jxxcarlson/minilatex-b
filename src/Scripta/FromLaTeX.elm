@@ -136,6 +136,31 @@ convertBlock blockIndex exprs =
                 , style = {}
                 }
 
+        [ Macro "image" _ args sm ] ->
+            let
+                argText =
+                    List.map PE.toString args |> String.join ""
+
+                parts =
+                    String.words argText
+
+                url =
+                    List.head parts |> Maybe.withDefault ""
+
+                props =
+                    List.drop 1 parts
+            in
+            Just
+                { heading = Scripta.Types.Ordinary "image"
+                , indent = 0
+                , args = props
+                , properties = Dict.empty
+                , firstLine = "\\image"
+                , body = Right [ Scripta.Types.Text url dummyExprMeta ]
+                , meta = toBlockMeta blockIndex filtered
+                , style = {}
+                }
+
         _ ->
             Just
                 { heading = Scripta.Types.Paragraph

@@ -45,7 +45,12 @@ suite =
                         """| lemma\nThere are infinitely many primes"""
           , ioTest "complexParagraph" """This is a \\bold{test}""" """This is a [bold test]"""
           , ioTest "itemized list" itemizedListIN itemizedListOUT
+          , ioTest "imagemacro" imageIN imageOUT
         ]
+
+imageIN = """\\image{http://psurl.s3.amazonaws.com/images/jc/huygens_snell-5ae9.jpg float:right width:300}"""
+
+imageOUT = """| image\n| float:right\n| width:300\nhttp://psurl.s3.amazonaws.com/images/jc/huygens_snell-5ae9.jpg"""
 
 
 totalEntropyRelationIN = """
