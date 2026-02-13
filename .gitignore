@@ -5,4 +5,5 @@ node_modules/
 app/index.html
 docs.json
 simple-demo/public/Main.js
+simple-demo/Main.js
 benchmarks/index.html
