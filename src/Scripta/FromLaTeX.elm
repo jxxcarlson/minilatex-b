@@ -40,6 +40,7 @@ convert ast =
 
 
 
+
 -- BLOCK CONVERSION
 
 
@@ -319,18 +320,12 @@ passThroughEnvList =
     , "eqnarray"
     , "verbatim"
     , "colored"
-    --, "CD" ???
     , "mathmacro"
     , "textmacro"
     , "listing"
     , "verse"
     , "align"
-    --, "matrix" ???
-    --, "pmatrix"
-    --, "bmatrix"
-    --, "Bmatrix"
-    --, "vmatrix"
-    --, "Vmatrix"
+
     ]
 
 
