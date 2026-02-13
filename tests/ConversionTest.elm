@@ -28,6 +28,7 @@ block name body =
 suite =
     describe "Scripta.FromLaTeX.convertFromString"
         [  identityTest "Plain text" "This is a test"
+          , ioTest "Bock order" twoBlocksIN twoBlocksOUT
           , ioTest "Inline math" "$x^2$"  "[math x^2]"
           , ioTest "Equation environment" (env "equation" "x^2") (block "equation" "x^2")
           , ioTest "Labeled equation environment" labeledEquationIN labeledEquationOUT
@@ -35,13 +36,27 @@ suite =
           , ioTest "Mathmcros test" mathMacrosIN mathMacrosOUT
           , ioTest "Macro test" "\\italic{Foo}"  "[italic Foo]"
           , ioTest "Env test" """\\begin{theorem}\nThere are infinitely many primes\n\\end{theorem}"""
-              """| theorem\nThere are infinitely many primes\n"""
+              """| theorem\nThere are infinitely many primes"""
           , ioTest "Env test (lemma)" """\\begin{lemma}\nThere are infinitely many primes\n\\end{lemma}"""
-                        """| lemma\nThere are infinitely many primes\n"""
+                        """| lemma\nThere are infinitely many primes"""
           , ioTest "complexParagraph" """This is a \\bold{test}""" """This is a [bold test]"""
           , ioTest "itemized list" itemizedListIN itemizedListOUT
         ]
 
+
+twoBlocksIN = """\\section{One}
+
+Blah Blah
+
+\\section{Two}"""
+
+twoBlocksOUT = """| section
+One
+
+Blah Blah
+
+| section
+Two"""
 
 mathMacrosIN = """
 \\begin{mathmacro}

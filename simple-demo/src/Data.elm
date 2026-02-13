@@ -1,4 +1,4 @@
-module Data exposing (document, minilatexio)
+module Data exposing (document, minilatexio, einsteinSolids)
 
 
 document1 =
@@ -6,6 +6,254 @@ document1 =
 \\strong{\\italic{Note.}} This app is a demo. \\italic{Nice!}
 """
 
+einsteinSolids = """
+\\title{Einstein Solids}
+
+\\banner
+\\ilink{Statistical Mechanics jxxcarlson:statistical-mechanics.1}
+
+
+
+\\tags{jxxcarlson:einstein-solids}
+
+\\contents
+
+\\section{Introduction}
+
+
+An \\term{Einstein solid} is an assembly of identical
+oscillators, where the energy of an individual oscillator is $E = \\hbar q \\omega$ where the quantum number $q$ takes the values
+$0, 1, 2, \\ldots$.  Suppose that there are $N$ such oscillators
+with energies $(q_1, q_2, \\ldots , q_N)$. This vector of energies
+is the \\term{microstate} of the solid.  Its total energy is
+$\\hbar q\\omega$ where its total quantum number
+$q = q_1 + q_2 + \\cdots + q_N$ defines
+the \\term{macrostate} of the solid.  To a given macrostate
+correspond a certain number $\\Omega(N,q)$  of microstates,
+namely
+
+\\begin{equation}
+\\Omega(N,q) \\approx \\frac{(q + N)!}{q!N!}
+\\end{equation}
+
+This number is the \\term{multiplicty} of the macrostate.  It is
+typically a very large number.  We can estimate it using
+Stirling's formula:
+
+\\begin{equation}
+N! \\approx N^N e^{-N} \\sqrt{2\\pi N}
+\\end{equation}
+
+The logarithm of $N!$ is
+
+\\begin{equation}
+\\log N! \\approx N \\log N - N
+\\end{equation}
+
+where we neglect smaller terms.  The \\term{entropy}  of a system
+is
+
+\\begin{equation}
+S = k_B \\log \\Omega
+\\end{equation}
+
+where
+
+\\begin{equation}
+k_B = 1.38 \\times 10^{-23} \\text{J/K}
+\\end{equation}
+
+is \\term{Boltzmann's constant}.  Let us find the entropy of
+an $N$-oscillator Einstein solid with total quantum number $q$.
+By Stirling's formula,
+
+
+\\begin{equation}
+\\label{e-entropy-1}
+\\log \\Omega(N,q) \\approx (q + N) \\log (q + N) - q \\log q
+- N \\log N
+\\end{equation}
+
+Assuming a "high-temperature" regime where $q >> N$, we have
+
+$$
+\\log(q + N) = \\log q + \\log(1 + N/q) \\approx \\log q + N/q
+$$
+
+Substituting this relation into \\eqref{e-entropy-1}, we find that
+
+\\begin{equation}
+\\log \\Omega(N, q) \\approx N \\log(q/N) + N + N^2/q \\approx N \\log(q/N) + N
+\\end{equation}
+
+
+
+Consequently the multiplicty is
+
+\\begin{equation}
+\\Omega(N,q) \\approx \\left(\\frac{qe}{N}\\right)^N
+\\end{equation}
+
+
+
+\\section{Interacting solids}
+
+Consider now two $N$-oscillator Einstein solids, $A$ and $B$
+which are in thermal  contact. The macrostate of the composite
+system is $q = q_A + q_B$.
+Assume the system to be isolated, so that $q$, which is proportional to the
+energy, is constant.
+The multiplicty is the product of
+the individual multplicities, so that
+
+\\begin{equation}
+\\Omega =  \\left(\\frac{q_Ae}{N}\\right)^N \\left(\\frac{q_Be}{N}\\right)^N
+= \\left(\\frac{e}{N}\\right)^{2N}(q_Aq_B)^N
+\\end{equation}
+
+Either by symmetry or by calculus, one sees that the maximum multiplicity occurs for $q_A = q_B = q/2$, so that
+
+\\begin{equation}
+\\Omega_{max}
+= \\left(\\frac{qe}{2N}\\right)^{2N}
+\\end{equation}
+
+To study how the multiplicity decays as one
+moves away from the macrostate $q_A  = q_B$, write $q_A = q/2  + x$, $q_B = q/2 - x$.  Then
+
+\\begin{equation}
+\\Omega =
+ \\left(\\frac{e}{N}\\right)^{2N}\\left( \\frac{q^2}{4} - x^2\\right)^N
+\\end{equation}
+
+
+Taking logarithms and dropping lower order terms, we find that
+
+\\begin{equation}
+\\log \\Omega \\approx q N\\log\\left( \\frac{q^2}{4} - x^2\\right) =
+N\\log\\left(\\frac{q^2}{4}\\left(1 - \\left( \\frac{2x}{q}\\right)^2 \\right) \\right)
+\\end{equation}
+
+Using the series for the logarithm, we find that
+
+\\begin{equation}
+\\log \\Omega x -N\\log\\left( \\frac{2x}{q}\\right)^2 + C
+\\end{equation}
+
+where the constant $C$ does not depend on $x$.  Thus the multiplicity is
+
+\\begin{equation}
+\\Omega(x) = C e^{-N(x/2q)^2}
+\\end{equation}
+
+This is a Gaussian centered at $x = 0$ and with standard
+deviation
+
+\\begin{equation}
+\\sigma = \\frac{q}{2\\sqrt N}
+\\end{equation}
+
+Suppose that $N$ is about $10^{20}$, corresponding to about a milligram of water,
+and that $q \\approx \\ell N$, $\\ell > 1$, so that we are in the high-temperature
+regime.  Then $\\sigma = \\ell\\sqrt{N/2} \\approx \\sqrt N$.  Suppose that the
+system is within 10 standard deviations of the maximum multiplicity state $x = 0$.
+Then the deviation from maximum multiplicity is on the order of $x = 10^{10}$.
+That deviation is the  change in quantum number $\\Delta q$.  What
+is important here is the fractional change, $\\Delta q/q \\approx 10^{-10}$.
+With probabilit very close to one, the system is in a state where the fractional
+change in quantum number is very close to zero.  That is, with probability very
+close to one, the two parts of the system are in very close to perfect energy balance.
+
+\\strong{Conclusion.}
+\\italic{Under the assumption of equal probability of microstates, the probability
+is very close to one that the system has nearly maxiumum entropy.}
+
+\\section{Temperature}
+
+
+Let us examine the consequences of the maxium entropy condition for the
+system AB described above. We assume that the total quantum number of AB is fixed,
+corresponding to fixed total energy.  Since $q_{AB} = q_A + q_B$, we can view the
+entropy of AB as a function of $q_A$. Thus maximum entropy for AB means
+that $\\partial S_{AB}/\\partial q_{A} = 0$.  Since $S_{AB} = S_A + S_B$,  we have
+
+\\begin{equation}
+\\frac{\\partial S_A}{\\partial q_A} + \\frac{\\partial S_B}{\\partial q_A} = 0
+\\end{equation}
+
+But $q_B = - q_A + \\text{a constant}$, so that
+
+\\begin{equation}
+\\label{equalbeta}
+\\frac{\\partial S_A}{\\partial q_A} = \\frac{\\partial S_B}{\\partial q_B}
+\\end{equation}
+
+The total quantum number and the entropy are \\term{state variables}: they depend
+only on the current state of the system, not on the history leading up to that
+state.  Therefore the quantity
+
+\\begin{equation}
+\\beta = \\frac{\\partial S}{\\partial q}
+\\end{equation}
+
+is also a state variable.  The maximum entropy condition \\eqref{equalbeta} can then
+be written as an equality of state variables:
+
+\\begin{equation}
+\\label{samebeta}
+\\beta_A = \\beta_B
+\\end{equation}
+
+Recall now the definition of "same temperature:" two bodies in thermal contact
+are in equilibrium, that is, their state does not change, if and only if they have the same temperature.    Consequently \\eqref{samebeta} is a formulation of the
+same temperature condition.
+
+Let us postulate that the same temperature condition is determined by some state variable
+$T$.  Let $T' = f(T)$, where $f$ is any monotonic function, increasing or decreasing.
+Then $T'$ is also a state variable, and it also yields the same temperature condition.
+Consequently, the function
+
+\\begin{equation}
+T = \\left(\\frac{\\partial S}{\\partial q}\\right)^{-1} = \\beta^{-1}
+\\end{equation}
+
+yields the same temperature condition, and so we \\emph{define} it to be the
+temperature of the system.
+
+For $T$ to be good definition of temperature, we must show that heat
+flows from hot to cold.  This why we choose  \\(T = \\beta^{-1}\\) rather than \\(T = \\beta\\) as
+our measure of temperature.
+
+
+Suppose that \\(T_A > T_B\\), Then
+
+
+$$
+\\left(\\frac{\\partial S_A}{\\partial q_A}\\right)^{-1} > \\left(\\frac{\\partial S_B}{\\partial q_B}\\right)^{-1}
+$$
+
+so that
+
+\\begin{equation}
+\\frac{\\partial S_A}{\\partial q_A} < \\frac{\\partial S_B}{\\partial q_B}
+\\end{equation}
+
+Equivalently, since $q_A + q_B$ is constant,
+$\\partial S_A/\\partial q_A < - \\partial S_B/\\partial q_A $,
+and so the total entropy satisfies
+
+$$
+\\frac{\\partial S_{AB}}{\\partial q_A} = \\frac{\\partial S_A}{\\partial q_A} + \\frac{\\partial S_B}{\\partial q_A} < 0
+$$
+
+The system is not in equilibrium, and total entropy increases as the quantum number $q_A$ decreases.   If total entropy
+increases as does $q_A$, we must be in the regime $x < 0$
+of the previous section, in which case the entropy is
+monotone increasing in $q_A$.  Consequently the
+
+
+
+"""
 
 minilatexio =
     """

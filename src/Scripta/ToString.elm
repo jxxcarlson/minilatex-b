@@ -80,7 +80,7 @@ blockToString block =
                 content =
                     bodyToString block.body |> String.trim
             in
-            "| " ++ name ++ "\n" ++ content ++ "\n"
+            "| " ++ name ++ "\n" ++ content
 
 
 bodyToString : Either String (List Expression) -> String
@@ -116,9 +116,6 @@ exprToString expr =
 
         VFun "math" str _ ->
             "[math " ++ str ++ "]"
-
-        VFun "$$" str _ ->
-            "$$\n" ++ str ++ "\n$$"
 
         VFun name str _ ->
             name ++ str

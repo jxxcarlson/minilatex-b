@@ -7,6 +7,7 @@ module Main exposing (main)
 -}
 
 import Browser
+import Data
 import Data.MiniLaTeXIO
 import Element exposing (..)
 import Element.Background as Background
@@ -100,7 +101,7 @@ init : Flags -> ( Model, Cmd Msg )
 init flags =
     ( { input = "App started"
       , output = "App started"
-      , sourceText = Data.MiniLaTeXIO.sourceText
+      , sourceText = Data.einsteinSolids
       , viewMode = Light
       , fontSize = 14
       }

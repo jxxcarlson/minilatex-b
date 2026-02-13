@@ -181,7 +181,7 @@ convertExpr index expr =
             Just (Scripta.Types.VFun "math" str (toExprMeta index sm)) |> Debug.log "@MATH"
 
         DisplayMath str sm ->
-            Just (Scripta.Types.VFun "$$" str (toExprMeta index sm))
+            Just (Scripta.Types.VFun "math" str (toExprMeta index sm))
 
         Macro name Nothing args sm ->
             Just (Scripta.Types.Fun name (convertExprList args) (toExprMeta index sm))

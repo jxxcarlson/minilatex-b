@@ -97,7 +97,7 @@ init generation selectedId input =
 
         parsedText : List (List Expression)
         parsedText =
-            Parser.Document.toParsed state |> List.reverse
+            Parser.Document.toParsed state
 
         accumulatorState =
             Render.Accumulator.render selectedId state.laTeXState parsedText

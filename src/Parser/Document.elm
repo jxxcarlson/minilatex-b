@@ -327,7 +327,7 @@ flush state =
         -- If the remaining input is nontrivial (/= ""), process it and update the state
         newState =
             if input == "" then
-                state
+                { state | output = List.reverse state.output }
 
             else
                 let
