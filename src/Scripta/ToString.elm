@@ -21,6 +21,8 @@ blockToString block =
         Paragraph ->
             bodyToString block.body
 
+        Verbatim "align" -> "| equation" ++ "\n" ++ leftBodyString block.body
+
         Verbatim "math" ->
             "$$\n" ++ leftBodyString block.body ++ "\n$$"
 
@@ -83,8 +85,8 @@ exprToString expr =
         Text str _ ->
             str
 
-        VFun "$" str _ ->
-            "$" ++ str ++ "$"
+        VFun "math" str _ ->
+            "[math " ++ str ++ "]"
 
         VFun "$$" str _ ->
             "$$\n" ++ str ++ "\n$$"

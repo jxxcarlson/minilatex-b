@@ -14,10 +14,22 @@ ioTest label input output =
   test label <|
          \_ ->   Expect.equal output (Scripta.ToString.fromString input |> Debug.log label)
 
+macro : String -> String -> String
+macro name body = "\\" ++ name ++ "{" ++ body ++ "}"
+
+env : String -> String -> String
+env name body =
+    (macro "begin" name)++ "\n" ++ body ++ "\n" ++ (macro "end" name)
+
+block : String -> String -> String
+block name body =
+   "| " ++ name ++ "\n" ++ body
+
 suite =
     describe "Scripta.FromLaTeX.convertFromString"
         [  identityTest "Plain text" "This is a test"
-          , identityTest "Inline math" "$x^2$"
+          , ioTest "Inline math" "$x^2$"  "[math x^2]"
+          , ioTest "Equation environment" (env "equation" "x^2") (block "equation" "x^2")
           , ioTest  "Display math" "$$x^2$$" """$$\nx^2\n$$"""
           , ioTest "Macro test" "\\italic{Foo}"  "[italic Foo]"
           , ioTest "Env test" """\\begin{theorem}\nThere are infinitely many primes\n\\end{theorem}"""

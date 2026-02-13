@@ -7,6 +7,27 @@ import Parser.Expression as PE exposing (Expression(..), SourceMap)
 import Scripta.Types
 
 
+{-|
+
+    convertFromString "\\italic{stuff}"
+    [{
+      ....args = []
+    , body = Right [Fun "italic" [Text "stuff" { begin = 0, end = 13, id = "0:0-0", index = 0 }]
+      { begin = 0, end = 14, id = "0:0-0", index = 0 }]
+    , firstLine = "\\italic[nada]stuff"
+    , heading = Paragraph
+    , indent = 0
+    , meta = { bodyLineNumber = 1
+    , error = Nothing, id = "0:0"
+    , lineNumber = 0
+    , messages = []
+    , numberOfLines = 1
+    , position = 0
+    , sourceText = "\\italic[nada]stuff" }
+    , properties = Dict.fromList [], style = {}
+    }]
+
+-}
 convertFromString : String -> List Scripta.Types.ExpressionBlock
 convertFromString str =
     str |> MiniLaTeX.parse 0 |> convert
@@ -149,7 +170,7 @@ convertExpr index expr =
             Just (Scripta.Types.Text str (toExprMeta index sm))
 
         InlineMath str sm ->
-            Just (Scripta.Types.VFun "$" str (toExprMeta index sm))
+            Just (Scripta.Types.VFun "math" str (toExprMeta index sm)) |> Debug.log "@MATH"
 
         DisplayMath str sm ->
             Just (Scripta.Types.VFun "$$" str (toExprMeta index sm))
@@ -267,18 +288,18 @@ passThroughEnvList =
     , "eqnarray"
     , "verbatim"
     , "colored"
-    , "CD"
+    --, "CD" ???
     , "mathmacro"
     , "textmacro"
     , "listing"
     , "verse"
     , "align"
-    , "matrix"
-    , "pmatrix"
-    , "bmatrix"
-    , "Bmatrix"
-    , "vmatrix"
-    , "Vmatrix"
+    --, "matrix" ???
+    --, "pmatrix"
+    --, "bmatrix"
+    --, "Bmatrix"
+    --, "vmatrix"
+    --, "Vmatrix"
     ]
 
 
