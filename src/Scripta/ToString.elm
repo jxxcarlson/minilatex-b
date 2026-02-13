@@ -21,10 +21,32 @@ blockToString block =
         Paragraph ->
             bodyToString block.body
 
+        Verbatim "mathmacros" ->
+            let
+                body =
+                    leftBodyString block.body
+
+                convertLine line =
+                    case parseNewcommand (String.trim line) of
+                        Just ( name, definition ) ->
+                            Just (name ++ ": " ++ definition)
+
+                        Nothing ->
+                            if String.trim line == "" then
+                                Nothing
+                            else
+                                Just line
+            in
+            "| mathmacros\n"
+                ++ (String.lines body
+                        |> List.filterMap convertLine
+                        |> String.join "\n"
+                   )
+
         Verbatim "align" -> "| equation" ++ "\n" ++ leftBodyString block.body
 
         Verbatim "math" ->
-            "$$\n" ++ leftBodyString block.body ++ "\n$$"
+            "|math\n" ++ leftBodyString block.body
 
         Verbatim name ->
             let
@@ -106,3 +128,52 @@ exprToString expr =
 
         ExprList _ exprs _ ->
             exprListToString exprs
+
+
+parseNewcommand : String -> Maybe ( String, String )
+parseNewcommand line =
+    if String.startsWith "\\newcommand{\\" line then
+        let
+            afterPrefix =
+                String.dropLeft 13 line
+
+            -- find closing } of macro name
+            nameEnd =
+                String.indexes "}" afterPrefix |> List.head
+        in
+        case nameEnd of
+            Just idx ->
+                let
+                    name =
+                        String.left idx afterPrefix
+
+                    rest =
+                        String.dropLeft (idx + 1) afterPrefix
+
+                    -- skip the [arity] part
+                    afterArity =
+                        case String.indexes "]" rest of
+                            first :: _ ->
+                                String.dropLeft (first + 1) rest
+
+                            [] ->
+                                rest
+
+                    -- extract definition from {definition}
+                    definition =
+                        afterArity
+                            |> String.trim
+                            |> (\s ->
+                                    if String.startsWith "{" s && String.endsWith "}" s then
+                                        s |> String.dropLeft 1 |> String.dropRight 1
+                                    else
+                                        s
+                               )
+                in
+                Just ( name, definition )
+
+            Nothing ->
+                Nothing
+
+    else
+        Nothing
