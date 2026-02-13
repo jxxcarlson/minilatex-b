@@ -43,6 +43,11 @@ suite =
                     "$x^2$"
                         |> run (expression 0 0)
                         |> Expect.equal (Ok (InlineMath "x^2" { generation = 0, blockOffset = 0, content = "x^2", length = 5, offset = 0 }))
+            , test "parse inline math (2)" <|
+                            \_ ->
+                                "\\(x^2\\)"
+                                    |> run (expression 0 0)
+                                    |> Expect.equal (Ok (InlineMath "x^2" { generation = 0, blockOffset = 0, content = "x^2", length = 7, offset = 0 }))
             , test "parse inline math with error" <|
                 \_ ->
                     "$x^2"

@@ -30,6 +30,7 @@ suite =
         [  identityTest "Plain text" "This is a test"
           , ioTest "Bock order" twoBlocksIN twoBlocksOUT
           , ioTest "Inline math" "$x^2$"  "[math x^2]"
+          , ioTest "Inline math (2)" "\\(x^2\\)"  "[math x^2]"
           , ioTest "Equation environment" (env "equation" "x^2") (block "equation" "x^2")
           , ioTest "Labeled equation environment" labeledEquationIN labeledEquationOUT
           , ioTest "Display math" "$$x^2$$" """| math\nx^2"""

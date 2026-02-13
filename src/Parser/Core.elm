@@ -346,6 +346,7 @@ expression generation lineNumber =
     Parser.oneOf
         [ comment generation lineNumber
         , newcommand generation lineNumber
+        , Parser.backtrackable (inlineMathParen generation lineNumber)
         , macro generation lineNumber
         , environment generation lineNumber
         , displayMath generation lineNumber
@@ -468,6 +469,16 @@ inlineMath generation lineNumber =
             |. Parser.symbol (Parser.Token "$" ExpectingLeadingDollarSign)
             |= getChompedString generation lineNumber (Parser.chompUntil (Parser.Token "$" ExpectingTrailingDollarSign))
             |. Parser.symbol (Parser.Token "$" ExpectingTrailingDollarSign)
+            |. Parser.spaces
+
+
+inlineMathParen : Int -> Int -> Parser Expression
+inlineMathParen generation lineNumber =
+    Parser.inContext InlineMathContext <|
+        Parser.succeed (\( s, t ) -> InlineMath s { t | length = t.length + 2 })
+            |. Parser.symbol (Parser.Token "\\(" ExpectingLeadingBackslashParen)
+            |= getChompedString generation lineNumber (Parser.chompUntil (Parser.Token "\\)" ExpectingTrailingBackslashParen))
+            |. Parser.symbol (Parser.Token "\\)" ExpectingTrailingBackslashParen)
             |. Parser.spaces
 
 
@@ -662,7 +673,8 @@ arg generation lineNo =
             |= Parser.getOffset
             |. Parser.symbol (Parser.Token "{" ExpectingLeftBrace)
             |= Parser.oneOf
-                [ inlineMath generation lineNo
+                [ Parser.backtrackable (inlineMathParen generation lineNo)
+                , inlineMath generation lineNo
 
                 --, Parser.lazy (\_ -> Parser.oneOf [ Parser.backtrackable (bareMacro lineNo), macro lineNo ])
                 , Parser.lazy (\_ -> macro generation lineNo)
@@ -805,6 +817,7 @@ innerParseEnvironment generation chunkOffset =
     ParserTool.many
         (Parser.oneOf
             [ environment generation chunkOffset
+            , Parser.backtrackable (inlineMathParen generation chunkOffset)
             , macro generation chunkOffset
             , displayMath generation chunkOffset
             , inlineMath generation chunkOffset
@@ -919,7 +932,7 @@ item generation lineNumber =
         |. Parser.symbol (Parser.Token "\\item" ExpectingEscapedItem)
         |. Parser.symbol (Parser.Token " " ExpectingSpaceAfterItem)
         |. Parser.spaces
-        |= ParserTool.many (Parser.oneOf [ textNP generation lineNumber [ '$', '\\' ] [ '$', '\\' ], inlineMath generation lineNumber, macro generation lineNumber ])
+        |= ParserTool.many (Parser.oneOf [ textNP generation lineNumber [ '$', '\\' ] [ '$', '\\' ], Parser.backtrackable (inlineMathParen generation lineNumber), inlineMath generation lineNumber, macro generation lineNumber ])
         |. Parser.spaces
         |= Parser.getOffset
         |= Parser.getSource

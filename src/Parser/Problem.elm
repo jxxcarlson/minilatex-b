@@ -40,7 +40,7 @@ getRecoveryData_ problem =
 
 recoveryData : List RecoveryData
 recoveryData =
-    [ problemWithInlineMath, problemWithDisplayMath, problemWithEnvironment, problemWithMacro ]
+    [ problemWithInlineMath, problemWithInlineMathParen, problemWithDisplayMath, problemWithEnvironment, problemWithMacro ]
 
 
 problemWithInlineMath : RecoveryData
@@ -53,6 +53,22 @@ problemWithInlineMath =
             [ Macro "red"
                 Nothing
                 [ Text (String.fromChar '⚠' ++ " unmatched $ in" ++ String.fromChar '\u{00A0}') Expression.dummySourceMap
+                ]
+                Expression.dummySourceMap
+            ]
+    }
+
+
+problemWithInlineMathParen : RecoveryData
+problemWithInlineMathParen =
+    { problem = ExpectingTrailingBackslashParen
+    , deltaOffset = 2
+    , textTruncation = 2
+    , parseSubstitute =
+        LXList
+            [ Macro "red"
+                Nothing
+                [ Text (String.fromChar '⚠' ++ " unmatched \\( in" ++ String.fromChar '\u{00A0}') Expression.dummySourceMap
                 ]
                 Expression.dummySourceMap
             ]

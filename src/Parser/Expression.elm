@@ -222,6 +222,8 @@ type Problem
     | ExpectingEndWord String
     | ExpectingValidOptionArgWord
     | ExpectingEndForPassThroughBody
+    | ExpectingLeadingBackslashParen
+    | ExpectingTrailingBackslashParen
     | ExpectingPrefixes (List Char)
 
 
@@ -659,3 +661,9 @@ problemAsString prob =
 
         ExpectingSpaceAfterItem ->
             "Expecting space after item (30)"
+
+        ExpectingLeadingBackslashParen ->
+            "Unmatched '\\(' (31)"
+
+        ExpectingTrailingBackslashParen ->
+            "Unmatched '\\)' (32)"

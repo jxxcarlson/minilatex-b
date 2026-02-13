@@ -170,6 +170,7 @@ macroBlock blockIndex name extraArgs args allExprs =
 
 -- EXPRESSION CONVERSION
 
+invisibleMacros = ["contents", "banner"]
 
 convertExpr : Int -> Expression -> Maybe Scripta.Types.Expression
 convertExpr index expr =
@@ -184,6 +185,7 @@ convertExpr index expr =
             Just (Scripta.Types.VFun "math" str (toExprMeta index sm))
 
         Macro name Nothing args sm ->
+           if List.member name invisibleMacros then Just (Scripta.Types.Text "" (toExprMeta index sm)) else
             Just (Scripta.Types.Fun name (convertExprList args) (toExprMeta index sm))
 
         Macro name (Just opt) args sm ->
