@@ -46,7 +46,7 @@ blockToString block =
         Verbatim "align" -> "| equation" ++ "\n" ++ leftBodyString block.body
 
         Verbatim "math" ->
-            "|math\n" ++ leftBodyString block.body
+            "| math\n" ++ leftBodyString block.body
 
         Verbatim name ->
             let

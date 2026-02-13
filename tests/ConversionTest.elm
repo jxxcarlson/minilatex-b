@@ -31,7 +31,7 @@ suite =
           , ioTest "Inline math" "$x^2$"  "[math x^2]"
           , ioTest "Equation environment" (env "equation" "x^2") (block "equation" "x^2")
           , ioTest "Labeled equation environment" labeledEquationIN labeledEquationOUT
-          , ioTest "Display math" "$$x^2$$" """|math\nx^2"""
+          , ioTest "Display math" "$$x^2$$" """| math\nx^2"""
           , ioTest "Mathmcros test" mathMacrosIN mathMacrosOUT
           , ioTest "Macro test" "\\italic{Foo}"  "[italic Foo]"
           , ioTest "Env test" """\\begin{theorem}\nThere are infinitely many primes\n\\end{theorem}"""
