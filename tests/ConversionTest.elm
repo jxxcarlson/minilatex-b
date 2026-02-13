@@ -30,6 +30,7 @@ suite =
         [  identityTest "Plain text" "This is a test"
           , ioTest "Inline math" "$x^2$"  "[math x^2]"
           , ioTest "Equation environment" (env "equation" "x^2") (block "equation" "x^2")
+          , ioTest "Labeled equation environment" labeledEquationIN labeledEquationOUT
           , ioTest  "Display math" "$$x^2$$" """$$\nx^2\n$$"""
           , ioTest "Macro test" "\\italic{Foo}"  "[italic Foo]"
           , ioTest "Env test" """\\begin{theorem}\nThere are infinitely many primes\n\\end{theorem}"""
@@ -40,6 +41,15 @@ suite =
           , ioTest "itemized list" itemizedListIN itemizedListOUT
         ]
 
+
+labeledEquationIN = """
+\\begin{equation}
+\\label{integral-exp}
+\\int_0^\\infty e^{-x} dx = 1
+\\end{equation}
+"""
+
+labeledEquationOUT = "| equation label:integral-exp\n\\int_0^\\infty e^{-x} dx = 1"
 
 itemizedListIN = """
 \\begin{itemize}

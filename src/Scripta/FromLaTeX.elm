@@ -67,13 +67,20 @@ convertBlock blockIndex exprs =
 
         [ Environment name optArgs body sm ] ->
             if isPassThroughEnv name then
+                let
+                    rawBody =
+                        bodyToString body
+
+                    ( labelArgs, cleanBody ) =
+                        extractLabel rawBody
+                in
                 Just
                     { heading = Scripta.Types.Verbatim (passThroughToVerbatimName name)
                     , indent = 0
-                    , args = optArgsToStrings optArgs
+                    , args = optArgsToStrings optArgs ++ labelArgs
                     , properties = Dict.empty
                     , firstLine = "\\begin{" ++ name ++ "}"
-                    , body = Left (bodyToString body)
+                    , body = Left cleanBody
                     , meta = toBlockMeta blockIndex filtered
                     , style = {}
                     }
@@ -259,6 +266,30 @@ toBlockMeta blockIndex exprs =
 
 
 -- HELPERS
+
+
+extractLabel : String -> ( List String, String )
+extractLabel bodyStr =
+    let
+        lines =
+            String.lines bodyStr
+
+        isLabelLine line =
+            String.startsWith "\\label{" (String.trim line)
+
+        extractLabelFromLine line =
+            line
+                |> String.trim
+                |> String.dropLeft 7
+                |> String.dropRight 1
+                |> (\l -> "label:" ++ l)
+    in
+    case List.partition isLabelLine lines of
+        ( [], _ ) ->
+            ( [], bodyStr )
+
+        ( labelLine :: _, rest ) ->
+            ( [ extractLabelFromLine labelLine ], String.join "\n" rest )
 
 
 isSkippable : Expression -> Bool

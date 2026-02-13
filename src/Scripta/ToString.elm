@@ -27,7 +27,14 @@ blockToString block =
             "$$\n" ++ leftBodyString block.body ++ "\n$$"
 
         Verbatim name ->
-            "| " ++ name ++ "\n" ++ leftBodyString block.body
+            let
+                argsStr =
+                    if List.isEmpty block.args then
+                        ""
+                    else
+                        " " ++ String.join " " block.args
+            in
+            "| " ++ name ++ argsStr ++ "\n" ++ leftBodyString block.body
 
         Ordinary "itemize" ->
             case block.body of
