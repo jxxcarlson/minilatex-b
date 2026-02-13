@@ -192,7 +192,7 @@ nextState state_ =
                     Loop (pushBlock state)
 
                 ( MathBlock, LTMathBlock _ ) ->
-                    Loop (initWithBlockType Start currentLine state)
+                    Loop (pushBlock { state | blockContents = currentLine :: state.blockContents })
 
                 ( MathBlock, BeginEnvBlock blockType ) ->
                     Loop (initWithBlockType (EnvBlock blockType) currentLine state)

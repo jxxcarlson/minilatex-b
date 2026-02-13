@@ -30,7 +30,9 @@ import Scripta.Types
 -}
 convertFromString : String -> List Scripta.Types.ExpressionBlock
 convertFromString str =
-    str |> MiniLaTeX.parse 0 |> convert
+    str
+      |> preprocess
+      |> MiniLaTeX.parse 0 |> convert
 
 
 convert : List (List Expression) -> List Scripta.Types.ExpressionBlock
@@ -38,6 +40,12 @@ convert ast =
     List.indexedMap convertBlock ast
         |> List.filterMap identity
 
+
+preprocess : String -> String
+preprocess str =
+  str
+    |> String.replace "\\term" "\\index"
+    |> String.replace "\\contents" ""
 
 
 
@@ -61,7 +69,7 @@ convertBlock blockIndex exprs =
                 , args = []
                 , properties = Dict.empty
                 , firstLine = "$$"
-                , body = Left str
+                , body = Left (String.trim str)
                 , meta = toBlockMeta blockIndex filtered
                 , style = {}
                 }

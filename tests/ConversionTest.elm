@@ -34,6 +34,7 @@ suite =
           , ioTest "Equation environment" (env "equation" "x^2") (block "equation" "x^2")
           , ioTest "Labeled equation environment" labeledEquationIN labeledEquationOUT
           , ioTest "Display math" "$$x^2$$" """| math\nx^2"""
+          , ioTest "totaEntropy" totalEntropyRelationIN totalEntropyRelationOUT
           , ioTest "Mathmcros test" mathMacrosIN mathMacrosOUT
           , ioTest "Macro test" "\\italic{Foo}"  "[italic Foo]"
           , ioTest "Env test" """\\begin{theorem}\nThere are infinitely many primes\n\\end{theorem}"""
@@ -44,6 +45,14 @@ suite =
           , ioTest "itemized list" itemizedListIN itemizedListOUT
         ]
 
+
+totalEntropyRelationIN = """
+$$
+\\frac{\\partial S_{AB}}{\\partial q_A} = \\frac{\\partial S_A}{\\partial q_A} + \\frac{\\partial S_B}{\\partial q_A} < 0
+$$"""
+
+totalEntropyRelationOUT = """| math
+\\frac{\\partial S_{AB}}{\\partial q_A} = \\frac{\\partial S_A}{\\partial q_A} + \\frac{\\partial S_B}{\\partial q_A} < 0"""
 
 twoBlocksIN = """\\section{One}
 
