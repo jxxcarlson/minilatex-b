@@ -46,8 +46,25 @@ suite =
           , ioTest "complexParagraph" """This is a \\bold{test}""" """This is a [bold test]"""
           , ioTest "itemized list" itemizedListIN itemizedListOUT
           , ioTest "imagemacro" imageIN imageOUT
+          , ioTest "text in math" "$x \\text{if} y$" "[math x if y]"
+          , ioTest "text in display math" "$$a \\text{where} b$$" "| math\na where b"
+          , ioTest "numbered item" numberedIN numberedOUT
+          , ioTest "image float right" imageFloatRightIN imageFloatRightOUT
         ]
 
+
+imageFloatRightIN = "[image http://psurl.s3.amazonaws.com/images/jc/snell2-5b65.jpg float:right width:70]"
+
+
+imageFloatRightOUT = """| image float:right width:70
+http://psurl.s3.amazonaws.com/images/jc/snell2-5b65.jpg"""
+
+numberedIN = """\\numbered
+Why are atoms stable? According to \\italic{classical electromagnetic theory} ($x^2$), electrons whirling around the nucleus should radiate their energy way in the blink of an eye.
+"""
+
+numberedOUT = """. Why are atoms stable? According to [italic classical electromagnetic theory] ([math x^2]), electrons whirling around the nucleus should radiate their energy way in the blink of an eye.
+"""
 imageIN = """\\image{http://psurl.s3.amazonaws.com/images/jc/huygens_snell-5ae9.jpg float:right width:300}"""
 
 imageOUT = """| image\n| float:right\n| width:300\nhttp://psurl.s3.amazonaws.com/images/jc/huygens_snell-5ae9.jpg"""

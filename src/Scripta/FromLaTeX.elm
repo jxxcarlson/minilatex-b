@@ -46,6 +46,23 @@ preprocess str =
   str
     |> String.replace "\\term" "\\index"
     |> String.replace "\\contents" ""
+    |> String.lines
+    |> List.map preprocessLine
+    |> String.join "\n"
+
+
+preprocessLine : String -> String
+preprocessLine line =
+    let
+        trimmed = String.trim line
+    in
+    if String.startsWith "[image " trimmed && String.endsWith "]" trimmed then
+        let
+            content = trimmed |> String.dropLeft 7 |> String.dropRight 1
+        in
+        "\\imageblock{" ++ content ++ "}"
+    else
+        line
 
 
 
@@ -69,7 +86,7 @@ convertBlock blockIndex exprs =
                 , args = []
                 , properties = Dict.empty
                 , firstLine = "$$"
-                , body = Left (String.trim str)
+                , body = Left (String.trim str |> stripTextMacro)
                 , meta = toBlockMeta blockIndex filtered
                 , style = {}
                 }
@@ -161,6 +178,47 @@ convertBlock blockIndex exprs =
                 , style = {}
                 }
 
+        [ Macro "imageblock" _ args sm ] ->
+            let
+                argText =
+                    List.map PE.toString args |> String.join ""
+
+                parts =
+                    String.words argText
+
+                url =
+                    List.head parts |> Maybe.withDefault ""
+
+                props =
+                    List.drop 1 parts
+            in
+            Just
+                { heading = Scripta.Types.Verbatim "image"
+                , indent = 0
+                , args = props
+                , properties = Dict.empty
+                , firstLine = "[image"
+                , body = Left url
+                , meta = toBlockMeta blockIndex filtered
+                , style = {}
+                }
+
+        (Macro "numbered" _ _ _) :: rest ->
+            let
+                trimmedRest =
+                    trimLeadingTextWhitespace rest
+            in
+            Just
+                { heading = Scripta.Types.Paragraph
+                , indent = 0
+                , args = []
+                , properties = Dict.empty
+                , firstLine = "."
+                , body = Right (Scripta.Types.Text ". " dummyExprMeta :: convertExprList trimmedRest ++ [ Scripta.Types.Text "\n" dummyExprMeta ])
+                , meta = toBlockMeta blockIndex filtered
+                , style = {}
+                }
+
         _ ->
             Just
                 { heading = Scripta.Types.Paragraph
@@ -212,10 +270,10 @@ convertExpr index expr =
             Just (Scripta.Types.Text str (toExprMeta index sm))
 
         InlineMath str sm ->
-            Just (Scripta.Types.VFun "math" str (toExprMeta index sm)) |> Debug.log "@MATH"
+            Just (Scripta.Types.VFun "math" (stripTextMacro str) (toExprMeta index sm)) |> Debug.log "@MATH"
 
         DisplayMath str sm ->
-            Just (Scripta.Types.VFun "math" str (toExprMeta index sm))
+            Just (Scripta.Types.VFun "math" (stripTextMacro str) (toExprMeta index sm))
 
         Macro name Nothing args sm ->
            if List.member name invisibleMacros then Just (Scripta.Types.Text "" (toExprMeta index sm)) else
@@ -302,6 +360,45 @@ toBlockMeta blockIndex exprs =
 
 
 -- HELPERS
+
+
+trimLeadingTextWhitespace : List Expression -> List Expression
+trimLeadingTextWhitespace exprs =
+    case exprs of
+        (Text str sm) :: rest ->
+            Text (String.trimLeft str) sm :: rest
+
+        _ ->
+            exprs
+
+
+stripTextMacro : String -> String
+stripTextMacro str =
+    case String.indexes "\\text{" str of
+        [] ->
+            str
+
+        idx :: _ ->
+            let
+                before =
+                    String.left idx str
+
+                afterPrefix =
+                    String.dropLeft (idx + 6) str
+            in
+            case String.indexes "}" afterPrefix of
+                [] ->
+                    str
+
+                closingIdx :: _ ->
+                    let
+                        content =
+                            String.left closingIdx afterPrefix
+
+                        rest =
+                            String.dropLeft (closingIdx + 1) afterPrefix
+                    in
+                    stripTextMacro (before ++ content ++ rest)
 
 
 extractLabel : String -> ( List String, String )
