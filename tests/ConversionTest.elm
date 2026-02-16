@@ -50,14 +50,40 @@ suite =
           , ioTest "text in display math" "$$a \\text{where} b$$" "| math\na where b"
           , ioTest "numbered item" numberedIN numberedOUT
           , ioTest "image float right" imageFloatRightIN imageFloatRightOUT
+          , ioTest "image float right2" imageFloatRightIN2 imageFloatRightOUT2
+          , ioTest "textInEquation" textInEquationIN textInEquationOUT
+          , ioTest "codeBlock" codeIN codeOUT
         ]
 
 
-imageFloatRightIN = "[image http://psurl.s3.amazonaws.com/images/jc/snell2-5b65.jpg float:right width:70]"
+codeIN = """\\begin{code}
+# jupyter/python
 
+matplotlib inline
+\\end{code}"""
+
+codeOUT = """| code
+# jupyter/python
+
+matplotlib inline
+"""
+
+textInEquationIN = """| equation
+h = 6.6\\times 10^{-34}\\;\\text{Joule-sec}"""
+
+textInEquationOUT = """| equation
+h = 6.6\\times 10^{-34}\\;\"Joule-sec\""""
+
+imageFloatRightIN = "[image http://psurl.s3.amazonaws.com/images/jc/snell2-5b65.jpg float:right width:70]"
 
 imageFloatRightOUT = """| image float:right width:70
 http://psurl.s3.amazonaws.com/images/jc/snell2-5b65.jpg"""
+
+imageFloatRightIN2 = "[image http://psurl.s3.amazonaws.com/images/jc/fermat_principle-94da.jpg float:right width:300]"
+
+imageFloatRightOUT2 = """| image float:right width:300
+http://psurl.s3.amazonaws.com/images/jc/fermat_principle-94da.jpg"""
+
 
 numberedIN = """\\numbered
 Why are atoms stable? According to \\italic{classical electromagnetic theory} ($x^2$), electrons whirling around the nucleus should radiate their energy way in the blink of an eye.

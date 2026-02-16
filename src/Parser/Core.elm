@@ -779,7 +779,7 @@ environment_ generation chunkOffset ( envType, sm ) =
             [ "align", "matrix", "pmatrix", "bmatrix", "Bmatrix", "vmatrix", "Vmatrix" ]
 
         envKind =
-            if List.member envType ([ "equation", "eqnarray", "verbatim", "colored", "CD", "mathmacro", "textmacro", "listing", "verse" ] ++ katex) then
+            if List.member envType ([ "equation", "eqnarray", "verbatim", "colored", "CD", "mathmacro", "textmacro", "listing", "code", "verse" ] ++ katex) then
                 "passThrough"
 
             else
@@ -850,7 +850,7 @@ passThroughEnv : Int -> Int -> String -> String -> Expression
 passThroughEnv generation chunkOffset envType source =
     let
         lines =
-            source |> String.trim |> String.lines |> List.filter (\l -> String.length l > 0)
+            source |> String.trim |> String.lines
 
         data =
             passThroughData generation envType source lines

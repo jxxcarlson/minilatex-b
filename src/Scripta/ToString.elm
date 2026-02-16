@@ -48,6 +48,9 @@ blockToString block =
         Verbatim "math" ->
             "| math\n" ++ leftBodyString block.body
 
+        Verbatim "code" ->
+            "| code\n" ++ leftBodyString block.body ++ "\n"
+
         Verbatim name ->
             let
                 argsStr =

@@ -204,8 +204,11 @@ nextState state_ =
                     Loop (addToBlockContents MathBlock currentLine state)
 
                 ---
-                ( EnvBlock _, LTBlank ) ->
-                    Loop state
+                ( EnvBlock et, LTBlank ) ->
+                    if isVerbatimEnv et then
+                        Loop (addToBlockContents (EnvBlock et) currentLine state)
+                    else
+                        Loop state
 
                 ( EnvBlock et, LTMathBlock _ ) ->
                     Loop (addToBlockContents (EnvBlock et) currentLine state)
@@ -350,6 +353,11 @@ countLines : List String -> Int
 countLines list =
     list |> List.map String.lines |> List.concat |> List.length |> (\x -> x + 1)
 
+
+
+isVerbatimEnv : String -> Bool
+isVerbatimEnv name =
+    List.member name [ "equation", "eqnarray", "verbatim", "colored", "CD", "mathmacro", "textmacro", "listing", "code", "verse", "align", "matrix", "pmatrix", "bmatrix", "Bmatrix", "vmatrix", "Vmatrix" ]
 
 
 -- HELPER (LOOP)

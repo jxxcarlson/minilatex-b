@@ -47,8 +47,47 @@ preprocess str =
     |> String.replace "\\term" "\\index"
     |> String.replace "\\contents" ""
     |> String.lines
-    |> List.map preprocessLine
+    |> preprocessLines
     |> String.join "\n"
+
+
+preprocessLines : List String -> List String
+preprocessLines lines =
+    case lines of
+        [] ->
+            []
+
+        first :: rest ->
+            let
+                trimmed = String.trim first
+            in
+            if String.startsWith "| equation" trimmed then
+                let
+                    ( bodyLines, remaining ) =
+                        spanBody rest
+                in
+                "\\begin{equation}" :: bodyLines ++ [ "\\end{equation}" ] ++ preprocessLines remaining
+
+            else
+                preprocessLine first :: preprocessLines rest
+
+
+spanBody : List String -> ( List String, List String )
+spanBody lines =
+    case lines of
+        [] ->
+            ( [], [] )
+
+        first :: rest ->
+            if String.trim first == "" then
+                ( [], first :: rest )
+
+            else
+                let
+                    ( body, remaining ) =
+                        spanBody rest
+                in
+                ( first :: body, remaining )
 
 
 preprocessLine : String -> String
@@ -106,7 +145,7 @@ convertBlock blockIndex exprs =
                     , args = optArgsToStrings optArgs ++ labelArgs
                     , properties = Dict.empty
                     , firstLine = "\\begin{" ++ name ++ "}"
-                    , body = Left cleanBody
+                    , body = Left (convertTextToQuotes cleanBody)
                     , meta = toBlockMeta blockIndex filtered
                     , style = {}
                     }
@@ -372,6 +411,35 @@ trimLeadingTextWhitespace exprs =
             exprs
 
 
+convertTextToQuotes : String -> String
+convertTextToQuotes str =
+    case String.indexes "\\text{" str of
+        [] ->
+            str
+
+        idx :: _ ->
+            let
+                before =
+                    String.left idx str
+
+                afterPrefix =
+                    String.dropLeft (idx + 6) str
+            in
+            case String.indexes "}" afterPrefix of
+                [] ->
+                    str
+
+                closingIdx :: _ ->
+                    let
+                        content =
+                            String.left closingIdx afterPrefix
+
+                        rest =
+                            String.dropLeft (closingIdx + 1) afterPrefix
+                    in
+                    convertTextToQuotes (before ++ "\"" ++ content ++ "\"" ++ rest)
+
+
 stripTextMacro : String -> String
 stripTextMacro str =
     case String.indexes "\\text{" str of
@@ -455,6 +523,7 @@ passThroughEnvList =
     , "mathmacro"
     , "textmacro"
     , "listing"
+    , "code"
     , "verse"
     , "align"
 
@@ -477,6 +546,9 @@ passThroughToVerbatimName name =
             "verbatim"
 
         "listing" ->
+            "code"
+
+        "code" ->
             "code"
 
         "colored" ->
