@@ -54,10 +54,25 @@ suite =
           , ioTest "textInEquation" textInEquationIN textInEquationOUT
           , ioTest "codeBlock" codeIN codeOUT
           , ioTest "bibItem" bibitemIN bibitemOUT
+          , ioTest "shiftAndSetCounter" shiftAndSetCounterIN shiftAndSetCounterOUT
+          , ioTest "tags" tagsIN tagsOUT
+          , ioTest "content" contentsIN contentsOUT
+          , ioTest "ilink" ilinkIN ilinkOUT
         ]
 
+ilinkIN = "\\ilink{Quantum Mechanics Notes id-708d4474-8450-4061-bd96-bc55c8b71f4f}"
 
-shfit
+ilinkOUT = "[ilink Quantum Mechanics Notes id-708d4474-8450-4061-bd96-bc55c8b71f4f]"
+
+contentsIN = "\\contents"
+contentsOUT = ""
+
+tagsIN = "\\tags{system:startup jxxcarslon:wave-packets-dispersion}"
+tagsOUT = ""
+
+shiftAndSetCounterIN = "\\shiftandsetcounter{2}"
+
+shiftAndSetCounterOUT = ""
 
 bibitemIN = """\\bibitem{QM}
 \\link{Quantum Mechanics for Engineers: Wave Packets https://www.eng.fsu.edu/~dommelen/quantum/style_a/packets.html}

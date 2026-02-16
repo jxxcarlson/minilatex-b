@@ -319,7 +319,7 @@ macroBlock blockIndex name extraArgs args allExprs =
 
 -- EXPRESSION CONVERSION
 
-invisibleMacros = ["contents", "banner"]
+invisibleMacros = ["contents", "banner", "shiftandsetcounter", "tags"]
 
 convertExpr : Int -> Expression -> Maybe Scripta.Types.Expression
 convertExpr index expr =
