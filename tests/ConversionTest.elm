@@ -53,8 +53,19 @@ suite =
           , ioTest "image float right2" imageFloatRightIN2 imageFloatRightOUT2
           , ioTest "textInEquation" textInEquationIN textInEquationOUT
           , ioTest "codeBlock" codeIN codeOUT
+          , ioTest "bibItem" bibitemIN bibitemOUT
         ]
 
+
+shfit
+
+bibitemIN = """\\bibitem{QM}
+\\link{Quantum Mechanics for Engineers: Wave Packets https://www.eng.fsu.edu/~dommelen/quantum/style_a/packets.html}
+"""
+
+bibitemOUT = """| bibitem QM
+[link Quantum Mechanics for Engineers: Wave Packets https://www.eng.fsu.edu/~dommelen/quantum/style_a/packets.html]
+"""
 
 codeIN = """\\begin{code}
 # jupyter/python

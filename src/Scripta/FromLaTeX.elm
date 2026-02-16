@@ -242,6 +242,25 @@ convertBlock blockIndex exprs =
                 , style = {}
                 }
 
+        (Macro "bibitem" _ args _) :: rest ->
+            let
+                key =
+                    List.map PE.toString args |> String.join "" |> String.trim
+
+                trimmedRest =
+                    trimLeadingTextWhitespace rest
+            in
+            Just
+                { heading = Scripta.Types.Ordinary "bibitem"
+                , indent = 0
+                , args = [ key ]
+                , properties = Dict.empty
+                , firstLine = "\\bibitem{" ++ key ++ "}"
+                , body = Right (convertExprList trimmedRest)
+                , meta = toBlockMeta blockIndex filtered
+                , style = {}
+                }
+
         (Macro "numbered" _ _ _) :: rest ->
             let
                 trimmedRest =

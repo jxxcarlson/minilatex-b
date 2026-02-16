@@ -88,6 +88,16 @@ blockToString block =
             in
             "| image\n" ++ propsStr ++ "\n" ++ content
 
+        Ordinary "bibitem" ->
+            let
+                argsStr =
+                    if List.isEmpty block.args then "" else " " ++ String.join " " block.args
+
+                content =
+                    bodyToString block.body |> String.trimLeft
+            in
+            "| bibitem" ++ argsStr ++ "\n" ++ content ++ "\n"
+
         Ordinary name ->
             let
                 content =

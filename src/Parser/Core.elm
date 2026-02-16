@@ -614,7 +614,7 @@ macroName2 =
     Parser.variable
         { start = \c -> c == '\\'
         , inner = \c -> Char.isAlphaNum c || c == '*'
-        , reserved = Set.fromList [ "\\begin", "\\end", "\\item", "\\bibitem" ]
+        , reserved = Set.fromList [ "\\begin", "\\end", "\\item" ]
         , expecting = RejectMacroReservedWord
         }
         |> Parser.map (String.dropLeft 1)
