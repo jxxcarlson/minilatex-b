@@ -328,7 +328,7 @@ convertExpr index expr =
             Just (Scripta.Types.Text str (toExprMeta index sm))
 
         InlineMath str sm ->
-            Just (Scripta.Types.VFun "math" (stripTextMacro str) (toExprMeta index sm)) |> Debug.log "@MATH"
+            Just (Scripta.Types.VFun "math" (convertTextToSpacedQuotes str) (toExprMeta index sm)) |> Debug.log "@MATH"
 
         DisplayMath str sm ->
             Just (Scripta.Types.VFun "math" (stripTextMacro str) (toExprMeta index sm))
@@ -457,6 +457,35 @@ convertTextToQuotes str =
                             String.dropLeft (closingIdx + 1) afterPrefix
                     in
                     convertTextToQuotes (before ++ "\"" ++ content ++ "\"" ++ rest)
+
+
+convertTextToSpacedQuotes : String -> String
+convertTextToSpacedQuotes str =
+    case String.indexes "\\text{" str of
+        [] ->
+            str
+
+        idx :: _ ->
+            let
+                before =
+                    String.left idx str
+
+                afterPrefix =
+                    String.dropLeft (idx + 6) str
+            in
+            case String.indexes "}" afterPrefix of
+                [] ->
+                    str
+
+                closingIdx :: _ ->
+                    let
+                        content =
+                            String.left closingIdx afterPrefix
+
+                        rest =
+                            String.dropLeft (closingIdx + 1) afterPrefix
+                    in
+                    convertTextToSpacedQuotes (before ++ "\" " ++ content ++ " \"" ++ rest)
 
 
 stripTextMacro : String -> String

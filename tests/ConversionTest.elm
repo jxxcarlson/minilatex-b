@@ -29,10 +29,10 @@ suite =
     describe "Scripta.FromLaTeX.convertFromString"
         [  identityTest "Plain text" "This is a test"
           , ioTest "Bock order" twoBlocksIN twoBlocksOUT
-          , ioTest "Inline math" "$x^2$"  "[math x^2]"
-          , ioTest "Inline math (2)" "\\(x^2\\)"  "[math x^2]"
-          , ioTest "Inline math (3)" "\\(T = b^{-1}\\)" "[math T = b^{-1}]"
-          , ioTest "Inline math (4)" "\\(T = \\beta^{-1}\\)" "[math T = \\beta^{-1}]"
+          , ioTest "Inline math" "$x^2$"  "$x^2$"
+          , ioTest "Inline math (2)" "\\(x^2\\)"  "$x^2$"
+          , ioTest "Inline math (3)" "\\(T = b^{-1}\\)" "$T = b^{-1}$"
+          , ioTest "Inline math (4)" "\\(T = \\beta^{-1}\\)" "$T = \\beta^{-1}$"
           , ioTest "Equation environment" (env "equation" "x^2") (block "equation" "x^2")
           , ioTest "Labeled equation environment" labeledEquationIN labeledEquationOUT
           , ioTest "Display math" "$$x^2$$" """| math\nx^2"""
@@ -46,7 +46,7 @@ suite =
           , ioTest "complexParagraph" """This is a \\bold{test}""" """This is a [bold test]"""
           , ioTest "itemized list" itemizedListIN itemizedListOUT
           , ioTest "imagemacro" imageIN imageOUT
-          , ioTest "text in math" "$x \\text{if} y$" "[math x if y]"
+          , ioTest "text in math" "$x \\text{if} y$" """$x " if " y$"""
           , ioTest "text in display math" "$$a \\text{where} b$$" "| math\na where b"
           , ioTest "numbered item" numberedIN numberedOUT
           , ioTest "image float right" imageFloatRightIN imageFloatRightOUT
@@ -58,7 +58,17 @@ suite =
           , ioTest "tags" tagsIN tagsOUT
           , ioTest "content" contentsIN contentsOUT
           , ioTest "ilink" ilinkIN ilinkOUT
+          , ioTest "imageStacked" imageStackedIn imageStackedOut
         ]
+
+imageStackedIn = "\\image{https://psurl.s3.amazonaws.com/images/jc/sinc2-bcbf.png  caption:Wave packet width:300}"
+
+
+imageStackedOut = """| image
+| caption:Wave
+packet
+| width:300
+https://psurl.s3.amazonaws.com/images/jc/sinc2-bcbf.png"""
 
 ilinkIN = "\\ilink{Quantum Mechanics Notes id-708d4474-8450-4061-bd96-bc55c8b71f4f}"
 
@@ -115,7 +125,7 @@ numberedIN = """\\numbered
 Why are atoms stable? According to \\italic{classical electromagnetic theory} ($x^2$), electrons whirling around the nucleus should radiate their energy way in the blink of an eye.
 """
 
-numberedOUT = """. Why are atoms stable? According to [italic classical electromagnetic theory] ([math x^2]), electrons whirling around the nucleus should radiate their energy way in the blink of an eye.
+numberedOUT = """. Why are atoms stable? According to [italic classical electromagnetic theory] ($x^2$), electrons whirling around the nucleus should radiate their energy way in the blink of an eye.
 """
 imageIN = """\\image{http://psurl.s3.amazonaws.com/images/jc/huygens_snell-5ae9.jpg float:right width:300}"""
 

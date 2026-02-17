@@ -80,8 +80,11 @@ blockToString block =
 
         Ordinary "image" ->
             let
+                formatProp p =
+                    if String.contains ":" p then "| " ++ p else p
+
                 propsStr =
-                    List.map (\p -> "| " ++ p) block.args |> String.join "\n"
+                    List.map formatProp block.args |> String.join "\n"
 
                 content =
                     bodyToString block.body |> String.trim
@@ -138,7 +141,7 @@ exprToString expr =
             str
 
         VFun "math" str _ ->
-            "[math " ++ str ++ "]"
+            "$" ++ str ++ "$"
 
         VFun name str _ ->
             name ++ str
