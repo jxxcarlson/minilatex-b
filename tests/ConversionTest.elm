@@ -59,7 +59,26 @@ suite =
           , ioTest "content" contentsIN contentsOUT
           , ioTest "ilink" ilinkIN ilinkOUT
           , ioTest "imageStacked" imageStackedIn imageStackedOut
+          , ioTest "equation2Test" equation2IN equation2OUT
+          , ioTest "bibitemTest" bibItemIN bibItemOUT
         ]
+
+bibItemIN = """\\bibitem{PTE}
+\\href{http://www2.ph.ed.ac.uk/~ldeldebb/docs/QM/lect17.pdf}{Perturbation Theory, Edinburgh}"""
+
+bibItemOUT = """| bibitem PTE
+[link Perturbation Theory, Edinburgh http://www2.ph.ed.ac.uk/~ldeldebb/docs/QM/lect17.pdf]
+"""
+
+equation2IN = """\\begin{aligned}
+ \\label{aa4}
+ \\Delta E_0 &= \\lambda g \\left(\\frac{ \\hbar }{  2m \\omega} \\right)^{2} \\langle \\psi_0 | ( a + a^\\dagger )^4 | \\psi_0 \\rangle \\\\
+ &= \\lambda \\frac{1}{16}\\frac{\\omega \\hbar}{2}\\langle \\psi_0 | ( a + a^\\dagger )^4 | \\psi_0 \\rangle
+ \\end{aligned}"""
+
+equation2OUT = """| aligned label:aa4
+ \\Delta E_0 &= \\lambda g \\left(\\frac{ \\hbar }{  2m \\omega} \\right)^{2} \\langle \\psi_0 | ( a + a^\\dagger )^4 | \\psi_0 \\rangle \\\\
+ &= \\lambda \\frac{1}{16}\\frac{\\omega \\hbar}{2}\\langle \\psi_0 | ( a + a^\\dagger )^4 | \\psi_0 \\rangle"""
 
 imageStackedIn = "\\image{https://psurl.s3.amazonaws.com/images/jc/sinc2-bcbf.png  caption:Wave packet width:300}"
 

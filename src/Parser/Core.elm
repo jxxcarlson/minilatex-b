@@ -776,7 +776,7 @@ environment_ generation chunkOffset ( envType, sm ) =
                 ++ "}"
 
         katex =
-            [ "align", "matrix", "pmatrix", "bmatrix", "Bmatrix", "vmatrix", "Vmatrix" ]
+            [ "align", "aligned", "matrix", "pmatrix", "bmatrix", "Bmatrix", "vmatrix", "Vmatrix" ]
 
         envKind =
             if List.member envType ([ "equation", "eqnarray", "verbatim", "colored", "CD", "mathmacro", "textmacro", "listing", "code", "verse" ] ++ katex) then

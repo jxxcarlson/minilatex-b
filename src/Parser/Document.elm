@@ -357,7 +357,7 @@ countLines list =
 
 isVerbatimEnv : String -> Bool
 isVerbatimEnv name =
-    List.member name [ "equation", "eqnarray", "verbatim", "colored", "CD", "mathmacro", "textmacro", "listing", "code", "verse", "align", "matrix", "pmatrix", "bmatrix", "Bmatrix", "vmatrix", "Vmatrix" ]
+    List.member name [ "equation", "eqnarray", "verbatim", "colored", "CD", "mathmacro", "textmacro", "listing", "code", "verse", "align", "aligned", "matrix", "pmatrix", "bmatrix", "Bmatrix", "vmatrix", "Vmatrix" ]
 
 
 -- HELPER (LOOP)

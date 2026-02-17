@@ -333,6 +333,13 @@ convertExpr index expr =
         DisplayMath str sm ->
             Just (Scripta.Types.VFun "math" (stripTextMacro str) (toExprMeta index sm))
 
+        Macro "href" Nothing args sm ->
+            let
+                converted = convertExprList (List.reverse args)
+                withSpace = List.intersperse (Scripta.Types.Text " " (toExprMeta index sm)) converted
+            in
+            Just (Scripta.Types.Fun "link" withSpace (toExprMeta index sm))
+
         Macro name Nothing args sm ->
            if List.member name invisibleMacros then Just (Scripta.Types.Text "" (toExprMeta index sm)) else
             Just (Scripta.Types.Fun name (convertExprList args) (toExprMeta index sm))
@@ -574,6 +581,7 @@ passThroughEnvList =
     , "code"
     , "verse"
     , "align"
+    , "aligned"
 
     ]
 
@@ -585,6 +593,9 @@ passThroughToVerbatimName name =
             "equation"
 
         "align" ->
+            "aligned"
+
+        "aligned" ->
             "aligned"
 
         "eqnarray" ->
